@@ -17,6 +17,9 @@ import TravelHistory from "./pages/TravelHistory";
 import PaymentOptions from "./pages/PaymentOptions";
 import DriverProfile from "./pages/DriverProfile";
 import RateDriver from "./pages/RateDriver";
+import UserRegistration from "./pages/UserRegistration";
+import DriverRegistration from "./pages/DriverRegistration";
+import FareSettings from "./pages/FareSettings";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +34,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/user-registration" element={<UserRegistration />} />
+            <Route path="/driver-registration" element={<DriverRegistration />} />
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/request-ride" element={<RideRequest />} />
@@ -39,6 +44,7 @@ const App = () => (
             <Route path="/payment-options" element={<PaymentOptions />} />
             <Route path="/driver/:driverId" element={<DriverProfile />} />
             <Route path="/rate-driver/:tripId" element={<RateDriver />} />
+            <Route path="/fare-settings" element={<FareSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
