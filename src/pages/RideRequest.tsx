@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowLeft, MapPin, Navigation, Clock, Car } from "lucide-react";
@@ -9,17 +8,21 @@ import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
 
-// Función para geocodificar direcciones usando Mapbox
+// Función para geocodificar direcciones usando Mapbox específicamente para Tenerife
 const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
   const apiKey = localStorage.getItem('mapbox_api_key');
   if (!apiKey) return null;
   
   try {
+    // Añadir "Tenerife, Spain" como contexto para mejorar la precisión
+    const searchQuery = `${address}, Tenerife, Spain`;
+    
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${apiKey}&limit=1`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=-16.5,28.4`
     );
     
     const data = await response.json();
+    console.log("Geocoding result:", data);
     
     if (data.features && data.features.length > 0) {
       const [lng, lat] = data.features[0].center;
@@ -79,12 +82,15 @@ const RideRequest = () => {
     if (!originResult || !destinationResult) {
       toast({
         title: "Error de geocodificación",
-        description: "No se pudieron encontrar las coordenadas para las direcciones proporcionadas",
+        description: "No se pudieron encontrar las coordenadas para las direcciones proporcionadas en Tenerife",
         variant: "destructive",
       });
       setIsLoading(false);
       return;
     }
+    
+    console.log("Origin coordinates:", originResult);
+    console.log("Destination coordinates:", destinationResult);
     
     setOriginCoords(originResult);
     setDestinationCoords(destinationResult);
@@ -297,3 +303,4 @@ const RideRequest = () => {
 };
 
 export default RideRequest;
+

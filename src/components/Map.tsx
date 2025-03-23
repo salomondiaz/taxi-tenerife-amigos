@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -51,13 +50,14 @@ const Map: React.FC<MapProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { testMode } = useAppContext();
   
-  // Geocoder para convertir direcciones a coordenadas
   const geocodeAddress = async (address: string) => {
     if (!apiKey) return null;
     
     try {
+      const searchQuery = `${address}, Tenerife, Spain`;
+      
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${apiKey}&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=-16.5,28.4`
       );
       
       const data = await response.json();
@@ -74,7 +74,6 @@ const Map: React.FC<MapProps> = ({
     }
   };
 
-  // Intentar cargar la clave API desde localStorage
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (storedApiKey) {
@@ -85,7 +84,6 @@ const Map: React.FC<MapProps> = ({
     }
   }, []);
 
-  // Simulación de movimiento del conductor si estamos en modo de prueba
   useEffect(() => {
     if (testMode && showDriverPosition && map.current && driverMarker.current && origin && destination) {
       let step = 0;
@@ -129,26 +127,22 @@ const Map: React.FC<MapProps> = ({
     try {
       mapboxgl.accessToken = apiKey;
       
-      // Inicializar el mapa
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: origin ? [origin.lng, origin.lat] : [-16.2519, 28.4689], // Centro por defecto: Santa Cruz de Tenerife
+        center: origin ? [origin.lng, origin.lat] : [-16.2519, 28.4689],
         zoom: 12,
         interactive: interactive
       });
       
       if (interactive) {
-        // Añadir controles de navegación
         map.current.addControl(
           new mapboxgl.NavigationControl(),
           'top-right'
         );
       }
       
-      // Evento de carga del mapa
       map.current.on('load', async () => {
-        // Si tenemos direcciones de texto pero no coordenadas, geocodificar
         let originCoords = origin;
         let destinationCoords = destination;
         
@@ -175,7 +169,6 @@ const Map: React.FC<MapProps> = ({
         }
         
         if (originCoords) {
-          // Crear marcador de origen
           const markerEl = document.createElement('div');
           markerEl.className = 'origin-marker';
           markerEl.style.width = '20px';
@@ -197,7 +190,6 @@ const Map: React.FC<MapProps> = ({
         }
         
         if (destinationCoords) {
-          // Crear marcador de destino
           const markerEl = document.createElement('div');
           markerEl.className = 'destination-marker';
           markerEl.style.width = '20px';
@@ -218,7 +210,6 @@ const Map: React.FC<MapProps> = ({
           }
         }
         
-        // Si tenemos origen y destino, ajustar la vista para incluir ambos
         if (originCoords && destinationCoords) {
           const bounds = new mapboxgl.LngLatBounds()
             .extend([originCoords.lng, originCoords.lat])
@@ -229,7 +220,6 @@ const Map: React.FC<MapProps> = ({
             maxZoom: 14
           });
           
-          // Dibujar ruta entre origen y destino
           if (map.current) {
             map.current.addSource('route', {
               type: 'geojson',
@@ -263,11 +253,9 @@ const Map: React.FC<MapProps> = ({
           }
         }
         
-        // Si debemos mostrar la posición del conductor
         if (showDriverPosition) {
           const markerEl = document.createElement('div');
           
-          // Crear un elemento personalizado para el marcador del conductor
           const driverIconHTML = `
             <div style="background-color: #1E88E5; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-car">
@@ -303,7 +291,6 @@ const Map: React.FC<MapProps> = ({
       setShowKeyInput(true);
     }
     
-    // Limpieza
     return () => {
       map.current?.remove();
     };
@@ -321,10 +308,8 @@ const Map: React.FC<MapProps> = ({
     
     setIsLoading(true);
     
-    // Guardar la clave API en localStorage
     localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
     
-    // Simular verificación
     setTimeout(() => {
       setIsLoading(false);
       setShowKeyInput(false);
