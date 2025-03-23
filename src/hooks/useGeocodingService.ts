@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { MapCoordinates } from "@/components/map/types";
 import { API_KEY_STORAGE_KEY } from "@/components/map/types";
-import { geocodeAddress } from "@/components/map/MapboxUtils";
+import { geocodeAddress } from "@/components/map/services/MapboxService";
 
 // Función para geocodificar direcciones usando Mapbox específicamente para Tenerife
 const geocodeAddressForRequest = async (address: string): Promise<MapCoordinates | null> => {

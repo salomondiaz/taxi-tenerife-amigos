@@ -9,7 +9,6 @@ const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();
   
   // This hook is only responsible for simulating driver movement
-  // It's called here to track this specific state that's not part of MapDisplay
   useDriverSimulation({
     testMode,
     showDriverPosition: props.showDriverPosition || false,

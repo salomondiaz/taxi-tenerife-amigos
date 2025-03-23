@@ -6,13 +6,17 @@ import { toast } from '@/hooks/use-toast';
 import { 
   addOriginMarker, 
   addDestinationMarker, 
-  addDriverMarker, 
+  addDriverMarker 
+} from './services/MapMarkerService';
+import { 
   drawRoute, 
-  fitMapToBounds, 
+  fitMapToBounds 
+} from './services/MapRoutingService';
+import { 
   geocodeAddress, 
   reverseGeocode,
   TENERIFE_CENTER
-} from './MapboxUtils';
+} from './services/MapboxService';
 
 interface UseMapInitializationProps {
   apiKey: string;
