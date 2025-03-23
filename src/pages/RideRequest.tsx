@@ -7,33 +7,16 @@ import { Input } from "@/components/ui/input";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import Map from "@/components/Map";
+import { geocodeAddress } from "@/components/map/MapboxUtils";
+import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 
 // Función para geocodificar direcciones usando Mapbox específicamente para Tenerife
-const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
-  const apiKey = localStorage.getItem('mapbox_api_key');
+const geocodeAddressForRequest = async (address: string): Promise<{lat: number, lng: number} | null> => {
+  const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
   if (!apiKey) return null;
   
-  try {
-    // Añadir "Tenerife, Spain" como contexto para mejorar la precisión
-    const searchQuery = `${address}, Tenerife, Spain`;
-    
-    const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=-16.5,28.4`
-    );
-    
-    const data = await response.json();
-    console.log("Geocoding result:", data);
-    
-    if (data.features && data.features.length > 0) {
-      const [lng, lat] = data.features[0].center;
-      return { lat, lng };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error geocoding address:', error);
-    return null;
-  }
+  const result = await geocodeAddress(address, apiKey);
+  return result ? { lat: result.lat, lng: result.lng } : null;
 };
 
 const RideRequest = () => {
@@ -76,8 +59,8 @@ const RideRequest = () => {
     setIsLoading(true);
     
     // Geocodificar las direcciones para obtener coordenadas
-    const originResult = await geocodeAddress(origin);
-    const destinationResult = await geocodeAddress(destination);
+    const originResult = await geocodeAddressForRequest(origin);
+    const destinationResult = await geocodeAddressForRequest(destination);
     
     if (!originResult || !destinationResult) {
       toast({
@@ -303,4 +286,3 @@ const RideRequest = () => {
 };
 
 export default RideRequest;
-
