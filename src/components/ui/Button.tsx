@@ -1,6 +1,7 @@
 
 import React, { forwardRef, ButtonHTMLAttributes } from "react";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "link" | "danger";
@@ -47,8 +48,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`
-          ${variantClasses[variant]} 
+        className={cn(
+          `${variantClasses[variant]} 
           ${sizeClasses[size]} 
           ${fullWidth ? "w-full" : ""} 
           ${
@@ -58,8 +59,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           }
           flex items-center justify-center gap-2 transition-all
           duration-300 focus:outline-none
-          ${className}
-        `}
+          ${className}`,
+        )}
         disabled={disabled || isLoading}
         {...props}
       >
