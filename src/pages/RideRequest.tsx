@@ -86,7 +86,7 @@ const RideRequest = () => {
           lat: 28.4158,
           lng: -16.5319,
         },
-        status: "pending",
+        status: "pending" as "pending" | "accepted" | "ongoing" | "completed" | "cancelled",
         requestTime: new Date(),
         price: estimatedPrice,
         distance: estimatedDistance,
