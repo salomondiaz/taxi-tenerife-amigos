@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import FormInput from "@/components/ui/FormInput";
 import Button from "@/components/ui/Button";
-import { User, Mail, Phone, LogOut, Sun, Moon, EyeOff, Eye, Languages, AlertTriangle } from "lucide-react";
+import { User, Mail, Phone, LogOut, Sun, Moon, EyeOff, Eye, Languages, AlertTriangle, Settings as SettingsIcon } from "lucide-react";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ const Profile = () => {
           <div className="flex">
             {[
               { id: "profile", label: "Perfil", icon: <User size={16} /> },
-              { id: "settings", label: "Ajustes", icon: <Settings size={16} /> },
+              { id: "settings", label: "Ajustes", icon: <SettingsIcon size={16} /> },
               { id: "data", label: "Mis Datos", icon: <EyeOff size={16} /> },
             ].map((tab) => (
               <button
