@@ -13,6 +13,10 @@ import Profile from "./pages/Profile";
 import RideRequest from "./pages/RideRequest";
 import RideTracking from "./pages/RideTracking";
 import NotFound from "./pages/NotFound";
+import TravelHistory from "./pages/TravelHistory";
+import PaymentOptions from "./pages/PaymentOptions";
+import DriverProfile from "./pages/DriverProfile";
+import RateDriver from "./pages/RateDriver";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +35,10 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/request-ride" element={<RideRequest />} />
             <Route path="/tracking" element={<RideTracking />} />
+            <Route path="/travel-history" element={<TravelHistory />} />
+            <Route path="/payment-options" element={<PaymentOptions />} />
+            <Route path="/driver/:driverId" element={<DriverProfile />} />
+            <Route path="/rate-driver/:tripId" element={<RateDriver />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

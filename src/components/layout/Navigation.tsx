@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, User, MapPin, Info, Settings } from "lucide-react";
+import { Home, User, MapPin, History, CreditCard } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 
 const Navigation: React.FC = () => {
@@ -24,6 +24,18 @@ const Navigation: React.FC = () => {
       ariaLabel: "Solicitar un taxi",
     },
     {
+      name: "Historial",
+      path: "/travel-history",
+      icon: <History size={24} />,
+      ariaLabel: "Ver historial de viajes",
+    },
+    {
+      name: "Pagos",
+      path: "/payment-options",
+      icon: <CreditCard size={24} />,
+      ariaLabel: "Gestionar métodos de pago",
+    },
+    {
       name: "Perfil",
       path: "/profile",
       icon: <User size={24} />,
@@ -33,17 +45,17 @@ const Navigation: React.FC = () => {
 
   return (
     <nav className={`${darkMode ? "bg-gray-900" : "bg-white"} border-t border-gray-200 fixed bottom-0 w-full z-50 shadow-lg`}>
-      <div className="max-w-md mx-auto px-4">
+      <div className="max-w-md mx-auto px-2">
         <ul className="flex justify-around items-center">
           {navItems.map((item) => (
             <li key={item.path} className="w-full">
               <button
                 onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center justify-center w-full py-3 focus:outline-none ${
+                className={`flex flex-col items-center justify-center w-full py-3 px-1 focus:outline-none ${
                   location.pathname === item.path
                     ? `text-tenerife-blue ${darkMode ? "bg-gray-800" : "bg-blue-50"}`
                     : `text-gray-500 ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"}`
-                } transition-colors duration-200 rounded-lg`}
+                } transition-colors duration-200 rounded-lg text-xs`}
                 aria-label={item.ariaLabel}
               >
                 {item.icon}
