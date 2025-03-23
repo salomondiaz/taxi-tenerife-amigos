@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 const Index = () => {
@@ -53,21 +53,17 @@ const Index = () => {
           <div className="space-y-4 animate-slide-up">
             <Button 
               onClick={() => navigate("/login")} 
-              variant="primary" 
-              fullWidth 
-              size="lg"
-              rightIcon={<ArrowRight size={20} />}
-              className="bg-white text-tenerife-blue hover:bg-gray-100"
+              variant="default" 
+              className="w-full bg-white text-tenerife-blue hover:bg-gray-100 h-12"
             >
               Iniciar Sesión
+              <ArrowRight size={20} />
             </Button>
             
             <Button 
               onClick={() => navigate("/register")} 
               variant="ghost" 
-              fullWidth 
-              size="lg" 
-              className="border-white text-white hover:bg-white/20"
+              className="w-full border-white text-white hover:bg-white/20 h-12"
             >
               Registrarse
             </Button>

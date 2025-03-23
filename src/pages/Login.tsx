@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import FormInput from "@/components/ui/FormInput";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mail, Lock, AlertCircle } from "lucide-react";
 
 const Login = () => {
@@ -26,7 +25,6 @@ const Login = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
     
-    // Limpiar el error relacionado con este campo
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
@@ -66,11 +64,9 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // Simulación de login
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
       if (testMode) {
-        // En modo de prueba, iniciar sesión con usuario de prueba
         setUser({
           id: "test-user-1",
           name: "Usuario de Prueba",
@@ -83,8 +79,6 @@ const Login = () => {
           description: "Has iniciado sesión como usuario de prueba",
         });
       } else {
-        // En un caso real, aquí iría la integración con Firebase Auth
-        // Por ahora simulamos un inicio de sesión exitoso
         setUser({
           id: "user-1",
           name: "Usuario",
@@ -178,11 +172,11 @@ const Login = () => {
           <div className="mt-6 py-4">
             <Button
               type="submit"
-              variant="primary"
-              size="lg"
-              isLoading={isLoading}
-              fullWidth
+              variant="default"
+              className="w-full h-12"
+              disabled={isLoading}
             >
+              {isLoading && <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground" />}
               Iniciar Sesión
             </Button>
           </div>

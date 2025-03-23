@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { MapPin, ChevronRight, Star, Clock } from "lucide-react";
 
 const Home = () => {
@@ -14,13 +13,11 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simular carga de datos
     const loadData = async () => {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       if (testMode) {
-        // Datos de prueba para modo de prueba
         setRecentRides([
           {
             id: "ride-1",
@@ -72,7 +69,6 @@ const Home = () => {
           },
         ]);
       } else {
-        // En un caso real, aquí iría la carga desde Firebase
         setRecentRides([]);
       }
       
@@ -117,7 +113,6 @@ const Home = () => {
   return (
     <MainLayout requireAuth>
       <div className="min-h-screen pb-16">
-        {/* Header Section */}
         <div className="bg-tenerife-blue text-white px-6 pt-12 pb-6 rounded-b-3xl shadow-md">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -141,17 +136,14 @@ const Home = () => {
           
           <Button 
             onClick={handleRequestRide}
-            variant="primary" 
-            size="lg" 
-            fullWidth
-            className="bg-white text-tenerife-blue hover:bg-gray-100 transition-colors shadow-lg"
-            leftIcon={<MapPin size={20} />}
+            variant="default" 
+            className="w-full bg-white text-tenerife-blue hover:bg-gray-100 transition-colors shadow-lg"
           >
+            <MapPin size={20} />
             Solicitar un taxi
           </Button>
         </div>
         
-        {/* Main Content */}
         <div className="px-6 py-8">
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Viajes recientes</h2>

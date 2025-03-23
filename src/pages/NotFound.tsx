@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
@@ -32,9 +32,8 @@ const NotFound = () => {
         
         <Button 
           onClick={() => navigate("/")}
-          variant="primary" 
-          size="lg" 
-          fullWidth
+          variant="default" 
+          className="w-full" 
         >
           Volver al inicio
         </Button>
