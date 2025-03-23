@@ -12,7 +12,7 @@ import { geocodeAddress } from "@/components/map/MapboxUtils";
 import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 
 // Función para geocodificar direcciones usando Mapbox específicamente para Tenerife
-const geocodeAddressForRequest = async (address: string): Promise<{lat: number, lng: number, address: string} | null> => {
+const geocodeAddressForRequest = async (address: string): Promise<MapCoordinates | null> => {
   const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
   if (!apiKey) return null;
   
