@@ -7,6 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
+import Map from "@/components/Map";
+
+// Función para geocodificar direcciones usando Mapbox
+const geocodeAddress = async (address: string): Promise<{lat: number, lng: number} | null> => {
+  const apiKey = localStorage.getItem('mapbox_api_key');
+  if (!apiKey) return null;
+  
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${apiKey}&limit=1`
+    );
+    
+    const data = await response.json();
+    
+    if (data.features && data.features.length > 0) {
+      const [lng, lat] = data.features[0].center;
+      return { lat, lng };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error geocoding address:', error);
+    return null;
+  }
+};
 
 const RideRequest = () => {
   const navigate = useNavigate();
@@ -15,10 +40,13 @@ const RideRequest = () => {
   
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
+  const [originCoords, setOriginCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{lat: number, lng: number} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
   const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   // Establecer destino si viene de la página de inicio
   useEffect(() => {
@@ -32,7 +60,7 @@ const RideRequest = () => {
   }, [location.state, origin]);
 
   // Función para calcular estimaciones
-  const calculateEstimates = () => {
+  const calculateEstimates = async () => {
     if (!origin || !destination) {
       toast({
         title: "Información incompleta",
@@ -43,24 +71,51 @@ const RideRequest = () => {
     }
 
     setIsLoading(true);
-
-    // Simulación de cálculo - en una app real, esto sería una llamada a una API
-    setTimeout(() => {
-      // Valores de ejemplo
-      const distance = Math.floor(Math.random() * 10) + 1; // 1-10 km
-      const time = distance * 3 + Math.floor(Math.random() * 5); // tiempo aproximado
-      const price = distance * 1.5 + 3; // tarifa base de 3€ + 1.5€ por km
-
-      setEstimatedDistance(distance);
-      setEstimatedTime(time);
-      setEstimatedPrice(parseFloat(price.toFixed(2)));
+    
+    // Geocodificar las direcciones para obtener coordenadas
+    const originResult = await geocodeAddress(origin);
+    const destinationResult = await geocodeAddress(destination);
+    
+    if (!originResult || !destinationResult) {
+      toast({
+        title: "Error de geocodificación",
+        description: "No se pudieron encontrar las coordenadas para las direcciones proporcionadas",
+        variant: "destructive",
+      });
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+    
+    setOriginCoords(originResult);
+    setDestinationCoords(destinationResult);
+
+    // Calcular distancia entre puntos (fórmula haversine)
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (destinationResult.lat - originResult.lat) * Math.PI / 180;
+    const dLon = (destinationResult.lng - originResult.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(originResult.lat * Math.PI / 180) * Math.cos(destinationResult.lat * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    
+    // Calcular tiempo estimado (3 minutos por km + algo aleatorio para variabilidad)
+    const time = Math.floor(distance * 3 + Math.random() * 5);
+    
+    // Calcular precio (tarifa base de 3€ + 1.5€ por km)
+    const price = distance * 1.5 + 3;
+
+    setEstimatedDistance(parseFloat(distance.toFixed(1)));
+    setEstimatedTime(time);
+    setEstimatedPrice(parseFloat(price.toFixed(2)));
+    setIsLoading(false);
+    setShowMap(true);
   };
 
   // Procesar la solicitud de viaje
   const handleRequestRide = () => {
-    if (!origin || !destination || !estimatedPrice) {
+    if (!origin || !destination || !estimatedPrice || !originCoords || !destinationCoords) {
       toast({
         title: "Información incompleta",
         description: "Por favor, calcula primero el precio estimado",
@@ -78,13 +133,13 @@ const RideRequest = () => {
         id: `ride-${Date.now()}`,
         origin: {
           address: origin,
-          lat: 28.4689,
-          lng: -16.2519,
+          lat: originCoords.lat,
+          lng: originCoords.lng,
         },
         destination: {
           address: destination,
-          lat: 28.4158,
-          lng: -16.5319,
+          lat: destinationCoords.lat,
+          lng: destinationCoords.lng,
         },
         status: "pending" as "pending" | "accepted" | "ongoing" | "completed" | "cancelled",
         requestTime: new Date(),
@@ -171,6 +226,24 @@ const RideRequest = () => {
             </div>
           </div>
         </div>
+        
+        {showMap && originCoords && destinationCoords && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 h-64">
+            <Map 
+              origin={{
+                lat: originCoords.lat,
+                lng: originCoords.lng,
+                address: origin
+              }}
+              destination={{
+                lat: destinationCoords.lat,
+                lng: destinationCoords.lng,
+                address: destination
+              }}
+              className="h-full"
+            />
+          </div>
+        )}
 
         {estimatedPrice !== null && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
