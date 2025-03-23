@@ -33,8 +33,7 @@ const RideRequest = () => {
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
   const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
-  const [showMap, setShowMap] = useState(false);
-  const [useManualSelection, setUseManualSelection] = useState(false);
+  const [useManualSelection, setUseManualSelection] = useState(true); // Activado por defecto
 
   // Establecer destino si viene de la página de inicio
   useEffect(() => {
@@ -137,7 +136,6 @@ const RideRequest = () => {
     setEstimatedTime(time);
     setEstimatedPrice(parseFloat(price.toFixed(2)));
     setIsLoading(false);
-    setShowMap(true);
   };
 
   // Procesar la solicitud de viaje
@@ -190,10 +188,87 @@ const RideRequest = () => {
   // Alternar entre entrada manual y selección en el mapa
   const toggleSelectionMode = () => {
     setUseManualSelection(!useManualSelection);
-    if (!useManualSelection) {
+    if (useManualSelection) {
+      toast({
+        title: "Modo de selección en el mapa desactivado",
+        description: "Ahora debes introducir las direcciones manualmente",
+      });
+    } else {
       toast({
         title: "Modo de selección en el mapa activado",
         description: "Ahora puedes hacer clic en el mapa para seleccionar origen y destino",
+      });
+    }
+  };
+
+  // Manejar ubicación actual
+  const handleUseCurrentLocation = async () => {
+    try {
+      if (navigator.geolocation) {
+        toast({
+          title: "Obteniendo ubicación",
+          description: "Por favor, espere mientras obtenemos su ubicación actual...",
+        });
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coords = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            
+            setOriginCoords(coords);
+            
+            // Intentar obtener la dirección
+            const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+            if (apiKey) {
+              fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.lng},${coords.lat}.json?access_token=${apiKey}&limit=1&language=es`
+              )
+                .then(response => response.json())
+                .then(data => {
+                  if (data.features && data.features.length > 0) {
+                    const address = data.features[0].place_name;
+                    setOrigin(address);
+                  } else {
+                    setOrigin("Ubicación actual");
+                  }
+                })
+                .catch(error => {
+                  console.error("Error al obtener dirección:", error);
+                  setOrigin("Ubicación actual");
+                });
+            } else {
+              setOrigin("Ubicación actual");
+            }
+            
+            toast({
+              title: "Ubicación actual establecida",
+              description: "Se ha establecido su ubicación actual como punto de origen",
+            });
+          },
+          (error) => {
+            console.error("Error al obtener ubicación:", error);
+            toast({
+              title: "Error de ubicación",
+              description: "No pudimos acceder a su ubicación. Por favor, asegúrese de haber concedido permisos de ubicación.",
+              variant: "destructive",
+            });
+          }
+        );
+      } else {
+        toast({
+          title: "Error de ubicación",
+          description: "Su navegador no soporta geolocalización",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error al usar ubicación actual:", error);
+      toast({
+        title: "Error de ubicación",
+        description: "Ocurrió un error al intentar obtener su ubicación actual",
+        variant: "destructive",
       });
     }
   };
@@ -212,75 +287,91 @@ const RideRequest = () => {
 
         <h1 className="text-2xl font-bold mb-4">Solicitar un taxi</h1>
         
+        {/* Controles de selección de mapas */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="space-y-4">
-            <div className="flex gap-2 items-start">
-              <div className="mt-2">
-                <MapPin size={18} className="text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">
-                  Punto de recogida
-                </label>
-                <Input
-                  id="origin"
-                  type="text"
-                  placeholder="¿Dónde te recogemos? (especifica 'Tenerife' en la dirección)"
-                  className="w-full"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                />
-              </div>
-            </div>
+          <h2 className="text-lg font-semibold mb-4">¿Cómo quieres indicar las ubicaciones?</h2>
+          
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <Button
+              variant={useManualSelection ? "default" : "outline"}
+              className={`w-full flex items-center justify-center ${useManualSelection ? "bg-tenerife-blue hover:bg-tenerife-blue/90" : ""}`}
+              onClick={() => setUseManualSelection(true)}
+            >
+              <MapPin size={18} className="mr-2" />
+              Seleccionar en el mapa
+            </Button>
             
-            <div className="flex gap-2 items-start">
-              <div className="mt-2">
-                <Navigation size={18} className="text-gray-400" />
-              </div>
-              <div className="flex-1">
-                <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
-                  Destino
-                </label>
-                <Input
-                  id="destination"
-                  type="text"
-                  placeholder="¿A dónde vas? (especifica 'Tenerife' en la dirección)"
-                  className="w-full"
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                />
-              </div>
-            </div>
+            <Button
+              variant={!useManualSelection ? "default" : "outline"}
+              className={`w-full flex items-center justify-center ${!useManualSelection ? "bg-tenerife-blue hover:bg-tenerife-blue/90" : ""}`}
+              onClick={() => setUseManualSelection(false)}
+            >
+              <Navigation size={18} className="mr-2" />
+              Introducir direcciones
+            </Button>
             
-            <div className="pt-2 flex flex-col sm:flex-row gap-2">
-              <Button 
-                variant="default"
-                className="w-full bg-tenerife-blue hover:bg-tenerife-blue/90"
-                onClick={calculateEstimates}
-                disabled={isLoading || !origin || !destination}
-              >
-                Calcular precio
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={toggleSelectionMode}
-              >
-                {useManualSelection ? "Desactivar selección en mapa" : "Seleccionar en mapa"}
-              </Button>
-            </div>
-            
-            {useManualSelection && !showMap && (
-              <div className="text-sm text-blue-500 italic">
-                Para activar la selección en el mapa, primero debes calcular el precio
-              </div>
-            )}
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center"
+              onClick={handleUseCurrentLocation}
+            >
+              <span className="flex h-2 w-2 mr-2 rounded-full bg-blue-500 animate-pulse" />
+              Usar mi ubicación
+            </Button>
           </div>
+          
+          {!useManualSelection && (
+            <div className="space-y-4">
+              <div className="flex gap-2 items-start">
+                <div className="mt-2">
+                  <MapPin size={18} className="text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">
+                    Punto de recogida
+                  </label>
+                  <Input
+                    id="origin"
+                    type="text"
+                    placeholder="¿Dónde te recogemos? (especifica 'Tenerife' en la dirección)"
+                    className="w-full"
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-2 items-start">
+                <div className="mt-2">
+                  <Navigation size={18} className="text-gray-400" />
+                </div>
+                <div className="flex-1">
+                  <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
+                    Destino
+                  </label>
+                  <Input
+                    id="destination"
+                    type="text"
+                    placeholder="¿A dónde vas? (especifica 'Tenerife' en la dirección)"
+                    className="w-full"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
-        {showMap && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 h-72">
+        {/* Mapa siempre visible */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">
+            {useManualSelection 
+              ? "Selecciona los puntos en el mapa" 
+              : "Vista previa del recorrido"}
+          </h2>
+          
+          <div className="h-72 mb-3">
             <Map 
               origin={originCoords || undefined}
               destination={destinationCoords || undefined}
@@ -290,8 +381,32 @@ const RideRequest = () => {
               allowMapSelection={useManualSelection}
             />
           </div>
-        )}
+          
+          {useManualSelection && (
+            <div className="text-sm text-gray-600">
+              <p className="font-medium mb-1">Instrucciones:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Usa los botones en el mapa para seleccionar origen o destino</li>
+                <li>Haz clic en el mapa en la ubicación deseada</li>
+                <li>Puedes arrastrar los marcadores para ajustar la posición</li>
+              </ul>
+            </div>
+          )}
+        </div>
+        
+        {/* Botón para calcular precio */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+          <Button 
+            variant="default"
+            className="w-full bg-tenerife-blue hover:bg-tenerife-blue/90"
+            onClick={calculateEstimates}
+            disabled={isLoading || (!origin && !originCoords) || (!destination && !destinationCoords)}
+          >
+            Calcular precio
+          </Button>
+        </div>
 
+        {/* Detalles del viaje estimado */}
         {estimatedPrice !== null && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Detalles estimados</h2>

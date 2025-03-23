@@ -33,6 +33,9 @@ const Map: React.FC<MapProps> = ({
   const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const { testMode } = useAppContext();
 
+  // Selección por defecto si allowMapSelection es true
+  const defaultSelectionMode = allowMapSelection ? 'origin' : 'none';
+
   // Load API key on mount
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
@@ -60,7 +63,8 @@ const Map: React.FC<MapProps> = ({
     setShowKeyInput,
     onOriginChange,
     onDestinationChange,
-    allowMapSelection
+    allowMapSelection,
+    defaultSelectionMode
   });
 
   // Driver simulation effect

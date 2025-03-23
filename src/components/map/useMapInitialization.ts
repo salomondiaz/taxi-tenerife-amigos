@@ -33,6 +33,7 @@ interface UseMapInitializationProps {
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   allowMapSelection?: boolean;
+  defaultSelectionMode?: MapSelectionMode;
 }
 
 export const useMapInitialization = ({
@@ -50,9 +51,13 @@ export const useMapInitialization = ({
   setShowKeyInput,
   onOriginChange,
   onDestinationChange,
-  allowMapSelection = false
+  allowMapSelection = false,
+  defaultSelectionMode = 'none'
 }: UseMapInitializationProps): { selectionMode: MapSelectionMode; setSelectionMode: (mode: MapSelectionMode) => void } => {
-  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>('none');
+  // Inicializamos el modo de selección con el valor por defecto
+  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(
+    allowMapSelection ? defaultSelectionMode : 'none'
+  );
 
   useEffect(() => {
     if (!apiKey || !mapContainer.current) return;
@@ -211,8 +216,7 @@ export const useMapInitialization = ({
                 drawRoute(map.current, coords, { lat: destLngLat.lat, lng: destLngLat.lng });
               }
               
-              // Resetear modo de selección
-              setSelectionMode('none');
+              // No reseteamos el modo de selección para permitir múltiples selecciones
               
               toast({
                 title: "Origen seleccionado",
@@ -244,8 +248,7 @@ export const useMapInitialization = ({
                 drawRoute(map.current, { lat: origLngLat.lat, lng: origLngLat.lng }, coords);
               }
               
-              // Resetear modo de selección
-              setSelectionMode('none');
+              // No reseteamos el modo de selección para permitir múltiples selecciones
               
               toast({
                 title: "Destino seleccionado",
