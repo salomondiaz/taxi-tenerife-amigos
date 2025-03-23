@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import FormInput from "@/components/ui/FormInput";
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, Mail, Phone, Lock, Check, FileText } from "lucide-react";
 
 const Register = () => {
@@ -41,7 +40,6 @@ const Register = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    // Limpiar el error relacionado con este campo
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
@@ -132,11 +130,8 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Simulación de registro
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      // En un caso real, aquí iría la integración con Firebase Auth
-      // Por ahora simulamos un registro exitoso
       setUser({
         id: "new-user-1",
         name: formData.name,
@@ -186,7 +181,6 @@ const Register = () => {
           </p>
         </div>
 
-        {/* Indicador de progreso */}
         <div className="flex mb-8">
           <div className="flex-1">
             <div
@@ -254,9 +248,9 @@ const Register = () => {
               <div className="mt-6 py-4">
                 <Button
                   type="button"
-                  variant="primary"
+                  variant="default"
                   size="lg"
-                  fullWidth
+                  className="w-full"
                   onClick={handleNextStep}
                 >
                   Continuar
@@ -385,12 +379,12 @@ const Register = () => {
               <div className="mt-6 py-4">
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="default"
                   size="lg"
-                  isLoading={isLoading}
-                  fullWidth
+                  disabled={isLoading}
+                  className="w-full"
                 >
-                  Crear Cuenta
+                  {isLoading ? "Cargando..." : "Crear Cuenta"}
                 </Button>
               </div>
             </>

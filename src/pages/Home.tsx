@@ -4,7 +4,8 @@ import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronRight, Star, Clock } from "lucide-react";
+import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation } from "lucide-react";
+import Input from "@/components/ui/input";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -145,6 +146,72 @@ const Home = () => {
         </div>
         
         <div className="px-6 py-8">
+          <section className="py-6">
+            <div className="container px-4 mx-auto">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                  <MapPin className="text-tenerife-blue" size={20} />
+                  Solicitar un viaje
+                </h2>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-2 items-start">
+                    <div className="mt-2">
+                      <MapPin size={18} className="text-gray-400" />
+                    </div>
+                    <div className="flex-1">
+                      <label htmlFor="pickup" className="block text-sm font-medium text-gray-700 mb-1">
+                        Punto de recogida
+                      </label>
+                      <Input 
+                        id="pickup"
+                        type="text"
+                        placeholder="¿Dónde te recogemos?"
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 items-start">
+                    <div className="mt-2">
+                      <Navigation size={18} className="text-gray-400" />
+                    </div>
+                    <div className="flex-1">
+                      <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
+                        Destino
+                      </label>
+                      <Input 
+                        id="destination"
+                        type="text"
+                        placeholder="¿A dónde vas?"
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4 mt-6">
+                    <Button 
+                      variant="outline"
+                      size="default"
+                      className="flex-1"
+                    >
+                      <CalendarIcon size={18} className="mr-2" />
+                      Programar
+                    </Button>
+                    <Button 
+                      variant="default"
+                      size="default"
+                      className="flex-1 bg-tenerife-blue hover:bg-tenerife-blue/90"
+                    >
+                      <Car size={18} className="mr-2" />
+                      Solicitar ahora
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Viajes recientes</h2>
             
