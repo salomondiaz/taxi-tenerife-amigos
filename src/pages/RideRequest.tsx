@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowLeft, MapPin, Navigation, Clock, Car } from "lucide-react";
@@ -6,17 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
-import Map from "@/components/Map";
+import Map, { MapCoordinates } from "@/components/Map";
 import { geocodeAddress } from "@/components/map/MapboxUtils";
 import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 
 // Función para geocodificar direcciones usando Mapbox específicamente para Tenerife
-const geocodeAddressForRequest = async (address: string): Promise<{lat: number, lng: number} | null> => {
+const geocodeAddressForRequest = async (address: string): Promise<{lat: number, lng: number, address: string} | null> => {
   const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
   if (!apiKey) return null;
   
   const result = await geocodeAddress(address, apiKey);
-  return result ? { lat: result.lat, lng: result.lng } : null;
+  return result;
 };
 
 const RideRequest = () => {
@@ -26,13 +27,14 @@ const RideRequest = () => {
   
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [originCoords, setOriginCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [destinationCoords, setDestinationCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
   const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [useManualSelection, setUseManualSelection] = useState(false);
 
   // Establecer destino si viene de la página de inicio
   useEffect(() => {
@@ -44,6 +46,24 @@ const RideRequest = () => {
       }
     }
   }, [location.state, origin]);
+
+  // Manejar cambios en el origen desde el mapa
+  const handleOriginChange = (coords: MapCoordinates) => {
+    setOriginCoords(coords);
+    if (coords.address) {
+      setOrigin(coords.address);
+    }
+    console.log("Nuevo origen desde el mapa:", coords);
+  };
+
+  // Manejar cambios en el destino desde el mapa
+  const handleDestinationChange = (coords: MapCoordinates) => {
+    setDestinationCoords(coords);
+    if (coords.address) {
+      setDestination(coords.address);
+    }
+    console.log("Nuevo destino desde el mapa:", coords);
+  };
 
   // Función para calcular estimaciones
   const calculateEstimates = async () => {
@@ -58,33 +78,51 @@ const RideRequest = () => {
 
     setIsLoading(true);
     
-    // Geocodificar las direcciones para obtener coordenadas
-    const originResult = await geocodeAddressForRequest(origin);
-    const destinationResult = await geocodeAddressForRequest(destination);
+    // Si ya tenemos coordenadas del mapa, las usamos directamente
+    let finalOriginCoords = originCoords;
+    let finalDestinationCoords = destinationCoords;
     
-    if (!originResult || !destinationResult) {
-      toast({
-        title: "Error de geocodificación",
-        description: "No se pudieron encontrar las coordenadas para las direcciones proporcionadas en Tenerife",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
+    // Si no tenemos coordenadas, geocodificamos las direcciones
+    if (!finalOriginCoords) {
+      const originResult = await geocodeAddressForRequest(origin);
+      if (!originResult) {
+        toast({
+          title: "Error de geocodificación",
+          description: "No se pudo encontrar el origen en Tenerife. Intenta ser más específico o usar la selección manual.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      finalOriginCoords = originResult;
+      setOriginCoords(originResult);
     }
     
-    console.log("Origin coordinates:", originResult);
-    console.log("Destination coordinates:", destinationResult);
+    if (!finalDestinationCoords) {
+      const destinationResult = await geocodeAddressForRequest(destination);
+      if (!destinationResult) {
+        toast({
+          title: "Error de geocodificación",
+          description: "No se pudo encontrar el destino en Tenerife. Intenta ser más específico o usar la selección manual.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      finalDestinationCoords = destinationResult;
+      setDestinationCoords(destinationResult);
+    }
     
-    setOriginCoords(originResult);
-    setDestinationCoords(destinationResult);
+    console.log("Origin coordinates:", finalOriginCoords);
+    console.log("Destination coordinates:", finalDestinationCoords);
 
     // Calcular distancia entre puntos (fórmula haversine)
     const R = 6371; // Radio de la Tierra en km
-    const dLat = (destinationResult.lat - originResult.lat) * Math.PI / 180;
-    const dLon = (destinationResult.lng - originResult.lng) * Math.PI / 180;
+    const dLat = (finalDestinationCoords.lat - finalOriginCoords.lat) * Math.PI / 180;
+    const dLon = (finalDestinationCoords.lng - finalOriginCoords.lng) * Math.PI / 180;
     const a = 
       Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(originResult.lat * Math.PI / 180) * Math.cos(destinationResult.lat * Math.PI / 180) * 
+      Math.cos(finalOriginCoords.lat * Math.PI / 180) * Math.cos(finalDestinationCoords.lat * Math.PI / 180) * 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c;
@@ -149,6 +187,17 @@ const RideRequest = () => {
     }, 1500);
   };
 
+  // Alternar entre entrada manual y selección en el mapa
+  const toggleSelectionMode = () => {
+    setUseManualSelection(!useManualSelection);
+    if (!useManualSelection) {
+      toast({
+        title: "Modo de selección en el mapa activado",
+        description: "Ahora puedes hacer clic en el mapa para seleccionar origen y destino",
+      });
+    }
+  };
+
   return (
     <MainLayout requireAuth>
       <div className="min-h-screen p-6">
@@ -176,7 +225,7 @@ const RideRequest = () => {
                 <Input
                   id="origin"
                   type="text"
-                  placeholder="¿Dónde te recogemos?"
+                  placeholder="¿Dónde te recogemos? (especifica 'Tenerife' en la dirección)"
                   className="w-full"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
@@ -195,7 +244,7 @@ const RideRequest = () => {
                 <Input
                   id="destination"
                   type="text"
-                  placeholder="¿A dónde vas?"
+                  placeholder="¿A dónde vas? (especifica 'Tenerife' en la dirección)"
                   className="w-full"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
@@ -203,7 +252,7 @@ const RideRequest = () => {
               </div>
             </div>
             
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row gap-2">
               <Button 
                 variant="default"
                 className="w-full bg-tenerife-blue hover:bg-tenerife-blue/90"
@@ -212,24 +261,33 @@ const RideRequest = () => {
               >
                 Calcular precio
               </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={toggleSelectionMode}
+              >
+                {useManualSelection ? "Desactivar selección en mapa" : "Seleccionar en mapa"}
+              </Button>
             </div>
+            
+            {useManualSelection && !showMap && (
+              <div className="text-sm text-blue-500 italic">
+                Para activar la selección en el mapa, primero debes calcular el precio
+              </div>
+            )}
           </div>
         </div>
         
-        {showMap && originCoords && destinationCoords && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 h-64">
+        {showMap && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 h-72">
             <Map 
-              origin={{
-                lat: originCoords.lat,
-                lng: originCoords.lng,
-                address: origin
-              }}
-              destination={{
-                lat: destinationCoords.lat,
-                lng: destinationCoords.lng,
-                address: destination
-              }}
+              origin={originCoords || undefined}
+              destination={destinationCoords || undefined}
               className="h-full"
+              onOriginChange={handleOriginChange}
+              onDestinationChange={handleDestinationChange}
+              allowMapSelection={useManualSelection}
             />
           </div>
         )}
@@ -279,6 +337,16 @@ const RideRequest = () => {
           <p className="text-sm text-gray-600 text-center">
             El precio final puede variar según el tráfico y la ruta exacta tomada por el conductor.
           </p>
+          
+          <div className="mt-3 text-sm text-gray-700 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+            <p className="font-medium mb-1">Sugerencias para mejorar la precisión:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Incluye "Tenerife" en la dirección (por ejemplo: "Plaza del Charco, Puerto de la Cruz, Tenerife")</li>
+              <li>Usa nombres oficiales para lugares y calles</li>
+              <li>Si tienes problemas, utiliza la función "Seleccionar en mapa"</li>
+              <li>Puedes arrastrar los marcadores para ajustar las ubicaciones</li>
+            </ul>
+          </div>
         </div>
       </div>
     </MainLayout>

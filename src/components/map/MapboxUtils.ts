@@ -2,6 +2,12 @@
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from './types';
 
+// Coordenadas centrales de Tenerife
+export const TENERIFE_CENTER = {
+  lat: 28.2916,
+  lng: -16.6291
+};
+
 export const addOriginMarker = (
   map: mapboxgl.Map, 
   coordinates: MapCoordinates
@@ -15,7 +21,10 @@ export const addOriginMarker = (
   markerEl.style.border = '3px solid #ffffff';
   markerEl.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
   
-  const marker = new mapboxgl.Marker(markerEl)
+  const marker = new mapboxgl.Marker({
+    element: markerEl,
+    draggable: true
+  })
     .setLngLat([coordinates.lng, coordinates.lat])
     .addTo(map);
     
@@ -41,7 +50,10 @@ export const addDestinationMarker = (
   markerEl.style.border = '3px solid #ffffff';
   markerEl.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
   
-  const marker = new mapboxgl.Marker(markerEl)
+  const marker = new mapboxgl.Marker({
+    element: markerEl,
+    draggable: true
+  })
     .setLngLat([coordinates.lng, coordinates.lat])
     .addTo(map);
     
@@ -88,6 +100,12 @@ export const drawRoute = (
   origin: MapCoordinates, 
   destination: MapCoordinates
 ): void => {
+  // Eliminar ruta existente si la hay
+  if (map.getSource('route')) {
+    map.removeLayer('route');
+    map.removeSource('route');
+  }
+  
   map.addSource('route', {
     type: 'geojson',
     data: {
@@ -139,17 +157,24 @@ export const geocodeAddress = async (
   apiKey: string
 ): Promise<MapCoordinates | null> => {
   try {
-    const searchQuery = `${address}, Tenerife, Spain`;
+    // Asegurar que estamos buscando en Tenerife
+    const searchQuery = `${address}, Tenerife, Islas Canarias, España`;
+    console.log("Geocoding query:", searchQuery);
     
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=-16.5,28.4`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=${TENERIFE_CENTER.lng},${TENERIFE_CENTER.lat}&bbox=-16.9,28.0,-16.1,28.6`
     );
     
     const data = await response.json();
+    console.log("Geocoding response:", data);
     
     if (data.features && data.features.length > 0) {
       const [lng, lat] = data.features[0].center;
-      return { lng, lat, address: data.features[0].place_name };
+      return { 
+        lng, 
+        lat, 
+        address: data.features[0].place_name 
+      };
     }
     
     return null;
@@ -157,4 +182,40 @@ export const geocodeAddress = async (
     console.error('Error geocoding address:', error);
     return null;
   }
+};
+
+export const reverseGeocode = async (
+  coordinates: {lat: number, lng: number},
+  apiKey: string
+): Promise<string | null> => {
+  try {
+    const response = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${apiKey}&limit=1&country=es&proximity=${TENERIFE_CENTER.lng},${TENERIFE_CENTER.lat}&language=es`
+    );
+    
+    const data = await response.json();
+    
+    if (data.features && data.features.length > 0) {
+      return data.features[0].place_name;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error reverse geocoding:', error);
+    return null;
+  }
+};
+
+export const getCurrentLocation = (): Promise<GeolocationPosition> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Geolocation is not supported by your browser'));
+    } else {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    }
+  });
 };
