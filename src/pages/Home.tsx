@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
@@ -5,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation } from "lucide-react";
-import Input from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -273,7 +274,7 @@ const Home = () => {
                 <Button 
                   onClick={handleRequestRide}
                   variant="ghost" 
-                  size="md"
+                  size="default"
                 >
                   Solicitar ahora
                 </Button>
