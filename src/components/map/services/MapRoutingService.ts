@@ -13,6 +13,8 @@ export const drawRoute = (
   }
   
   try {
+    console.log("Drawing route from", origin, "to", destination);
+    
     // Check if map source exists and remove it safely
     if (map.getStyle() && map.getSource('route')) {
       map.removeLayer('route');
@@ -48,6 +50,8 @@ export const drawRoute = (
         'line-opacity': 0.7
       }
     });
+    
+    console.log("Route drawn successfully");
   } catch (error) {
     console.error("Error drawing route:", error);
   }
@@ -61,6 +65,7 @@ export const fitMapToBounds = (
   if (!map || !map.loaded()) return;
   
   try {
+    console.log("Fitting map to bounds");
     const bounds = new mapboxgl.LngLatBounds()
       .extend([origin.lng, origin.lat])
       .extend([destination.lng, destination.lat]);

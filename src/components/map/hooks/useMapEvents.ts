@@ -30,18 +30,21 @@ export function useMapEvents({
     }
     
     const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+    console.log(`Map click in ${selectionMode} mode:`, coords);
     
     try {
       const address = await reverseGeocode(coords, apiKey);
       const coordsWithAddress = { ...coords, address: address || undefined };
       
       if (selectionMode === 'origin' && onOriginSelect) {
+        console.log("Setting origin coordinates:", coordsWithAddress);
         onOriginSelect(coordsWithAddress);
         toast({
           title: "Origen seleccionado",
           description: address || "Ubicación seleccionada en el mapa",
         });
       } else if (selectionMode === 'destination' && onDestinationSelect) {
+        console.log("Setting destination coordinates:", coordsWithAddress);
         onDestinationSelect(coordsWithAddress);
         toast({
           title: "Destino seleccionado",
@@ -60,9 +63,11 @@ export function useMapEvents({
   
   useEffect(() => {
     if (!map) return;
+    console.log("Setting up map click handler, selection mode:", selectionMode);
     
     // Only attach the click handler when the map is fully loaded
     const handleLoad = () => {
+      console.log("Map loaded, attaching click handler");
       map.on('click', handleMapClick);
     };
     
@@ -76,5 +81,5 @@ export function useMapEvents({
       map.off('click', handleMapClick);
       map.off('load', handleLoad);
     };
-  }, [map, handleMapClick]);
+  }, [map, handleMapClick, selectionMode]);
 }

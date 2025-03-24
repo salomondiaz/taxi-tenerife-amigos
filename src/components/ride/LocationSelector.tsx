@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -15,6 +15,8 @@ interface LocationSelectorProps {
   setUseManualSelection: (value: boolean) => void;
   handleUseCurrentLocation: () => void;
 }
+
+const HOME_ADDRESS_KEY = 'home_address';
 
 const LocationSelector: React.FC<LocationSelectorProps> = ({
   origin,
@@ -36,6 +38,39 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       toast({
         title: "Modo de selección en el mapa activado",
         description: "Ahora puedes hacer clic en el mapa para seleccionar origen y destino",
+      });
+    }
+  };
+
+  const saveHomeAddress = () => {
+    if (origin) {
+      localStorage.setItem(HOME_ADDRESS_KEY, origin);
+      toast({
+        title: "Dirección guardada",
+        description: "Tu casa ha sido guardada correctamente",
+      });
+    } else {
+      toast({
+        title: "No hay dirección para guardar",
+        description: "Por favor, introduce primero una dirección de origen",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const useHomeAddress = () => {
+    const homeAddress = localStorage.getItem(HOME_ADDRESS_KEY);
+    if (homeAddress) {
+      setOrigin(homeAddress);
+      toast({
+        title: "Dirección de casa cargada",
+        description: "Se ha establecido tu casa como punto de origen",
+      });
+    } else {
+      toast({
+        title: "No hay dirección guardada",
+        description: "Aún no has guardado ninguna dirección como tu casa",
+        variant: "destructive",
       });
     }
   };
@@ -70,6 +105,26 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
         >
           <span className="flex h-2 w-2 mr-2 rounded-full bg-blue-500 animate-pulse" />
           Usar mi ubicación
+        </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={useHomeAddress}
+        >
+          <Home size={18} className="mr-2" />
+          Usar mi casa
+        </Button>
+        
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center"
+          onClick={saveHomeAddress}
+        >
+          <Home size={18} className="mr-2" />
+          Guardar como mi casa
         </Button>
       </div>
       

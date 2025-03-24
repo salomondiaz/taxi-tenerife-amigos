@@ -25,18 +25,20 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
       const markerEl = document.createElement('div');
       markerEl.className = 'origin-marker';
       markerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ff0000" stroke="#ffffff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ea384c" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
-          <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#ff0000"/>
+          <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#ea384c"/>
         </svg>
       `;
+      
+      console.log("Creating origin marker at:", coordinates);
       
       // Only create and add the marker if the map is ready
       const addMarker = () => {
         try {
           markerRef.current = new mapboxgl.Marker({
             element: markerEl,
-            draggable: true
+            draggable: !!onDragEnd
           })
             .setLngLat([coordinates.lng, coordinates.lat])
             .addTo(map);
