@@ -13,7 +13,7 @@ export const drawRoute = (
   origin: MapCoordinates, 
   destination: MapCoordinates
 ): void => {
-  if (!map || !map.loaded()) {
+  if (!map || !map.loaded() || !map.getStyle()) {
     console.log("Map not fully loaded yet, skipping route drawing");
     return;
   }
@@ -22,7 +22,7 @@ export const drawRoute = (
     console.log("Drawing route from", origin, "to", destination);
     
     // Check if map source exists and remove it safely
-    if (map.getStyle() && map.getSource('route')) {
+    if (map.getSource('route')) {
       map.removeLayer('route');
       map.removeSource('route');
     }
@@ -110,5 +110,25 @@ export const resetMapToTenerife = (map: mapboxgl.Map): void => {
     }
   } catch (error) {
     console.error("Error resetting map:", error);
+  }
+};
+
+// New function to zoom to home location
+export const zoomToHomeLocation = (
+  map: mapboxgl.Map,
+  homeLocation: MapCoordinates
+): void => {
+  if (!map || !map.loaded()) return;
+  
+  try {
+    console.log("Zooming to home location:", homeLocation);
+    
+    map.flyTo({
+      center: [homeLocation.lng, homeLocation.lat],
+      zoom: 15, // Closer zoom for home location
+      essential: true
+    });
+  } catch (error) {
+    console.error("Error zooming to home location:", error);
   }
 };

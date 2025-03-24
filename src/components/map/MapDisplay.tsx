@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -13,6 +13,8 @@ import ApiKeyManager from './components/ApiKeyManager';
 import MapContainer from './components/MapContainer';
 import MapMarkers from './components/MapMarkers';
 import MapSelectionControls from './components/MapSelectionControls';
+
+const HOME_LOCATION_KEY = 'user_home_location';
 
 const MapDisplay: React.FC<MapProps> = ({
   origin,
@@ -31,6 +33,8 @@ const MapDisplay: React.FC<MapProps> = ({
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(
     allowMapSelection ? 'origin' : 'none'
   );
+  const [isHomeLocation, setIsHomeLocation] = useState<boolean>(false);
+  const [homeLocation, setHomeLocation] = useState<MapCoordinates | null>(null);
 
   // API Key management
   const { 
@@ -40,6 +44,62 @@ const MapDisplay: React.FC<MapProps> = ({
     setShowKeyInput, 
     handleApiKeySubmit 
   } = useMapApiKey();
+
+  // Load home location on mount
+  useEffect(() => {
+    try {
+      const savedHomeLocation = localStorage.getItem(HOME_LOCATION_KEY);
+      if (savedHomeLocation) {
+        const parsedHome = JSON.parse(savedHomeLocation);
+        setHomeLocation(parsedHome);
+        console.log("Loaded home location:", parsedHome);
+      }
+    } catch (error) {
+      console.error("Error loading home location:", error);
+    }
+  }, []);
+
+  // Check if current origin is home location
+  useEffect(() => {
+    if (origin && homeLocation) {
+      const isHome = 
+        Math.abs(origin.lat - homeLocation.lat) < 0.0001 && 
+        Math.abs(origin.lng - homeLocation.lng) < 0.0001;
+      
+      setIsHomeLocation(isHome);
+      console.log("Is home location:", isHome);
+    } else {
+      setIsHomeLocation(false);
+    }
+  }, [origin, homeLocation]);
+
+  // Save home location
+  const saveHomeLocation = () => {
+    if (!origin) {
+      console.error("No origin set to save as home");
+      return;
+    }
+    
+    try {
+      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(origin));
+      setHomeLocation(origin);
+      console.log("Home location saved:", origin);
+    } catch (error) {
+      console.error("Error saving home location:", error);
+    }
+  };
+
+  // Use home location as origin
+  const useHomeAsOrigin = () => {
+    if (!homeLocation || !onOriginChange) {
+      console.error("No home location saved or no origin change handler");
+      return;
+    }
+    
+    onOriginChange(homeLocation);
+    setIsHomeLocation(true);
+    console.log("Using home as origin:", homeLocation);
+  };
 
   // Initialize map when API key is available
   React.useEffect(() => {
@@ -77,30 +137,6 @@ const MapDisplay: React.FC<MapProps> = ({
         );
       }
       
-      // Adjust bounds on load
-      map.current.on('load', () => {
-        if (origin && destination && map.current) {
-          const bounds = new mapboxgl.LngLatBounds()
-            .extend([origin.lng, origin.lat])
-            .extend([destination.lng, destination.lat]);
-            
-          map.current.fitBounds(bounds, {
-            padding: 60,
-            maxZoom: 14
-          });
-        } else if (origin && map.current) {
-          map.current.flyTo({
-            center: [origin.lng, origin.lat],
-            zoom: 14
-          });
-        } else if (destination && map.current) {
-          map.current.flyTo({
-            center: [destination.lng, destination.lat],
-            zoom: 14
-          });
-        }
-      });
-
       return () => {
         map.current?.remove();
       };
@@ -112,7 +148,7 @@ const MapDisplay: React.FC<MapProps> = ({
   }, [apiKey, origin, destination, interactive, showKeyInput, setShowKeyInput]);
 
   // Draw route between points if both exist
-  useMapRouting(map.current, origin, destination);
+  useMapRouting(map.current, origin, destination, isHomeLocation);
   
   // Handle map click events for selection
   useMapEvents({
@@ -163,6 +199,30 @@ const MapDisplay: React.FC<MapProps> = ({
             setSelectionMode={setSelectionMode}
             onUseCurrentLocation={getLocation}
           />
+          
+          {allowMapSelection && (
+            <div className="absolute bottom-4 left-4 z-10 flex gap-2">
+              {origin && (
+                <button 
+                  onClick={saveHomeLocation}
+                  className="bg-white p-2 rounded-md shadow-md text-sm font-medium hover:bg-gray-100"
+                  title="Guardar como mi casa"
+                >
+                  💾 Guardar como Mi Casa
+                </button>
+              )}
+              
+              {homeLocation && (
+                <button 
+                  onClick={useHomeAsOrigin}
+                  className="bg-white p-2 rounded-md shadow-md text-sm font-medium hover:bg-gray-100"
+                  title="Usar Mi Casa como origen"
+                >
+                  🏠 Usar Mi Casa
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>

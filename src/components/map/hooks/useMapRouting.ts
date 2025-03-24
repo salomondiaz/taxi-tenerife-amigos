@@ -2,23 +2,35 @@
 import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
-import { drawRoute, fitMapToBounds, resetMapToTenerife, TENERIFE_CENTER } from '../services/MapRoutingService';
+import { 
+  drawRoute, 
+  fitMapToBounds, 
+  resetMapToTenerife, 
+  TENERIFE_CENTER,
+  zoomToHomeLocation
+} from '../services/MapRoutingService';
 
 export function useMapRouting(
   map: mapboxgl.Map | null,
   origin?: MapCoordinates,
-  destination?: MapCoordinates
+  destination?: MapCoordinates,
+  isHomeLocation: boolean = false
 ) {
   // Effect to ensure map stays centered on Tenerife when it loads initially
   useEffect(() => {
     if (!map) return;
     
     const centerOnTenerife = () => {
-      map.flyTo({
-        center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
-        zoom: 10,
-        essential: true
-      });
+      // If origin is home location and is set, zoom to it instead of Tenerife center
+      if (isHomeLocation && origin) {
+        zoomToHomeLocation(map, origin);
+      } else {
+        map.flyTo({
+          center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
+          zoom: 10,
+          essential: true
+        });
+      }
     };
     
     if (map.loaded()) {
@@ -30,7 +42,7 @@ export function useMapRouting(
     return () => {
       map.off('load', centerOnTenerife);
     };
-  }, [map]);
+  }, [map, origin, isHomeLocation]);
 
   // Effect to handle route drawing between points
   useEffect(() => {
@@ -42,6 +54,14 @@ export function useMapRouting(
     const handleRouting = () => {
       try {
         console.log("Executing routing logic");
+        
+        // If the style isn't loaded yet, wait for it
+        if (!map.getStyle()) {
+          console.log("Map style not loaded yet, waiting...");
+          map.once('styledata', () => handleRouting());
+          return;
+        }
+        
         // Draw route between points
         drawRoute(map, origin, destination);
         
@@ -82,4 +102,33 @@ export function useMapRouting(
       map.off('load', handleRouting);
     };
   }, [map, origin, destination]);
+  
+  // Add effect to handle a single origin (home location) without destination
+  useEffect(() => {
+    if (!map || !origin || destination || !isHomeLocation) return;
+    
+    const zoomToHome = () => {
+      try {
+        if (!map.getStyle()) {
+          map.once('styledata', zoomToHome);
+          return;
+        }
+        
+        console.log("Zooming to home location");
+        zoomToHomeLocation(map, origin);
+      } catch (error) {
+        console.error("Error zooming to home:", error);
+      }
+    };
+    
+    if (map.loaded()) {
+      zoomToHome();
+    } else {
+      map.once('load', zoomToHome);
+    }
+    
+    return () => {
+      map.off('load', zoomToHome);
+    };
+  }, [map, origin, destination, isHomeLocation]);
 }
