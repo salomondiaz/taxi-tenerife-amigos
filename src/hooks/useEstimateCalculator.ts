@@ -11,7 +11,9 @@ export const useEstimateCalculator = () => {
     originCoords: MapCoordinates, 
     destinationCoords: MapCoordinates
   ) => {
-    // Calcular distancia entre puntos (fórmula haversine)
+    // Improved distance calculation using haversine formula
+    // The original formula was correct, but wasn't considering road routes
+    // We'll apply a correction factor to approximate real road distances
     const R = 6371; // Radio de la Tierra en km
     const dLat = (destinationCoords.lat - originCoords.lat) * Math.PI / 180;
     const dLon = (destinationCoords.lng - originCoords.lng) * Math.PI / 180;
@@ -20,20 +22,33 @@ export const useEstimateCalculator = () => {
       Math.cos(originCoords.lat * Math.PI / 180) * Math.cos(destinationCoords.lat * Math.PI / 180) * 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c;
     
-    // Calcular tiempo estimado (3 minutos por km + algo aleatorio para variabilidad)
-    const time = Math.floor(distance * 3 + Math.random() * 5);
+    // Direct distance as the crow flies
+    const directDistance = R * c;
     
-    // Calcular precio (tarifa base de 3€ + 1.5€ por km)
+    // Apply correction factor for road routes (typically 1.3-1.5x the direct distance)
+    // In mountainous areas like Tenerife, the factor can be higher
+    const roadFactor = 1.6; // Increased road factor for mountainous terrain
+    const distance = directDistance * roadFactor;
+    
+    // Calculate time based on realistic average speed in minutes per km
+    // In Tenerife with its winding roads and mountains, average speed is lower
+    // Assume average speed of 40 km/h = 1.5 minutes per km
+    const timePerKm = 1.5;
+    const time = Math.floor(distance * timePerKm + Math.random() * 5);
+    
+    // Calculate price (tarifa base of 3€ + 1.5€ per km)
     const price = distance * 1.5 + 3;
 
-    setEstimatedDistance(parseFloat(distance.toFixed(1)));
+    // Round the distance to one decimal place
+    const roundedDistance = parseFloat(distance.toFixed(1));
+    
+    setEstimatedDistance(roundedDistance);
     setEstimatedTime(time);
     setEstimatedPrice(parseFloat(price.toFixed(2)));
     
     return {
-      distance: parseFloat(distance.toFixed(1)),
+      distance: roundedDistance,
       time,
       price: parseFloat(price.toFixed(2))
     };
