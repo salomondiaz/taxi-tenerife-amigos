@@ -65,6 +65,9 @@ const MapDisplay: React.FC<MapProps> = ({
         interactive: interactive
       });
       
+      // Cambiar el cursor para toda el área del mapa 
+      map.current.getCanvas().style.cursor = 'default';
+      
       if (interactive) {
         map.current.addControl(
           new mapboxgl.NavigationControl(),
@@ -84,10 +87,14 @@ const MapDisplay: React.FC<MapProps> = ({
         );
       }
       
-      // Center map appropriately when loaded
+      // Cambiar el cursor cuando se está en modo de selección
       map.current.on('load', () => {
+        if (allowMapSelection && selectionMode !== 'none') {
+          map.current!.getCanvas().style.cursor = 'crosshair';
+        }
+        
+        // Si ambos puntos están establecidos, ajustar los límites para mostrarlos
         if (origin && destination && map.current) {
-          // If both points are set, fit bounds to show them
           const bounds = new mapboxgl.LngLatBounds()
             .extend([origin.lng, origin.lat])
             .extend([destination.lng, destination.lat]);
@@ -97,13 +104,13 @@ const MapDisplay: React.FC<MapProps> = ({
             maxZoom: 14
           });
         } else if (origin && map.current) {
-          // If only origin is set, center on it
+          // Si solo se establece el origen, centrarse en él
           map.current.flyTo({
             center: [origin.lng, origin.lat],
             zoom: 14
           });
         } else if (destination && map.current) {
-          // If only destination is set, center on it
+          // Si solo se establece el destino, centrarse en él
           map.current.flyTo({
             center: [destination.lng, destination.lat],
             zoom: 14
@@ -124,6 +131,17 @@ const MapDisplay: React.FC<MapProps> = ({
       setShowKeyInput(true);
     }
   }, [apiKey, origin, destination, interactive, showKeyInput]);
+
+  // Actualizar el cursor del mapa cuando cambia el modo de selección
+  useEffect(() => {
+    if (!map.current || !map.current.getCanvas()) return;
+    
+    if (allowMapSelection && selectionMode !== 'none') {
+      map.current.getCanvas().style.cursor = 'crosshair';
+    } else {
+      map.current.getCanvas().style.cursor = 'default';
+    }
+  }, [selectionMode, allowMapSelection]);
 
   // Draw route between points if both exist
   useMapRouting(map.current, origin, destination);
