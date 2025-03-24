@@ -7,41 +7,50 @@ export const drawRoute = (
   origin: MapCoordinates, 
   destination: MapCoordinates
 ): void => {
-  // Eliminar ruta existente si la hay
-  if (map.getSource('route')) {
-    map.removeLayer('route');
-    map.removeSource('route');
+  if (!map || !map.loaded()) {
+    console.log("Map not fully loaded yet, skipping route drawing");
+    return;
   }
   
-  map.addSource('route', {
-    type: 'geojson',
-    data: {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'LineString',
-        coordinates: [
-          [origin.lng, origin.lat],
-          [destination.lng, destination.lat]
-        ]
+  try {
+    // Check if map source exists and remove it safely
+    if (map.getStyle() && map.getSource('route')) {
+      map.removeLayer('route');
+      map.removeSource('route');
+    }
+    
+    map.addSource('route', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [origin.lng, origin.lat],
+            [destination.lng, destination.lat]
+          ]
+        }
       }
-    }
-  });
-  
-  map.addLayer({
-    id: 'route',
-    type: 'line',
-    source: 'route',
-    layout: {
-      'line-join': 'round',
-      'line-cap': 'round'
-    },
-    paint: {
-      'line-color': '#1E88E5',
-      'line-width': 4,
-      'line-opacity': 0.7
-    }
-  });
+    });
+    
+    map.addLayer({
+      id: 'route',
+      type: 'line',
+      source: 'route',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#1E88E5',
+        'line-width': 4,
+        'line-opacity': 0.7
+      }
+    });
+  } catch (error) {
+    console.error("Error drawing route:", error);
+  }
 };
 
 export const fitMapToBounds = (
@@ -49,12 +58,18 @@ export const fitMapToBounds = (
   origin: MapCoordinates,
   destination: MapCoordinates
 ): void => {
-  const bounds = new mapboxgl.LngLatBounds()
-    .extend([origin.lng, origin.lat])
-    .extend([destination.lng, destination.lat]);
-    
-  map.fitBounds(bounds, {
-    padding: 60,
-    maxZoom: 14
-  });
+  if (!map || !map.loaded()) return;
+  
+  try {
+    const bounds = new mapboxgl.LngLatBounds()
+      .extend([origin.lng, origin.lat])
+      .extend([destination.lng, destination.lat]);
+      
+    map.fitBounds(bounds, {
+      padding: 60,
+      maxZoom: 14
+    });
+  } catch (error) {
+    console.error("Error fitting map to bounds:", error);
+  }
 };
