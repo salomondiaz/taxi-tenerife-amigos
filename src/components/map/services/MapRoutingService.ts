@@ -11,7 +11,8 @@ export const TENERIFE_CENTER = {
 export const drawRoute = (
   map: mapboxgl.Map, 
   origin: MapCoordinates, 
-  destination: MapCoordinates
+  destination: MapCoordinates,
+  routeGeometry?: any
 ): void => {
   if (!map || !map.loaded() || !map.getStyle()) {
     console.log("Map not fully loaded yet, skipping route drawing");
@@ -27,20 +28,33 @@ export const drawRoute = (
       map.removeSource('route');
     }
     
-    map.addSource('route', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [origin.lng, origin.lat],
-            [destination.lng, destination.lat]
-          ]
+    // Si tenemos la geometría de la ruta desde la API de direcciones, la usamos
+    if (routeGeometry) {
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: routeGeometry
         }
-      }
-    });
+      });
+    } else {
+      // Fallback a una línea recta si no hay datos de la API
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [origin.lng, origin.lat],
+              [destination.lng, destination.lat]
+            ]
+          }
+        }
+      });
+    }
     
     map.addLayer({
       id: 'route',

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
 import { 
@@ -9,6 +9,7 @@ import {
   TENERIFE_CENTER,
   zoomToHomeLocation
 } from '../services/MapRoutingService';
+import { API_KEY_STORAGE_KEY } from '../types';
 
 export function useMapRouting(
   map: mapboxgl.Map | null,
@@ -16,6 +17,8 @@ export function useMapRouting(
   destination?: MapCoordinates,
   isHomeLocation: boolean = false
 ) {
+  const [routeGeometry, setRouteGeometry] = useState<any>(null);
+
   // Effect to ensure map stays centered on Tenerife when it loads initially
   useEffect(() => {
     if (!map) return;
@@ -44,6 +47,32 @@ export function useMapRouting(
     };
   }, [map, origin, isHomeLocation]);
 
+  // Efecto para obtener la ruta entre puntos
+  useEffect(() => {
+    if (!map || !origin || !destination) return;
+
+    const fetchRoute = async () => {
+      try {
+        const accessToken = localStorage.getItem(API_KEY_STORAGE_KEY);
+        if (!accessToken) return;
+        
+        const response = await fetch(
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?access_token=${accessToken}&geometries=geojson`
+        );
+        
+        const data = await response.json();
+        
+        if (data.routes && data.routes.length > 0) {
+          setRouteGeometry(data.routes[0].geometry);
+        }
+      } catch (error) {
+        console.error("Error fetching route:", error);
+      }
+    };
+    
+    fetchRoute();
+  }, [map, origin, destination]);
+
   // Effect to handle route drawing between points
   useEffect(() => {
     if (!map || !origin || !destination) return;
@@ -63,7 +92,7 @@ export function useMapRouting(
         }
         
         // Draw route between points
-        drawRoute(map, origin, destination);
+        drawRoute(map, origin, destination, routeGeometry);
         
         // Fit map to show both points
         fitMapToBounds(map, origin, destination);
@@ -101,7 +130,7 @@ export function useMapRouting(
       // Remove load event listener
       map.off('load', handleRouting);
     };
-  }, [map, origin, destination]);
+  }, [map, origin, destination, routeGeometry]);
   
   // Add effect to handle a single origin (home location) without destination
   useEffect(() => {

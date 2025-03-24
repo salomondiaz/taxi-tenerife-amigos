@@ -20,6 +20,7 @@ import HomeLocationControls from './components/HomeLocationControls';
 const MapDisplay: React.FC<MapProps> = ({
   origin,
   destination,
+  routeGeometry,
   showDriverPosition = false,
   driverPosition,
   style,
@@ -109,9 +110,40 @@ const MapDisplay: React.FC<MapProps> = ({
         // Load last map position when map is ready
         loadLastMapPosition(map.current!);
         
-        // If home location exists, show home marker
-        if (homeLocation && map.current) {
-          console.log("Home location exists, showing home marker");
+        // Si hay geometría de ruta, dibujarla
+        if (routeGeometry && origin && destination) {
+          try {
+            if (map.current!.getSource('route')) {
+              map.current!.removeLayer('route');
+              map.current!.removeSource('route');
+            }
+            
+            map.current!.addSource('route', {
+              type: 'geojson',
+              data: {
+                type: 'Feature',
+                properties: {},
+                geometry: routeGeometry
+              }
+            });
+            
+            map.current!.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#1E88E5',
+                'line-width': 4,
+                'line-opacity': 0.7
+              }
+            });
+          } catch (error) {
+            console.error("Error dibujando ruta desde geometría:", error);
+          }
         }
       });
       
@@ -123,7 +155,7 @@ const MapDisplay: React.FC<MapProps> = ({
       setShowKeyInput(true);
       return undefined;
     }
-  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation]);
+  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination]);
 
   return (
     <div className={`relative ${className}`} style={style}>

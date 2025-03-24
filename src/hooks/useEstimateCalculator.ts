@@ -1,6 +1,9 @@
 
 import { useState } from "react";
+import mapboxgl from "mapbox-gl";
 import { MapCoordinates } from "@/components/map/types";
+import { API_KEY_STORAGE_KEY } from "@/components/map/types";
+import { toast } from "@/hooks/use-toast";
 
 export const useEstimateCalculator = () => {
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
@@ -12,9 +15,21 @@ export const useEstimateCalculator = () => {
     destinationCoords: MapCoordinates
   ) => {
     try {
+      // Obtener el token de API de Mapbox
+      const accessToken = localStorage.getItem(API_KEY_STORAGE_KEY);
+      
+      if (!accessToken) {
+        toast({
+          title: "Error de configuración",
+          description: "No se encontró el token de API de Mapbox",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
       // Usar Mapbox Directions API para obtener la ruta real
       const response = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords.lng},${originCoords.lat};${destinationCoords.lng},${destinationCoords.lat}?access_token=${mapboxgl.accessToken}&geometries=geojson`
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords.lng},${originCoords.lat};${destinationCoords.lng},${destinationCoords.lat}?access_token=${accessToken}&geometries=geojson`
       );
       
       const data = await response.json();
@@ -35,16 +50,30 @@ export const useEstimateCalculator = () => {
         setEstimatedTime(time);
         setEstimatedPrice(parseFloat(price.toFixed(2)));
         
+        // Guardar la geometría de la ruta para dibujarla en el mapa
+        const routeGeometry = data.routes[0].geometry;
+        
         return {
           distance: roundedDistance,
           time,
-          price: parseFloat(price.toFixed(2))
+          price: parseFloat(price.toFixed(2)),
+          routeGeometry
         };
       } else {
+        toast({
+          title: "Error de ruta",
+          description: "No se pudo calcular la ruta entre los puntos seleccionados",
+          variant: "destructive",
+        });
         throw new Error("No se pudo calcular la ruta");
       }
     } catch (error) {
       console.error("Error calculando la ruta:", error);
+      toast({
+        title: "Error de cálculo",
+        description: "Ocurrió un error al calcular la ruta. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
       return null;
     }
   };

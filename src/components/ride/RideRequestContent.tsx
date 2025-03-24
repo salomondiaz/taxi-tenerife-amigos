@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MapCoordinates } from "@/components/map/types";
 
@@ -17,6 +17,7 @@ import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { useGeocodingService } from "@/hooks/useGeocodingService";
 import { useEstimateCalculator } from "@/hooks/useEstimateCalculator";
 import { useRideRequest } from "@/hooks/useRideRequest";
+import { toast } from "@/hooks/use-toast";
 
 const RideRequestContent: React.FC = () => {
   const location = useLocation();
@@ -26,6 +27,7 @@ const RideRequestContent: React.FC = () => {
   const [useManualSelection, setUseManualSelection] = useState(true); // Activado por defecto
   const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<any>(null);
   
   // Hooks personalizados
   const { 
@@ -69,13 +71,41 @@ const RideRequestContent: React.FC = () => {
 
   // Función para calcular estimaciones
   const calculateEstimates = async () => {
-    const result = await geocodeLocations(origin, destination, originCoords, destinationCoords);
-    
-    if (result.success && result.finalOriginCoords && result.finalDestinationCoords) {
-      setOriginCoords(result.finalOriginCoords);
-      setDestinationCoords(result.finalDestinationCoords);
+    if (!originCoords || !destinationCoords) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, selecciona origen y destino en el mapa",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await geocodeLocations(origin, destination, originCoords, destinationCoords);
       
-      calculateEstimatedValues(result.finalOriginCoords, result.finalDestinationCoords);
+      if (result.success && result.finalOriginCoords && result.finalDestinationCoords) {
+        setOriginCoords(result.finalOriginCoords);
+        setDestinationCoords(result.finalDestinationCoords);
+        
+        const routeData = await calculateEstimatedValues(
+          result.finalOriginCoords, 
+          result.finalDestinationCoords
+        );
+        
+        if (routeData && routeData.routeGeometry) {
+          setRouteGeometry(routeData.routeGeometry);
+        }
+      }
+    } catch (error) {
+      console.error("Error al calcular estimaciones:", error);
+      toast({
+        title: "Error de cálculo",
+        description: "No se pudieron calcular las estimaciones. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -111,6 +141,7 @@ const RideRequestContent: React.FC = () => {
         useManualSelection={useManualSelection}
         originCoords={originCoords}
         destinationCoords={destinationCoords}
+        routeGeometry={routeGeometry}
         handleOriginChange={handleOriginChange}
         handleDestinationChange={handleDestinationChange}
       />

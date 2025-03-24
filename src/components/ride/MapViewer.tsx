@@ -7,6 +7,7 @@ interface MapViewerProps {
   useManualSelection: boolean;
   originCoords: MapCoordinates | null;
   destinationCoords: MapCoordinates | null;
+  routeGeometry?: any;
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
 }
@@ -15,6 +16,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
   useManualSelection,
   originCoords,
   destinationCoords,
+  routeGeometry,
   handleOriginChange,
   handleDestinationChange,
 }) => {
@@ -30,6 +32,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
         <Map 
           origin={originCoords || undefined}
           destination={destinationCoords || undefined}
+          routeGeometry={routeGeometry}
           className="h-full"
           onOriginChange={handleOriginChange}
           onDestinationChange={handleDestinationChange}
@@ -44,6 +47,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
             <li>Usa los botones en el mapa para seleccionar origen o destino</li>
             <li>Haz clic en el mapa en la ubicación deseada</li>
             <li>Puedes arrastrar los marcadores para ajustar la posición</li>
+            <li>Una vez seleccionados origen y destino, calcula el precio</li>
           </ul>
         </div>
       )}
