@@ -24,12 +24,12 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
     try {
       const markerEl = document.createElement('div');
       markerEl.className = 'origin-marker';
-      markerEl.style.width = '20px';
-      markerEl.style.height = '20px';
-      markerEl.style.borderRadius = '50%';
-      markerEl.style.backgroundColor = '#3b82f6';
-      markerEl.style.border = '3px solid #ffffff';
-      markerEl.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+      markerEl.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
+          <path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        </svg>
+      `;
       
       // Only create and add the marker if the map is ready
       const addMarker = () => {
