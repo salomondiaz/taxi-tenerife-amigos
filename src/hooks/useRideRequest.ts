@@ -1,14 +1,50 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAppContext } from "@/context/AppContext";
 import { MapCoordinates } from "@/components/map/types";
 
+const RIDE_HISTORY_KEY = 'ride_history';
+
+type RideHistoryEntry = {
+  id: string;
+  origin: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  destination: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  status: "pending" | "accepted" | "ongoing" | "completed" | "cancelled";
+  requestTime: string; // ISO string
+  price: number;
+  distance: number | null;
+};
+
 export function useRideRequest() {
   const navigate = useNavigate();
   const { setCurrentRide } = useAppContext();
   const [isLoading, setIsLoading] = useState(false);
+
+  const saveRideToHistory = (ride: RideHistoryEntry) => {
+    try {
+      const historyJSON = localStorage.getItem(RIDE_HISTORY_KEY);
+      const history: RideHistoryEntry[] = historyJSON ? JSON.parse(historyJSON) : [];
+      
+      history.unshift(ride);
+      
+      const trimmedHistory = history.slice(0, 20);
+      
+      localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(trimmedHistory));
+      
+      console.log("Ride saved to history:", ride);
+    } catch (error) {
+      console.error("Error saving ride to history:", error);
+    }
+  };
 
   const requestRide = (
     origin: string,
@@ -29,11 +65,12 @@ export function useRideRequest() {
 
     setIsLoading(true);
 
-    // Simulación de solicitud de viaje
     setTimeout(() => {
-      // Crear un nuevo viaje
+      const rideId = `ride-${Date.now()}`;
+      const requestTime = new Date();
+      
       const newRide = {
-        id: `ride-${Date.now()}`,
+        id: rideId,
         origin: {
           address: origin,
           lat: originCoords.lat,
@@ -45,13 +82,17 @@ export function useRideRequest() {
           lng: destinationCoords.lng,
         },
         status: "pending" as "pending" | "accepted" | "ongoing" | "completed" | "cancelled",
-        requestTime: new Date(),
+        requestTime: requestTime,
         price: estimatedPrice,
         distance: estimatedDistance,
       };
 
-      // Actualizar el contexto con el nuevo viaje
       setCurrentRide(newRide);
+      
+      saveRideToHistory({
+        ...newRide,
+        requestTime: requestTime.toISOString(),
+      });
 
       toast({
         title: "¡Viaje solicitado!",

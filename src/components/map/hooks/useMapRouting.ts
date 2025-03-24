@@ -2,13 +2,37 @@
 import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
-import { drawRoute, fitMapToBounds } from '../services/MapRoutingService';
+import { drawRoute, fitMapToBounds, resetMapToTenerife, TENERIFE_CENTER } from '../services/MapRoutingService';
 
 export function useMapRouting(
   map: mapboxgl.Map | null,
   origin?: MapCoordinates,
   destination?: MapCoordinates
 ) {
+  // Effect to ensure map stays centered on Tenerife when it loads initially
+  useEffect(() => {
+    if (!map) return;
+    
+    const centerOnTenerife = () => {
+      map.flyTo({
+        center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
+        zoom: 10,
+        essential: true
+      });
+    };
+    
+    if (map.loaded()) {
+      centerOnTenerife();
+    } else {
+      map.once('load', centerOnTenerife);
+    }
+    
+    return () => {
+      map.off('load', centerOnTenerife);
+    };
+  }, [map]);
+
+  // Effect to handle route drawing between points
   useEffect(() => {
     if (!map || !origin || !destination) return;
 
@@ -23,6 +47,9 @@ export function useMapRouting(
         
         // Fit map to show both points
         fitMapToBounds(map, origin, destination);
+        
+        // Make sure we're still focused on Tenerife
+        resetMapToTenerife(map);
       } catch (error) {
         console.error("Error in map routing:", error);
       }
