@@ -8,6 +8,7 @@ import { useMapRouting } from './hooks/useMapRouting';
 import { useMapEvents } from './hooks/useMapEvents';
 import { useCurrentLocation } from './hooks/useCurrentLocation';
 import { useMapApiKey } from './hooks/useMapApiKey';
+import { zoomToHomeLocation, loadLastMapPosition } from './services/MapRoutingService';
 
 import ApiKeyManager from './components/ApiKeyManager';
 import MapContainer from './components/MapContainer';
@@ -35,6 +36,7 @@ const MapDisplay: React.FC<MapProps> = ({
   );
   const [isHomeLocation, setIsHomeLocation] = useState<boolean>(false);
   const [homeLocation, setHomeLocation] = useState<MapCoordinates | null>(null);
+  const [showHomeMarker, setShowHomeMarker] = useState<boolean>(false);
 
   // API Key management
   const { 
@@ -52,6 +54,7 @@ const MapDisplay: React.FC<MapProps> = ({
       if (savedHomeLocation) {
         const parsedHome = JSON.parse(savedHomeLocation);
         setHomeLocation(parsedHome);
+        setShowHomeMarker(true);
         console.log("Loaded home location:", parsedHome);
       }
     } catch (error) {
@@ -83,6 +86,7 @@ const MapDisplay: React.FC<MapProps> = ({
     try {
       localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(origin));
       setHomeLocation(origin);
+      setShowHomeMarker(true);
       console.log("Home location saved:", origin);
     } catch (error) {
       console.error("Error saving home location:", error);
@@ -91,13 +95,16 @@ const MapDisplay: React.FC<MapProps> = ({
 
   // Use home location as origin
   const useHomeAsOrigin = () => {
-    if (!homeLocation || !onOriginChange) {
+    if (!homeLocation || !onOriginChange || !map.current) {
       console.error("No home location saved or no origin change handler");
       return;
     }
     
     onOriginChange(homeLocation);
     setIsHomeLocation(true);
+    
+    // Zoom to home location
+    zoomToHomeLocation(map.current, homeLocation);
     console.log("Using home as origin:", homeLocation);
   };
 
@@ -111,9 +118,7 @@ const MapDisplay: React.FC<MapProps> = ({
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: origin 
-          ? [origin.lng, origin.lat] 
-          : [28.2916, -16.6291], // TENERIFE_CENTER
+        center: [28.2916, -16.6291], // Default to TENERIFE_CENTER
         zoom: 11,
         interactive: interactive
       });
@@ -137,6 +142,21 @@ const MapDisplay: React.FC<MapProps> = ({
         );
       }
       
+      map.current.once('load', () => {
+        // Load last map position when map is ready
+        loadLastMapPosition(map.current!);
+        
+        // If home location exists, show home marker
+        if (homeLocation && map.current) {
+          setShowHomeMarker(true);
+        }
+        
+        // If using home as origin, zoom to it
+        if (isHomeLocation && homeLocation && map.current) {
+          zoomToHomeLocation(map.current, homeLocation);
+        }
+      });
+      
       return () => {
         map.current?.remove();
       };
@@ -145,7 +165,7 @@ const MapDisplay: React.FC<MapProps> = ({
       setShowKeyInput(true);
       return undefined;
     }
-  }, [apiKey, origin, destination, interactive, showKeyInput, setShowKeyInput]);
+  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, isHomeLocation]);
 
   // Draw route between points if both exist
   useMapRouting(map.current, origin, destination, isHomeLocation);
@@ -187,10 +207,12 @@ const MapDisplay: React.FC<MapProps> = ({
             map={map.current}
             origin={origin}
             destination={destination}
+            homeLocation={homeLocation}
             showDriverPosition={showDriverPosition}
             driverPosition={driverPosition}
             onOriginChange={onOriginChange}
             onDestinationChange={onDestinationChange}
+            showHomeMarker={showHomeMarker}
           />
           
           <MapSelectionControls 

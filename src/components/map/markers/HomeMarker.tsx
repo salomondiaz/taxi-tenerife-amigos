@@ -3,13 +3,12 @@ import React from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
 
-interface OriginMarkerProps {
+interface HomeMarkerProps {
   map: mapboxgl.Map;
   coordinates: MapCoordinates;
-  onDragEnd?: (coords: MapCoordinates) => void;
 }
 
-const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd }) => {
+const HomeMarker: React.FC<HomeMarkerProps> = ({ map, coordinates }) => {
   const markerRef = React.useRef<mapboxgl.Marker | null>(null);
 
   React.useEffect(() => {
@@ -23,45 +22,42 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
 
     try {
       const markerEl = document.createElement('div');
-      markerEl.className = 'origin-marker';
+      markerEl.className = 'home-marker';
       
-      // Use blue color for origin marker
+      // Use house icon for home marker
       markerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#1E88E5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
-          <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#1E88E5"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24" fill="#4CAF50" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       `;
       
-      console.log("Creating origin marker at:", coordinates);
+      console.log("Creating home marker at:", coordinates);
       
       // Only create and add the marker if the map is ready
       const addMarker = () => {
         try {
           markerRef.current = new mapboxgl.Marker({
             element: markerEl,
-            draggable: !!onDragEnd
+            draggable: false
           })
             .setLngLat([coordinates.lng, coordinates.lat])
             .addTo(map);
             
           if (coordinates.address) {
             markerRef.current.setPopup(
-              new mapboxgl.Popup({ offset: 25 }).setText(coordinates.address)
+              new mapboxgl.Popup({ offset: 25 }).setText("Mi Casa: " + coordinates.address)
+            );
+          } else {
+            markerRef.current.setPopup(
+              new mapboxgl.Popup({ offset: 25 }).setText("Mi Casa")
             );
           }
           
-          // Add drag end event listener
-          if (onDragEnd && markerRef.current) {
-            markerRef.current.on('dragend', () => {
-              const lngLat = markerRef.current?.getLngLat();
-              if (lngLat) {
-                onDragEnd({ lat: lngLat.lat, lng: lngLat.lng });
-              }
-            });
-          }
+          // Show popup by default
+          markerRef.current.togglePopup();
         } catch (error) {
-          console.error("Error creating origin marker:", error);
+          console.error("Error creating home marker:", error);
         }
       };
 
@@ -72,7 +68,7 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
         map.once('load', addMarker);
       }
     } catch (error) {
-      console.error("Error in OriginMarker useEffect:", error);
+      console.error("Error in HomeMarker useEffect:", error);
     }
 
     return () => {
@@ -80,13 +76,13 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
         try {
           markerRef.current.remove();
         } catch (error) {
-          console.error("Error removing origin marker:", error);
+          console.error("Error removing home marker:", error);
         }
         markerRef.current = null;
       }
       map.off('load', () => {}); // Clean up any load event listeners
     };
-  }, [map, coordinates, onDragEnd]);
+  }, [map, coordinates]);
 
   // Update marker position if coordinates change
   React.useEffect(() => {
@@ -96,11 +92,11 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
         
         if (coordinates.address) {
           markerRef.current.setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setText(coordinates.address)
+            new mapboxgl.Popup({ offset: 25 }).setText("Mi Casa: " + coordinates.address)
           );
         }
       } catch (error) {
-        console.error("Error updating origin marker:", error);
+        console.error("Error updating home marker:", error);
       }
     }
   }, [coordinates]);
@@ -108,4 +104,4 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
   return null; // This is a non-visual component that manipulates the map directly
 };
 
-export default OriginMarker;
+export default HomeMarker;

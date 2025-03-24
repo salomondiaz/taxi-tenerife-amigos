@@ -5,25 +5,30 @@ import { MapCoordinates, MapDriverPosition } from '../types';
 import OriginMarker from '../markers/OriginMarker';
 import DestinationMarker from '../markers/DestinationMarker';
 import DriverMarker from '../markers/DriverMarker';
+import HomeMarker from '../markers/HomeMarker';
 
 interface MapMarkersProps {
   map: mapboxgl.Map | null;
   origin?: MapCoordinates;
   destination?: MapCoordinates;
+  homeLocation?: MapCoordinates;
   showDriverPosition?: boolean;
   driverPosition?: MapDriverPosition;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
+  showHomeMarker?: boolean;
 }
 
 const MapMarkers: React.FC<MapMarkersProps> = ({
   map,
   origin,
   destination,
+  homeLocation,
   showDriverPosition,
   driverPosition,
   onOriginChange,
-  onDestinationChange
+  onDestinationChange,
+  showHomeMarker = true
 }) => {
   if (!map) return null;
   
@@ -42,6 +47,13 @@ const MapMarkers: React.FC<MapMarkersProps> = ({
           map={map} 
           coordinates={destination}
           onDragEnd={onDestinationChange}
+        />
+      )}
+      
+      {showHomeMarker && homeLocation && (
+        <HomeMarker
+          map={map}
+          coordinates={homeLocation}
         />
       )}
       
