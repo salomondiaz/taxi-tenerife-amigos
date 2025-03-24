@@ -18,18 +18,31 @@ export function useMapView({
   useEffect(() => {
     if (!map) return;
     
-    if (origin && destination) {
-      fitMapToBounds(map, origin, destination);
-    } else if (origin) {
-      map.flyTo({
-        center: [origin.lng, origin.lat],
-        zoom: 14
-      });
-    } else if (destination) {
-      map.flyTo({
-        center: [destination.lng, destination.lat],
-        zoom: 14
-      });
+    // Ensure the map is loaded before trying to manipulate the view
+    const updateView = () => {
+      if (origin && destination) {
+        fitMapToBounds(map, origin, destination);
+      } else if (origin) {
+        map.flyTo({
+          center: [origin.lng, origin.lat],
+          zoom: 14
+        });
+      } else if (destination) {
+        map.flyTo({
+          center: [destination.lng, destination.lat],
+          zoom: 14
+        });
+      }
+    };
+    
+    if (map.loaded()) {
+      updateView();
+    } else {
+      map.once('load', updateView);
     }
+    
+    return () => {
+      map.off('load', updateView);
+    };
   }, [map, origin, destination]);
 }

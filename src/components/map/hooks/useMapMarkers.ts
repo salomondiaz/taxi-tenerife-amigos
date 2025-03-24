@@ -39,29 +39,47 @@ export function useMapMarkers({
   // Setup origin marker
   useEffect(() => {
     if (!map || !origin) return;
-    
-    if (originMarker.current) {
-      originMarker.current.remove();
-    }
-    
-    originMarker.current = addOriginMarker(map, origin);
-    
-    // Add drag event handling
-    if (onOriginChange && originMarker.current) {
-      originMarker.current.on('dragend', async () => {
-        const lngLat = originMarker.current?.getLngLat();
-        if (lngLat) {
-          const coords = { lat: lngLat.lat, lng: lngLat.lng };
-          const address = await reverseGeocode(coords, apiKey);
-          onOriginChange({ ...coords, address: address || undefined });
-          
-          // Update route if both markers exist
-          if (originMarker.current && destinationMarker.current && map) {
-            const destLngLat = destinationMarker.current.getLngLat();
-            drawRoute(map, coords, { lat: destLngLat.lat, lng: destLngLat.lng });
-          }
+
+    // Ensure the map is actually ready before adding markers
+    const addOriginMarkerToMap = () => {
+      try {
+        if (originMarker.current) {
+          originMarker.current.remove();
         }
-      });
+        
+        originMarker.current = addOriginMarker(map, origin);
+        
+        // Add drag event handling
+        if (onOriginChange && originMarker.current) {
+          originMarker.current.on('dragend', async () => {
+            const lngLat = originMarker.current?.getLngLat();
+            if (lngLat) {
+              const coords = { lat: lngLat.lat, lng: lngLat.lng };
+              try {
+                const address = await reverseGeocode(coords, apiKey);
+                onOriginChange({ ...coords, address: address || undefined });
+                
+                // Update route if both markers exist
+                if (originMarker.current && destinationMarker.current && map) {
+                  const destLngLat = destinationMarker.current.getLngLat();
+                  drawRoute(map, coords, { lat: destLngLat.lat, lng: destLngLat.lng });
+                }
+              } catch (error) {
+                console.error("Error during reverse geocoding:", error);
+                onOriginChange(coords);
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error setting up origin marker:", error);
+      }
+    };
+    
+    if (map.loaded()) {
+      addOriginMarkerToMap();
+    } else {
+      map.once('load', addOriginMarkerToMap);
     }
     
     return () => {
@@ -69,6 +87,7 @@ export function useMapMarkers({
         originMarker.current.remove();
         originMarker.current = null;
       }
+      map.off('load', addOriginMarkerToMap);
     };
   }, [map, origin, apiKey, originMarker, destinationMarker, onOriginChange]);
   
@@ -76,28 +95,45 @@ export function useMapMarkers({
   useEffect(() => {
     if (!map || !destination) return;
     
-    if (destinationMarker.current) {
-      destinationMarker.current.remove();
-    }
-    
-    destinationMarker.current = addDestinationMarker(map, destination);
-    
-    // Add drag event handling
-    if (onDestinationChange && destinationMarker.current) {
-      destinationMarker.current.on('dragend', async () => {
-        const lngLat = destinationMarker.current?.getLngLat();
-        if (lngLat) {
-          const coords = { lat: lngLat.lat, lng: lngLat.lng };
-          const address = await reverseGeocode(coords, apiKey);
-          onDestinationChange({ ...coords, address: address || undefined });
-          
-          // Update route if both markers exist
-          if (originMarker.current && destinationMarker.current && map) {
-            const origLngLat = originMarker.current.getLngLat();
-            drawRoute(map, { lat: origLngLat.lat, lng: origLngLat.lng }, coords);
-          }
+    const addDestinationMarkerToMap = () => {
+      try {
+        if (destinationMarker.current) {
+          destinationMarker.current.remove();
         }
-      });
+        
+        destinationMarker.current = addDestinationMarker(map, destination);
+        
+        // Add drag event handling
+        if (onDestinationChange && destinationMarker.current) {
+          destinationMarker.current.on('dragend', async () => {
+            const lngLat = destinationMarker.current?.getLngLat();
+            if (lngLat) {
+              const coords = { lat: lngLat.lat, lng: lngLat.lng };
+              try {
+                const address = await reverseGeocode(coords, apiKey);
+                onDestinationChange({ ...coords, address: address || undefined });
+                
+                // Update route if both markers exist
+                if (originMarker.current && destinationMarker.current && map) {
+                  const origLngLat = originMarker.current.getLngLat();
+                  drawRoute(map, { lat: origLngLat.lat, lng: origLngLat.lng }, coords);
+                }
+              } catch (error) {
+                console.error("Error during reverse geocoding:", error);
+                onDestinationChange(coords);
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error setting up destination marker:", error);
+      }
+    };
+    
+    if (map.loaded()) {
+      addDestinationMarkerToMap();
+    } else {
+      map.once('load', addDestinationMarkerToMap);
     }
     
     return () => {
@@ -105,6 +141,7 @@ export function useMapMarkers({
         destinationMarker.current.remove();
         destinationMarker.current = null;
       }
+      map.off('load', addDestinationMarkerToMap);
     };
   }, [map, destination, apiKey, originMarker, destinationMarker, onDestinationChange]);
   
@@ -114,12 +151,24 @@ export function useMapMarkers({
     
     const startPosition = driverPosition || origin;
     
-    if (startPosition) {
-      if (driverMarker.current) {
-        driverMarker.current.remove();
+    const addDriverMarkerToMap = () => {
+      if (startPosition) {
+        try {
+          if (driverMarker.current) {
+            driverMarker.current.remove();
+          }
+          
+          driverMarker.current = addDriverMarker(map, startPosition);
+        } catch (error) {
+          console.error("Error setting up driver marker:", error);
+        }
       }
-      
-      driverMarker.current = addDriverMarker(map, startPosition);
+    };
+    
+    if (map.loaded()) {
+      addDriverMarkerToMap();
+    } else {
+      map.once('load', addDriverMarkerToMap);
     }
     
     return () => {
@@ -127,6 +176,7 @@ export function useMapMarkers({
         driverMarker.current.remove();
         driverMarker.current = null;
       }
+      map.off('load', addDriverMarkerToMap);
     };
   }, [map, showDriverPosition, driverPosition, origin, driverMarker]);
 }

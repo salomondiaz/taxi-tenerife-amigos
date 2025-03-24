@@ -23,21 +23,37 @@ export function useMapEvents({
   const handleMapClick = useCallback(async (e: mapboxgl.MapMouseEvent) => {
     if (!map || !apiKey || selectionMode === 'none') return;
     
-    const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-    const address = await reverseGeocode(coords, apiKey);
-    const coordsWithAddress = { ...coords, address: address || undefined };
+    // Check if map is fully loaded and initialized
+    if (!map.loaded()) {
+      console.log("Map not fully loaded, skipping click handler");
+      return;
+    }
     
-    if (selectionMode === 'origin' && onOriginSelect) {
-      onOriginSelect(coordsWithAddress);
+    const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+    
+    try {
+      const address = await reverseGeocode(coords, apiKey);
+      const coordsWithAddress = { ...coords, address: address || undefined };
+      
+      if (selectionMode === 'origin' && onOriginSelect) {
+        onOriginSelect(coordsWithAddress);
+        toast({
+          title: "Origen seleccionado",
+          description: address || "Ubicación seleccionada en el mapa",
+        });
+      } else if (selectionMode === 'destination' && onDestinationSelect) {
+        onDestinationSelect(coordsWithAddress);
+        toast({
+          title: "Destino seleccionado",
+          description: address || "Ubicación seleccionada en el mapa",
+        });
+      }
+    } catch (error) {
+      console.error("Error processing map click:", error);
       toast({
-        title: "Origen seleccionado",
-        description: address || "Ubicación seleccionada en el mapa",
-      });
-    } else if (selectionMode === 'destination' && onDestinationSelect) {
-      onDestinationSelect(coordsWithAddress);
-      toast({
-        title: "Destino seleccionado",
-        description: address || "Ubicación seleccionada en el mapa",
+        title: "Error al seleccionar ubicación",
+        description: "No se pudo procesar la selección en el mapa",
+        variant: "destructive",
       });
     }
   }, [map, apiKey, selectionMode, onOriginSelect, onDestinationSelect]);
@@ -45,10 +61,20 @@ export function useMapEvents({
   useEffect(() => {
     if (!map) return;
     
-    map.on('click', handleMapClick);
+    // Only attach the click handler when the map is fully loaded
+    const handleLoad = () => {
+      map.on('click', handleMapClick);
+    };
+    
+    if (map.loaded()) {
+      map.on('click', handleMapClick);
+    } else {
+      map.once('load', handleLoad);
+    }
     
     return () => {
       map.off('click', handleMapClick);
+      map.off('load', handleLoad);
     };
   }, [map, handleMapClick]);
 }
