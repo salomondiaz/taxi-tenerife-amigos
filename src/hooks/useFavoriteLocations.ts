@@ -66,10 +66,11 @@ export function useFavoriteLocations() {
   };
 
   // Function to save a new favorite location
-  const saveFavoriteLocation = (location: Omit<FavoriteLocation, 'id'>) => {
+  const saveFavoriteLocation = (location: FavoriteLocation | Omit<FavoriteLocation, 'id'> & { id?: string }) => {
     try {
+      // If id is provided, use it, otherwise generate one
       const newLocation: FavoriteLocation = {
-        ...location,
+        ...(location as Omit<FavoriteLocation, 'id'>),
         id: location.id || Date.now().toString()
       };
       

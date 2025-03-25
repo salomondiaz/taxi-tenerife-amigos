@@ -72,7 +72,7 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
         coordinates: origin,
         type: "home",
         icon: "🏠",
-        id: "home"
+        id: "home" // explicitly include id here
       });
       
       setHomeLocation(origin);
