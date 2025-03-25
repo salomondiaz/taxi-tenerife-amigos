@@ -5,7 +5,7 @@ import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation, Home } from "lucide-react";
+import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation, Home as HomeIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
 
@@ -164,7 +164,7 @@ const Home = () => {
           <section className="mb-8">
             <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-6">
               <h2 className="text-xl font-semibold mb-3 text-blue-800 flex items-center gap-2">
-                <Home className="text-tenerife-blue" size={24} />
+                <HomeIcon className="text-tenerife-blue" size={24} />
                 Mi Casa
               </h2>
               
@@ -190,7 +190,7 @@ const Home = () => {
                       className="flex-1"
                       onClick={handleSetHomeLocation}
                     >
-                      <Home size={16} className="mr-2" />
+                      <HomeIcon size={16} className="mr-2" />
                       Cambiar ubicación
                     </Button>
                   </div>
@@ -205,7 +205,7 @@ const Home = () => {
                     className="w-full bg-tenerife-blue"
                     onClick={handleSetHomeLocation}
                   >
-                    <Home size={16} className="mr-2" />
+                    <HomeIcon size={16} className="mr-2" />
                     Configurar Mi Casa
                   </Button>
                 </div>
