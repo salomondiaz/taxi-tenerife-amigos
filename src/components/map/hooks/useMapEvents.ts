@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates, MapSelectionMode } from '../types';
-import { reverseGeocode } from '../services/MapboxService';
+import { reverseGeocode, geocodeAddress } from '../services/MapboxService';
 import { toast } from '@/hooks/use-toast';
 
 interface UseMapEventsProps {
@@ -11,6 +11,7 @@ interface UseMapEventsProps {
   selectionMode: MapSelectionMode;
   onOriginSelect?: (coordinates: MapCoordinates) => void;
   onDestinationSelect?: (coordinates: MapCoordinates) => void;
+  onSearchLocation?: (query: string, type: 'origin' | 'destination') => void;
 }
 
 export function useMapEvents({
@@ -18,8 +19,63 @@ export function useMapEvents({
   apiKey,
   selectionMode,
   onOriginSelect,
-  onDestinationSelect
+  onDestinationSelect,
+  onSearchLocation
 }: UseMapEventsProps) {
+  // Función para buscar ubicaciones
+  useEffect(() => {
+    if (!map || !onSearchLocation) return;
+    
+    // Esta función será expuesta a través del componente
+    onSearchLocation = async (query: string, type: 'origin' | 'destination') => {
+      try {
+        toast({
+          title: "Buscando ubicación",
+          description: "Espera mientras buscamos: " + query
+        });
+        
+        const geocodedLocation = await geocodeAddress(query, apiKey);
+        
+        if (geocodedLocation) {
+          // Volar a la ubicación encontrada
+          map.flyTo({
+            center: [geocodedLocation.lng, geocodedLocation.lat],
+            zoom: 15,
+            essential: true
+          });
+          
+          // Si estamos buscando un origen o destino, seleccionarlo automáticamente
+          if (type === 'origin' && onOriginSelect) {
+            onOriginSelect(geocodedLocation);
+            toast({
+              title: "Origen establecido",
+              description: geocodedLocation.address || "Ubicación seleccionada"
+            });
+          } else if (type === 'destination' && onDestinationSelect) {
+            onDestinationSelect(geocodedLocation);
+            toast({
+              title: "Destino establecido",
+              description: geocodedLocation.address || "Ubicación seleccionada"
+            });
+          }
+        } else {
+          toast({
+            title: "Ubicación no encontrada",
+            description: "No pudimos encontrar: " + query,
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Error al buscar ubicación:", error);
+        toast({
+          title: "Error de búsqueda",
+          description: "Ocurrió un error al buscar la ubicación",
+          variant: "destructive"
+        });
+      }
+    };
+  }, [map, apiKey, onOriginSelect, onDestinationSelect, onSearchLocation]);
+  
   // Handle map click events for selection
   useEffect(() => {
     if (!map) return;

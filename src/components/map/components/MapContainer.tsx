@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
@@ -36,21 +37,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
         return 'default';
     }
   };
-
-  // Este useEffect se mantiene simplificado para tener menos control directo sobre el mapa
-  // y dejar que useMapInitialization maneje la mayor parte de la configuración
-  useEffect(() => {
-    if (!mapContainer.current) return;
-    
-    const container = mapContainer.current;
-    
-    // Usamos un estilo mínimo para no interferir con los comportamientos configurados en useMapInitialization
-    container.style.cursor = getCursorStyle();
-    
-    return () => {
-      container.style.cursor = 'default';
-    };
-  }, [mapContainer, selectionMode, allowMapSelection]);
 
   return (
     <div 

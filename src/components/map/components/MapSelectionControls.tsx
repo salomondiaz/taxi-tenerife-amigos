@@ -9,13 +9,15 @@ interface MapSelectionControlsProps {
   selectionMode: MapSelectionMode;
   setSelectionMode: (mode: MapSelectionMode) => void;
   onUseCurrentLocation: () => void;
+  onSearchLocation?: (query: string, type: 'origin' | 'destination') => void;
 }
 
 const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
   allowMapSelection,
   selectionMode,
   setSelectionMode,
-  onUseCurrentLocation
+  onUseCurrentLocation,
+  onSearchLocation
 }) => {
   if (!allowMapSelection) return null;
   
@@ -25,6 +27,7 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
         selectionMode={selectionMode}
         setSelectionMode={setSelectionMode}
         onUseCurrentLocation={onUseCurrentLocation}
+        onSearchLocation={onSearchLocation}
       />
       <SelectionHint selectionMode={selectionMode} />
     </>

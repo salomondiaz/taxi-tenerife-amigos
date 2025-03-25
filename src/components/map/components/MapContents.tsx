@@ -7,6 +7,7 @@ import MapSelectionControls from './MapSelectionControls';
 import HomeLocationControls from './HomeLocationControls';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { toast } from '@/hooks/use-toast';
+import { geocodeAddress } from '../services/MapboxService';
 
 interface MapContentsProps {
   map: mapboxgl.Map | null;
@@ -75,6 +76,57 @@ const MapContents: React.FC<MapContentsProps> = ({
     }
   };
 
+  // Función para buscar ubicaciones
+  const handleSearchLocation = async (query: string, type: 'origin' | 'destination') => {
+    if (!map) return;
+    
+    try {
+      toast({
+        title: "Buscando ubicación",
+        description: "Espera mientras buscamos: " + query
+      });
+      
+      const geocodedLocation = await geocodeAddress(query, apiKey);
+      
+      if (geocodedLocation) {
+        // Volar a la ubicación encontrada
+        map.flyTo({
+          center: [geocodedLocation.lng, geocodedLocation.lat],
+          zoom: 15,
+          essential: true
+        });
+        
+        // Si estamos buscando un origen o destino, seleccionarlo automáticamente
+        if (type === 'origin' && onOriginChange) {
+          onOriginChange(geocodedLocation);
+          toast({
+            title: "Origen establecido",
+            description: geocodedLocation.address || "Ubicación seleccionada"
+          });
+        } else if (type === 'destination' && onDestinationChange) {
+          onDestinationChange(geocodedLocation);
+          toast({
+            title: "Destino establecido",
+            description: geocodedLocation.address || "Ubicación seleccionada"
+          });
+        }
+      } else {
+        toast({
+          title: "Ubicación no encontrada",
+          description: "No pudimos encontrar: " + query,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error al buscar ubicación:", error);
+      toast({
+        title: "Error de búsqueda",
+        description: "Ocurrió un error al buscar la ubicación",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <>
       <MapMarkers 
@@ -94,6 +146,7 @@ const MapContents: React.FC<MapContentsProps> = ({
         selectionMode={selectionMode}
         setSelectionMode={handleSelectionModeChange}
         onUseCurrentLocation={getLocation}
+        onSearchLocation={handleSearchLocation}
       />
       
       <HomeLocationControls
