@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 
@@ -37,6 +37,27 @@ const MapContainer: React.FC<MapContainerProps> = ({
         return 'default';
     }
   };
+
+  // Prevenir eventos predeterminados del contenedor cuando estamos en modo de selección
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    
+    const container = mapContainer.current;
+    
+    const preventDefaultDrag = (e: Event) => {
+      if (allowMapSelection && selectionMode !== 'none') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    
+    // Prevenir eventos de arrastre estándar cuando estamos en modo de selección
+    container.addEventListener('dragstart', preventDefaultDrag, { passive: false });
+    
+    return () => {
+      container.removeEventListener('dragstart', preventDefaultDrag);
+    };
+  }, [mapContainer, allowMapSelection, selectionMode]);
 
   return (
     <div 

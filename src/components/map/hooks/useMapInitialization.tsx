@@ -75,8 +75,11 @@ export function useMapInitialization({
         interactive: interactive,
         dragRotate: false, // Deshabilitar rotación con arrastre
         pitchWithRotate: false, // Deshabilitar inclinación con rotación
-        dragPan: true, // Mantener habilitado el pan con arrastre
+        dragPan: !allowMapSelection, // Deshabilitar pan con arrastre si estamos en modo selección
       });
+      
+      // Deshabilitar completamente la rotación del mapa
+      newMap.touchZoomRotate.disableRotation();
       
       if (interactive) {
         // Solo agregar los controles de navegación básicos
@@ -105,6 +108,19 @@ export function useMapInitialization({
           }),
           'top-right'
         );
+      }
+      
+      // Configuración especial para selección en el mapa
+      if (allowMapSelection) {
+        // Eventos específicos para prevenir manipulación del mapa en modo selección
+        newMap.on('dragstart', (e) => {
+          if (selectionMode !== 'none') {
+            e.preventDefault();
+          }
+        });
+        
+        // Prevenir zoom con scroll en modo selección
+        newMap.scrollZoom.disable();
       }
       
       newMap.once('load', () => {
@@ -146,6 +162,14 @@ export function useMapInitialization({
             console.error("Error dibujando ruta desde geometría:", error);
           }
         }
+        
+        // Notificar al usuario sobre el modo de selección
+        if (allowMapSelection && selectionMode === 'origin') {
+          toast({
+            title: "Selección de punto de origen",
+            description: "Haz clic en el mapa para seleccionar el origen de tu viaje",
+          });
+        }
       });
       
       setMap(newMap);
@@ -158,7 +182,7 @@ export function useMapInitialization({
       setShowKeyInput(true);
       return undefined;
     }
-  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination, mapContainer]);
+  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination, mapContainer, allowMapSelection, selectionMode]);
 
   return {
     map,

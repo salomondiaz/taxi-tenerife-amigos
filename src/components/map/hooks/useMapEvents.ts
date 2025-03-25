@@ -24,9 +24,9 @@ export function useMapEvents({
   useEffect(() => {
     if (!map) return;
     
-    // Función segura para actualizar el cursor
-    const updateCursor = () => {
-      try {
+    try {
+      // Función segura para actualizar el cursor
+      const updateCursor = () => {
         if (map && map.getCanvas()) {
           if (selectionMode !== 'none') {
             map.getCanvas().style.cursor = 'crosshair';
@@ -34,24 +34,31 @@ export function useMapEvents({
             map.getCanvas().style.cursor = '';
           }
         }
-      } catch (error) {
-        console.error("Error al actualizar el cursor:", error);
+      };
+      
+      // Actualizar el cursor inicialmente
+      if (map.loaded()) {
+        updateCursor();
+      } else {
+        map.once('load', updateCursor);
       }
-    };
-    
-    // Actualizar el cursor inicialmente
-    updateCursor();
-    
-    // Limpiar al desmontar
-    return () => {
-      try {
-        if (map && map.getCanvas()) {
-          map.getCanvas().style.cursor = '';
+      
+      // Limpiar al desmontar
+      return () => {
+        try {
+          if (map && map.getCanvas()) {
+            map.getCanvas().style.cursor = '';
+          }
+          if (!map.loaded()) {
+            map.off('load', updateCursor);
+          }
+        } catch (error) {
+          console.error("Error al restablecer el cursor:", error);
         }
-      } catch (error) {
-        console.error("Error al restablecer el cursor:", error);
-      }
-    };
+      };
+    } catch (error) {
+      console.error("Error en el efecto del cursor:", error);
+    }
   }, [map, selectionMode]);
   
   // Handle map click events for selection
@@ -59,65 +66,77 @@ export function useMapEvents({
     if (!map) return;
     
     const handleMapClick = async (e: mapboxgl.MapMouseEvent) => {
-      // Prevenir el comportamiento predeterminado si estamos en modo de selección
-      if (selectionMode !== 'none') {
+      try {
+        // Prevenir el comportamiento predeterminado si estamos en modo de selección
+        if (selectionMode === 'none') {
+          return; // No procesar si no estamos en modo de selección
+        }
+        
+        // Detener eventos subyacentes
         e.preventDefault();
         e.originalEvent.stopPropagation();
-      } else {
-        return; // No procesar si no estamos en modo de selección
-      }
-      
-      console.log("Map clicked in mode:", selectionMode);
-      
-      const lngLat = e.lngLat;
-      const coordinates = {
-        lat: lngLat.lat,
-        lng: lngLat.lng
-      };
-      
-      try {
-        // Obtain address via reverse geocoding
-        const address = await reverseGeocode(coordinates, apiKey);
-        const coordsWithAddress = { ...coordinates, address };
+        e.originalEvent.preventDefault();
         
-        if (selectionMode === 'origin' && onOriginSelect) {
-          console.log("Setting origin to:", coordsWithAddress);
-          onOriginSelect(coordsWithAddress);
-          toast({
-            title: "Origen seleccionado",
-            description: address || "Ubicación seleccionada en el mapa",
-          });
-        } else if (selectionMode === 'destination' && onDestinationSelect) {
-          console.log("Setting destination to:", coordsWithAddress);
-          onDestinationSelect(coordsWithAddress);
-          toast({
-            title: "Destino seleccionado",
-            description: address || "Ubicación seleccionada en el mapa",
-          });
+        console.log("Map clicked in mode:", selectionMode);
+        
+        const lngLat = e.lngLat;
+        const coordinates = {
+          lat: lngLat.lat,
+          lng: lngLat.lng
+        };
+        
+        // Obtain address via reverse geocoding
+        try {
+          const address = await reverseGeocode(coordinates, apiKey);
+          const coordsWithAddress = { ...coordinates, address };
+          
+          if (selectionMode === 'origin' && onOriginSelect) {
+            console.log("Setting origin to:", coordsWithAddress);
+            onOriginSelect(coordsWithAddress);
+            toast({
+              title: "Origen seleccionado",
+              description: address || "Ubicación seleccionada en el mapa",
+            });
+          } else if (selectionMode === 'destination' && onDestinationSelect) {
+            console.log("Setting destination to:", coordsWithAddress);
+            onDestinationSelect(coordsWithAddress);
+            toast({
+              title: "Destino seleccionado",
+              description: address || "Ubicación seleccionada en el mapa",
+            });
+          }
+        } catch (error) {
+          console.error("Error during reverse geocoding:", error);
+          
+          // Even if geocoding fails, still set the coordinates
+          if (selectionMode === 'origin' && onOriginSelect) {
+            onOriginSelect(coordinates);
+            toast({
+              title: "Origen seleccionado",
+              description: "No se pudo obtener la dirección",
+            });
+          } else if (selectionMode === 'destination' && onDestinationSelect) {
+            onDestinationSelect(coordinates);
+            toast({
+              title: "Destino seleccionado",
+              description: "No se pudo obtener la dirección",
+            });
+          }
         }
       } catch (error) {
-        console.error("Error during reverse geocoding:", error);
-        
-        // Even if geocoding fails, still set the coordinates
-        if (selectionMode === 'origin' && onOriginSelect) {
-          onOriginSelect(coordinates);
-          toast({
-            title: "Origen seleccionado",
-            description: "No se pudo obtener la dirección",
-          });
-        } else if (selectionMode === 'destination' && onDestinationSelect) {
-          onDestinationSelect(coordinates);
-          toast({
-            title: "Destino seleccionado",
-            description: "No se pudo obtener la dirección",
-          });
-        }
+        console.error("Error procesando el clic en el mapa:", error);
       }
     };
     
     // Solo agregar el controlador de clics si estamos en modo de selección
-    if (selectionMode !== 'none') {
-      map.on('click', handleMapClick);
+    if (selectionMode !== 'none' && map) {
+      if (map.loaded()) {
+        map.on('click', handleMapClick);
+      } else {
+        map.once('load', () => {
+          map.on('click', handleMapClick);
+        });
+      }
     }
     
     return () => {

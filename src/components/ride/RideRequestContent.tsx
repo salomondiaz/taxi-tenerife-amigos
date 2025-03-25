@@ -8,6 +8,7 @@ import LocationSelector from "@/components/ride/LocationSelector";
 import MapViewer from "@/components/ride/MapViewer";
 import PriceEstimator from "@/components/ride/PriceEstimator";
 import RideDetails from "@/components/ride/RideDetails";
+import TrafficInfo from "@/components/ride/TrafficInfo";
 import InfoSection from "@/components/ride/InfoSection";
 import RidePaymentInfo from "@/components/ride/PaymentInfo";
 import RequestHeader from "@/components/ride/header/RequestHeader";
@@ -28,6 +29,10 @@ const RideRequestContent: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
+  
+  // Nuevos estados para información de tráfico
+  const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'heavy' | null>(null);
+  const [arrivalTime, setArrivalTime] = useState<string | null>(null);
   
   // Hooks personalizados
   const { 
@@ -69,6 +74,27 @@ const RideRequestContent: React.FC = () => {
     console.log("Nuevo destino desde el mapa:", coords);
   };
 
+  // Calcular la hora de llegada estimada
+  const calculateArrivalTime = (estimatedTimeMinutes: number) => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + estimatedTimeMinutes);
+    
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+  };
+
+  // Simular nivel de tráfico basado en la distancia y el tiempo
+  const calculateTrafficLevel = (distance: number, time: number): 'low' | 'moderate' | 'heavy' => {
+    // Velocidad promedio en km/h
+    const avgSpeed = distance / (time / 60);
+    
+    if (avgSpeed > 40) return 'low';
+    if (avgSpeed > 25) return 'moderate';
+    return 'heavy';
+  };
+
   // Función para calcular estimaciones
   const calculateEstimates = async () => {
     if (!originCoords || !destinationCoords) {
@@ -95,6 +121,22 @@ const RideRequestContent: React.FC = () => {
         
         if (routeData && routeData.routeGeometry) {
           setRouteGeometry(routeData.routeGeometry);
+          
+          // Calcular información de tráfico
+          if (routeData.distance && routeData.time) {
+            const traffic = calculateTrafficLevel(routeData.distance, routeData.time);
+            setTrafficLevel(traffic);
+            
+            // Ajustar tiempo estimado según tráfico
+            let adjustedTime = routeData.time;
+            if (traffic === 'moderate') {
+              adjustedTime = Math.ceil(adjustedTime * 1.2); // 20% más tiempo
+            } else if (traffic === 'heavy') {
+              adjustedTime = Math.ceil(adjustedTime * 1.5); // 50% más tiempo
+            }
+            
+            setArrivalTime(calculateArrivalTime(adjustedTime));
+          }
         }
       }
     } catch (error) {
@@ -155,6 +197,15 @@ const RideRequestContent: React.FC = () => {
         isLoading={isLoading}
         calculateEstimates={calculateEstimates}
       />
+
+      {/* Información de tráfico */}
+      {estimatedTime !== null && (
+        <TrafficInfo 
+          estimatedTime={estimatedTime}
+          trafficLevel={trafficLevel}
+          arrivalTime={arrivalTime}
+        />
+      )}
 
       {/* Detalles del viaje estimado */}
       {estimatedPrice !== null && (
