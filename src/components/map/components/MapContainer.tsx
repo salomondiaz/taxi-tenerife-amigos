@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
@@ -38,56 +37,20 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   };
 
-  // Prevent default events on container when in selection mode
+  // Este useEffect se mantiene simplificado para tener menos control directo sobre el mapa
+  // y dejar que useMapInitialization maneje la mayor parte de la configuración
   useEffect(() => {
     if (!mapContainer.current) return;
     
     const container = mapContainer.current;
     
-    const preventDefaultEvents = (e: Event) => {
-      if (allowMapSelection && selectionMode !== 'none') {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Show a toast message to guide the user
-        if (e.type === 'wheel') {
-          toast({
-            title: "Modo de selección activo",
-            description: "No puedes hacer zoom mientras seleccionas un punto. Haz clic para seleccionar.",
-            variant: "default",
-          });
-        }
-      }
-    };
-    
-    // Prevent standard drag events when in selection mode
-    container.addEventListener('dragstart', preventDefaultEvents, { passive: false });
-    container.addEventListener('drag', preventDefaultEvents, { passive: false });
-    container.addEventListener('dragend', preventDefaultEvents, { passive: false });
-    
-    container.addEventListener('click', (e) => {
-      if (allowMapSelection && selectionMode !== 'none') {
-        // Don't stop propagation here as we want the click to be handled
-        // by the map click handler in useMapEvents
-      }
-    }, { passive: false });
-    
-    // Prevent zoom and other gestures
-    container.addEventListener('wheel', preventDefaultEvents, { passive: false });
-    container.addEventListener('touchstart', preventDefaultEvents, { passive: false });
-    container.addEventListener('touchmove', preventDefaultEvents, { passive: false });
-    container.addEventListener('touchend', preventDefaultEvents, { passive: false });
+    // Usamos un estilo mínimo para no interferir con los comportamientos configurados en useMapInitialization
+    container.style.cursor = getCursorStyle();
     
     return () => {
-      container.removeEventListener('dragstart', preventDefaultEvents);
-      container.removeEventListener('drag', preventDefaultEvents);
-      container.removeEventListener('dragend', preventDefaultEvents);
-      container.removeEventListener('wheel', preventDefaultEvents);
-      container.removeEventListener('touchstart', preventDefaultEvents);
-      container.removeEventListener('touchmove', preventDefaultEvents);
-      container.removeEventListener('touchend', preventDefaultEvents);
+      container.style.cursor = 'default';
     };
-  }, [mapContainer, allowMapSelection, selectionMode]);
+  }, [mapContainer, selectionMode, allowMapSelection]);
 
   return (
     <div 

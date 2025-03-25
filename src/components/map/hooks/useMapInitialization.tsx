@@ -73,17 +73,16 @@ export function useMapInitialization({
         style: 'mapbox://styles/mapbox/streets-v11',
         center: [28.2916, -16.6291], // Default to TENERIFE_CENTER
         zoom: 11,
-        interactive: interactive,
+        interactive: true, // Siempre mantener interactive en true
         dragRotate: false, // Disable rotation with drag
         pitchWithRotate: false, // Disable pitch with rotation
-        dragPan: !allowMapSelection, // Disable pan with drag if we're in selection mode
       });
       
       // Disable map rotation completely
       newMap.touchZoomRotate.disableRotation();
       
-      if (interactive) {
-        // Only add basic navigation controls
+      // Only add basic navigation controls if not in selection mode
+      if (!allowMapSelection) {
         const navControl = new mapboxgl.NavigationControl({
           showCompass: false, // Hide compass to prevent rotations
           showZoom: true,     // Keep zoom controls
@@ -91,41 +90,48 @@ export function useMapInitialization({
         });
         
         newMap.addControl(navControl, 'top-right');
-        
-        // Disable double click for zoom
-        newMap.doubleClickZoom.disable();
-        
-        // Reduce scroll sensitivity for zoom
-        newMap.scrollZoom.setWheelZoomRate(0.5);
-        
-        // Add geolocation button
-        newMap.addControl(
-          new mapboxgl.GeolocateControl({
-            positionOptions: {
-              enableHighAccuracy: true
-            },
-            trackUserLocation: false, // Change to false to avoid continuous tracking
-            showUserHeading: true
-          }),
-          'top-right'
-        );
       }
+      
+      // Add geolocation button
+      newMap.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: false,
+          showUserHeading: true
+        }),
+        'top-right'
+      );
       
       // Special configuration for map selection
       if (allowMapSelection) {
-        // Specific events to prevent map manipulation in selection mode
-        newMap.on('dragstart', (e) => {
+        // Reduce scroll sensitivity for zoom when not in selection mode
+        newMap.scrollZoom.setWheelZoomRate(0.5);
+        
+        // Disable map controls when in selection mode
+        newMap.on('modechange', () => {
           if (selectionMode !== 'none') {
-            // We can't use preventDefault here since it doesn't exist on this event type
-            // Instead we'll use stopPropagation to prevent the drag behavior
-            if (e.originalEvent) {
-              e.originalEvent.stopPropagation();
-            }
+            // Disable zoom when in selection mode
+            newMap.scrollZoom.disable();
+            // Disable double click zoom
+            newMap.doubleClickZoom.disable();
+          } else {
+            // Re-enable zoom when not in selection mode
+            newMap.scrollZoom.enable();
+            // Re-enable double click zoom
+            newMap.doubleClickZoom.enable();
           }
         });
         
-        // Prevent zoom with scroll in selection mode
-        newMap.scrollZoom.disable();
+        // Set initial mode
+        if (selectionMode !== 'none') {
+          newMap.scrollZoom.disable();
+          newMap.doubleClickZoom.disable();
+        } else {
+          newMap.scrollZoom.enable();
+          newMap.doubleClickZoom.enable();
+        }
       }
       
       newMap.once('load', () => {
@@ -188,6 +194,32 @@ export function useMapInitialization({
       return undefined;
     }
   }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination, mapContainer, allowMapSelection, selectionMode]);
+
+  // Actualizar el comportamiento del mapa cuando cambia el modo de selección
+  useEffect(() => {
+    if (!map) return;
+    
+    // Actualizar el estado del mapa según el modo de selección
+    if (selectionMode !== 'none') {
+      // En modo selección: deshabilitar zoom y arrastre
+      map.scrollZoom.disable();
+      map.doubleClickZoom.disable();
+      
+      // Cambiar el cursor a crosshair
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = 'crosshair';
+      }
+    } else {
+      // Fuera del modo selección: habilitar zoom y arrastre
+      map.scrollZoom.enable();
+      map.doubleClickZoom.enable();
+      
+      // Restaurar cursor predeterminado
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = '';
+      }
+    }
+  }, [map, selectionMode]);
 
   return {
     map,

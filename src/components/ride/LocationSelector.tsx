@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MapPin, Navigation, Home } from "lucide-react";
+import { MapPin, Navigation, Home, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -110,7 +110,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
           className="w-full flex items-center justify-center"
           onClick={handleUseCurrentLocation}
         >
-          <span className="flex h-2 w-2 mr-2 rounded-full bg-blue-500 animate-pulse" />
+          <Target size={18} className="mr-2" />
           Usar mi ubicación
         </Button>
       </div>

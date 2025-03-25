@@ -20,64 +20,18 @@ export function useMapEvents({
   onOriginSelect,
   onDestinationSelect
 }: UseMapEventsProps) {
-  // Manejar el cursor del mapa según el modo de selección
-  useEffect(() => {
-    if (!map) return;
-    
-    try {
-      // Función segura para actualizar el cursor
-      const updateCursor = () => {
-        if (map && map.getCanvas()) {
-          if (selectionMode !== 'none') {
-            map.getCanvas().style.cursor = 'crosshair';
-          } else {
-            map.getCanvas().style.cursor = '';
-          }
-        }
-      };
-      
-      // Actualizar el cursor inicialmente
-      if (map.loaded()) {
-        updateCursor();
-      } else {
-        map.once('load', updateCursor);
-      }
-      
-      // Limpiar al desmontar
-      return () => {
-        try {
-          if (map && map.getCanvas()) {
-            map.getCanvas().style.cursor = '';
-          }
-          if (!map.loaded()) {
-            map.off('load', updateCursor);
-          }
-        } catch (error) {
-          console.error("Error al restablecer el cursor:", error);
-        }
-      };
-    } catch (error) {
-      console.error("Error en el efecto del cursor:", error);
-    }
-  }, [map, selectionMode]);
-  
   // Handle map click events for selection
   useEffect(() => {
     if (!map) return;
     
     const handleMapClick = async (e: mapboxgl.MapMouseEvent) => {
       try {
-        // Prevenir el comportamiento predeterminado si estamos en modo de selección
+        // Solo procesar si estamos en modo de selección
         if (selectionMode === 'none') {
-          return; // No procesar si no estamos en modo de selección
+          return;
         }
         
-        // Detener eventos subyacentes
-        e.preventDefault();
-        e.originalEvent.stopPropagation();
-        e.originalEvent.preventDefault();
-        
-        console.log("Map clicked in mode:", selectionMode);
+        console.log("Mapa clickeado en modo:", selectionMode);
         
         const lngLat = e.lngLat;
         const coordinates = {
@@ -91,14 +45,14 @@ export function useMapEvents({
           const coordsWithAddress = { ...coordinates, address };
           
           if (selectionMode === 'origin' && onOriginSelect) {
-            console.log("Setting origin to:", coordsWithAddress);
+            console.log("Estableciendo origen en:", coordsWithAddress);
             onOriginSelect(coordsWithAddress);
             toast({
               title: "Origen seleccionado",
               description: address || "Ubicación seleccionada en el mapa",
             });
           } else if (selectionMode === 'destination' && onDestinationSelect) {
-            console.log("Setting destination to:", coordsWithAddress);
+            console.log("Estableciendo destino en:", coordsWithAddress);
             onDestinationSelect(coordsWithAddress);
             toast({
               title: "Destino seleccionado",
@@ -106,9 +60,9 @@ export function useMapEvents({
             });
           }
         } catch (error) {
-          console.error("Error during reverse geocoding:", error);
+          console.error("Error durante la geocodificación inversa:", error);
           
-          // Even if geocoding fails, still set the coordinates
+          // Incluso si falla la geocodificación, establecer las coordenadas
           if (selectionMode === 'origin' && onOriginSelect) {
             onOriginSelect(coordinates);
             toast({
@@ -129,7 +83,7 @@ export function useMapEvents({
     };
     
     // Solo agregar el controlador de clics si estamos en modo de selección
-    if (selectionMode !== 'none' && map) {
+    if (selectionMode !== 'none') {
       if (map.loaded()) {
         map.on('click', handleMapClick);
       } else {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation, Target } from 'lucide-react';
 import { MapSelectionMode } from '../types';
 
 interface MapSelectionControlProps {
@@ -43,7 +43,7 @@ const MapSelectionControl: React.FC<MapSelectionControlProps> = ({
         onClick={onUseCurrentLocation}
         className="flex items-center"
       >
-        <span className="flex h-2 w-2 mr-2 rounded-full bg-blue-500 animate-pulse" />
+        <Target size={16} className="mr-2" />
         Usar ubicación actual
       </Button>
     </div>
