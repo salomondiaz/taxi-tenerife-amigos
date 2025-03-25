@@ -27,11 +27,45 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ map, coordinates,
       
       // Use red color for destination marker (increased size)
       markerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ea384c" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#ea384c" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
           <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#ea384c"/>
         </svg>
       `;
+      
+      // Add pulse effect
+      const pulseCircle = document.createElement('div');
+      pulseCircle.className = 'destination-pulse-circle';
+      markerEl.appendChild(pulseCircle);
+      
+      // Add CSS for pulse effect
+      const style = document.createElement('style');
+      style.textContent = `
+        .destination-pulse-circle {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: rgba(234, 56, 76, 0.3);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: -1;
+          animation: destination-pulse 2s infinite;
+        }
+        
+        @keyframes destination-pulse {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
       
       console.log("Creating destination marker at:", coordinates);
       
@@ -54,6 +88,9 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ map, coordinates,
               new mapboxgl.Popup({ offset: 25 }).setText("Punto de destino")
             );
           }
+          
+          // Mostrar popup automáticamente
+          markerRef.current.togglePopup();
           
           // Add drag end event listener
           if (onDragEnd && markerRef.current) {

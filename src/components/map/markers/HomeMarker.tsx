@@ -26,11 +26,45 @@ const HomeMarker: React.FC<HomeMarkerProps> = ({ map, coordinates }) => {
       
       // Use house icon for home marker - made larger and more visible
       markerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#4CAF50" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#4CAF50" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
       `;
+      
+      // Add pulse effect for better visibility
+      const pulseCircle = document.createElement('div');
+      pulseCircle.className = 'pulse-circle';
+      markerEl.appendChild(pulseCircle);
+      
+      // Add CSS for pulse effect
+      const style = document.createElement('style');
+      style.textContent = `
+        .pulse-circle {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: rgba(76, 175, 80, 0.3);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: -1;
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
       
       console.log("Creating home marker at:", coordinates);
       

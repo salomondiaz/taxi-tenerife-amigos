@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { MapCoordinates } from "@/components/map/types";
+import { toast } from "./use-toast";
 
 export const useTrafficCalculator = () => {
   const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'heavy' | null>(null);
@@ -40,9 +41,34 @@ export const useTrafficCalculator = () => {
       adjustedTime = Math.ceil(adjustedTime * 1.5); // 50% more time
     }
     
-    setArrivalTime(calculateArrivalTime(adjustedTime));
+    const arrival = calculateArrivalTime(adjustedTime);
+    setArrivalTime(arrival);
     
-    return { trafficLevel: traffic, adjustedTime };
+    // Mostrar notificación sobre el estado del tráfico
+    let trafficMessage = '';
+    let variant: 'default' | 'destructive' | undefined = 'default';
+    
+    switch (traffic) {
+      case 'low':
+        trafficMessage = 'Tráfico fluido. Buen momento para viajar.';
+        break;
+      case 'moderate':
+        trafficMessage = 'Tráfico moderado. Posible demora de 20%.';
+        variant = undefined;
+        break;
+      case 'heavy':
+        trafficMessage = 'Tráfico intenso. Tiempo estimado aumentado en 50%.';
+        variant = 'destructive';
+        break;
+    }
+    
+    toast({
+      title: `Hora estimada de llegada: ${arrival}`,
+      description: trafficMessage,
+      variant: variant
+    });
+    
+    return { trafficLevel: traffic, adjustedTime, arrivalTime: arrival };
   };
 
   return {

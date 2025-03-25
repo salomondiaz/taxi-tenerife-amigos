@@ -18,10 +18,13 @@ import { useGeocodingService } from "@/hooks/useGeocodingService";
 import { useEstimateCalculator } from "@/hooks/useEstimateCalculator";
 import { useRideRequest } from "@/hooks/useRideRequest";
 import { useTrafficCalculator } from "@/hooks/useTrafficCalculator";
+import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
 
 const RideRequestContent: React.FC = () => {
   const location = useLocation();
   const initialDestination = location.state?.destination || "";
+  const useHomeAsOrigin = location.state?.useHomeAsOrigin || false;
+  const setHomeLocationMode = location.state?.setHomeLocation || false;
   
   // Selection mode state
   const [useManualSelection, setUseManualSelection] = useState(true); // Enabled by default
@@ -56,6 +59,23 @@ const RideRequestContent: React.FC = () => {
     arrivalTime,
     updateTrafficInfo
   } = useTrafficCalculator();
+  
+  const { getLocationByType, saveFavoriteLocation } = useFavoriteLocations();
+
+  // Cargar ubicación de casa si viene con ese parámetro
+  useEffect(() => {
+    if (useHomeAsOrigin) {
+      const homeLocation = getLocationByType('home');
+      if (homeLocation) {
+        setOriginCoords(homeLocation.coordinates);
+        setOrigin(homeLocation.coordinates.address || "Mi Casa");
+        toast({
+          title: "Casa seleccionada como origen",
+          description: "Tu ubicación de casa ha sido establecida como punto de origen."
+        });
+      }
+    }
+  }, [useHomeAsOrigin, getLocationByType, setOrigin]);
 
   // Handle origin change from map
   const handleOriginChange = (coords: MapCoordinates) => {
@@ -64,6 +84,25 @@ const RideRequestContent: React.FC = () => {
       setOrigin(coords.address);
     }
     console.log("New origin from map:", coords);
+    
+    // If we're in set home location mode, save this as home
+    if (setHomeLocationMode) {
+      const homeLocation = {
+        id: "home",
+        name: "Mi Casa",
+        coordinates: coords,
+        type: 'home' as const,
+        icon: '🏠'
+      };
+      
+      const success = saveFavoriteLocation(homeLocation);
+      if (success) {
+        toast({
+          title: "Casa guardada",
+          description: "Ubicación guardada como tu casa exitosamente."
+        });
+      }
+    }
   };
 
   // Handle destination change from map
@@ -114,6 +153,12 @@ const RideRequestContent: React.FC = () => {
           // Calculate traffic information
           if (routeData.distance && routeData.time) {
             updateTrafficInfo(routeData.distance, routeData.time);
+            
+            // Mostrar mensaje de éxito con la información de la ruta
+            toast({
+              title: "Ruta calculada",
+              description: `Distancia: ${routeData.distance.toFixed(1)} km - Tiempo estimado: ${routeData.time} min`
+            });
           }
         }
       }

@@ -56,6 +56,7 @@ export const drawRoute = (
       });
     }
     
+    // Agregar línea principal
     map.addLayer({
       id: 'route',
       type: 'line',
@@ -66,8 +67,48 @@ export const drawRoute = (
       },
       paint: {
         'line-color': '#1E88E5',
-        'line-width': 4,
-        'line-opacity': 0.7
+        'line-width': 6,
+        'line-opacity': 0.8
+      }
+    });
+    
+    // Agregar efecto de resplandor a la ruta
+    map.addLayer({
+      id: 'route-glow',
+      type: 'line',
+      source: 'route',
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#4FC3F7',
+        'line-width': 12,
+        'line-opacity': 0.3,
+        'line-blur': 3
+      }
+    }, 'route');
+    
+    // Agregar flechas direccionales en la ruta
+    map.addLayer({
+      id: 'route-arrows',
+      type: 'symbol',
+      source: 'route',
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 100,
+        'icon-image': 'arrow-right',
+        'icon-size': 0.75,
+        'text-field': '→',
+        'text-size': 20,
+        'text-offset': [0, 0],
+        'text-rotation-alignment': 'map',
+        'icon-rotation-alignment': 'map'
+      },
+      paint: {
+        'text-color': '#1E88E5',
+        'text-halo-color': '#fff',
+        'text-halo-width': 2
       }
     });
     
@@ -92,10 +133,19 @@ export const fitMapToBounds = (
       .extend([origin.lng, origin.lat])
       .extend([destination.lng, destination.lat]);
       
+    // Add padding to ensure markers are visible
+    const padding = {
+      top: 100,
+      bottom: 100,
+      left: 100,
+      right: 100
+    };
+    
     // Only if the bounds are valid and within Tenerife's general area
     map.fitBounds(bounds, {
-      padding: 60,
-      maxZoom: 14
+      padding: padding,
+      maxZoom: 14,
+      duration: 1000 // Animación más suave
     });
     
     // Save the last view position to localStorage
@@ -145,8 +195,9 @@ export const zoomToHomeLocation = (
     
     map.flyTo({
       center: [homeLocation.lng, homeLocation.lat],
-      zoom: 15, // Closer zoom for home location
-      essential: true
+      zoom: 16, // Closer zoom for home location
+      essential: true,
+      duration: 1500 // Transición más suave
     });
     
     // Save the home view position
@@ -196,7 +247,8 @@ export const loadLastMapPosition = (map: mapboxgl.Map): void => {
         map.flyTo({
           center: [center.lng, center.lat],
           zoom: mapPosition.zoom,
-          essential: true
+          essential: true,
+          duration: 1000 // Transición más suave
         });
         
         console.log("Loaded saved map position:", mapPosition);

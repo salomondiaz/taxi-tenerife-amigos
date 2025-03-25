@@ -22,7 +22,7 @@ export function useMapEvents({
   onDestinationSelect,
   onSearchLocation
 }: UseMapEventsProps) {
-  // Función para buscar ubicaciones
+  // Búsqueda de ubicaciones
   useEffect(() => {
     if (!map || !onSearchLocation) return;
     
@@ -76,11 +76,13 @@ export function useMapEvents({
     };
   }, [map, apiKey, onOriginSelect, onDestinationSelect, onSearchLocation]);
   
-  // Handle map double-click events for selection
+  // Handler para doble clic en el mapa
   useEffect(() => {
     if (!map) return;
     
     const handleMapDblClick = async (e: mapboxgl.MapMouseEvent) => {
+      e.preventDefault(); // Prevenir comportamiento por defecto
+      
       try {
         // Solo procesar si estamos en modo de selección
         if (selectionMode === 'none') {
@@ -97,6 +99,11 @@ export function useMapEvents({
         
         // Obtain address via reverse geocoding
         try {
+          toast({
+            title: "Obteniendo dirección",
+            description: "Espera mientras obtenemos la dirección de la ubicación seleccionada..."
+          });
+          
           const address = await reverseGeocode(coordinates, apiKey);
           const coordsWithAddress = { ...coordinates, address };
           
@@ -156,7 +163,7 @@ export function useMapEvents({
     };
   }, [map, apiKey, selectionMode, onOriginSelect, onDestinationSelect]);
   
-  // Handle map click events for selection
+  // Actualizamos para que también funcione con clic simple
   useEffect(() => {
     if (!map) return;
     
@@ -177,6 +184,11 @@ export function useMapEvents({
         
         // Obtain address via reverse geocoding
         try {
+          toast({
+            title: "Obteniendo dirección",
+            description: "Espera mientras obtenemos la dirección de la ubicación seleccionada..."
+          });
+          
           const address = await reverseGeocode(coordinates, apiKey);
           const coordsWithAddress = { ...coordinates, address };
           

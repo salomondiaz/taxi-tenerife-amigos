@@ -56,6 +56,9 @@ export function useMapRouting(
         const accessToken = localStorage.getItem(API_KEY_STORAGE_KEY);
         if (!accessToken) return;
         
+        // Mostrar mensaje de carga
+        console.log("Calculando ruta entre puntos...");
+        
         const response = await fetch(
           `https://api.mapbox.com/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?access_token=${accessToken}&geometries=geojson`
         );
@@ -63,11 +66,16 @@ export function useMapRouting(
         const data = await response.json();
         
         if (data.routes && data.routes.length > 0) {
+          console.log("Ruta calculada con éxito:", data.routes[0]);
           setRouteGeometry(data.routes[0].geometry);
+          return data.routes[0];
+        } else {
+          console.error("No se encontraron rutas", data);
         }
       } catch (error) {
         console.error("Error fetching route:", error);
       }
+      return null;
     };
     
     fetchRoute();
@@ -80,7 +88,7 @@ export function useMapRouting(
     console.log("useMapRouting effect triggered with", origin, destination);
 
     // Ensure map is loaded before drawing routes
-    const handleRouting = () => {
+    const handleRouting = async () => {
       try {
         console.log("Executing routing logic");
         
@@ -91,8 +99,15 @@ export function useMapRouting(
           return;
         }
         
-        // Draw route between points
-        drawRoute(map, origin, destination, routeGeometry);
+        // Draw route between points with defined geometry from API
+        if (routeGeometry) {
+          console.log("Drawing route with geometry from API");
+          drawRoute(map, origin, destination, routeGeometry);
+        } else {
+          // Draw simple route if no API geometry available
+          console.log("Drawing direct route without API geometry");
+          drawRoute(map, origin, destination);
+        }
         
         // Fit map to show both points
         fitMapToBounds(map, origin, destination);
@@ -160,4 +175,6 @@ export function useMapRouting(
       map.off('load', zoomToHome);
     };
   }, [map, origin, destination, isHomeLocation]);
+  
+  return { routeGeometry, setRouteGeometry };
 }
