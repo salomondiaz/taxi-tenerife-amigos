@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
-import { toast } from "@/hooks/use-toast";
 
 interface MapContainerProps {
   mapContainer: React.RefObject<HTMLDivElement>;
@@ -19,12 +18,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
   apiKey,
   onOriginChange 
 }) => {
-  // Current location handler
-  const { getLocation } = useCurrentLocation({
-    apiKey,
-    onLocationFound: onOriginChange
-  });
-
   // Determine cursor style based on selection mode
   const getCursorStyle = () => {
     if (!allowMapSelection) return 'default';

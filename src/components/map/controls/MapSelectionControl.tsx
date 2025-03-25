@@ -61,7 +61,6 @@ const MapSelectionControl: React.FC<MapSelectionControlProps> = ({
       <div className="flex flex-col space-y-2 mt-2 border-t border-gray-200 pt-2">
         <div className="text-xs text-gray-500 font-medium">Buscar lugar:</div>
         <Input
-          size="sm"
           placeholder="Buscar lugar en Tenerife"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

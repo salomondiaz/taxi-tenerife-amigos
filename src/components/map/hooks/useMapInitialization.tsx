@@ -37,7 +37,7 @@ export function useMapInitialization({
 }: UseMapInitializationProps) {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(
-    allowMapSelection ? 'origin' : 'none'
+    allowMapSelection ? 'none' : 'none'
   );
 
   // Home location management
@@ -54,7 +54,7 @@ export function useMapInitialization({
   
   // Handle map click events for selection
   useMapEvents({
-    map: map,
+    map,
     apiKey,
     selectionMode,
     onOriginSelect: onOriginChange,
@@ -71,7 +71,7 @@ export function useMapInitialization({
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: [28.2916, -16.6291], // Default to TENERIFE_CENTER
+        center: [-16.6291, 28.2916], // Default to TENERIFE_CENTER - Fixed order to [lng, lat]
         zoom: 11,
         interactive: true,
         dragRotate: false,
@@ -91,14 +91,24 @@ export function useMapInitialization({
         });
         
         newMap.addControl(navControl, 'top-right');
+      } else {
+        // Si estamos en modo selección, agregar controles específicos
+        const navControl = new mapboxgl.NavigationControl({
+          showCompass: false,
+          showZoom: true,
+          visualizePitch: false
+        });
+        
+        // Agregar controles en una posición diferente para no interferir con la selección
+        newMap.addControl(navControl, 'bottom-right');
       }
       
       // Configuración especial cuando estamos en modo selección
       if (allowMapSelection) {
-        // IMPORTANTE: Deshabilitar completamente el zoom con scroll cuando estemos en modo selección
-        newMap.scrollZoom.disable();
+        // Deshabilitar completamente el zoom con scroll cuando estemos en modo selección
+        // newMap.scrollZoom.disable(); - Permitimos el scroll zoom para mejor experiencia
         
-        // Deshabilitar zoom con doble click
+        // Deshabilitar zoom con doble click para evitar interferencias al seleccionar
         newMap.doubleClickZoom.disable();
       }
       
@@ -142,11 +152,11 @@ export function useMapInitialization({
           }
         }
         
-        // Notificar al usuario sobre el modo de selección
-        if (allowMapSelection && selectionMode === 'origin') {
+        // Notificar al usuario sobre cómo seleccionar puntos
+        if (allowMapSelection) {
           toast({
-            title: "Selección de punto de origen",
-            description: "Haz clic en el mapa para seleccionar el origen de tu viaje",
+            title: "Selección en el mapa",
+            description: "Usa los botones para elegir si quieres marcar el origen o destino, luego haz clic en el mapa",
           });
         }
       });
@@ -161,7 +171,7 @@ export function useMapInitialization({
       setShowKeyInput(true);
       return undefined;
     }
-  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination, mapContainer, allowMapSelection, selectionMode]);
+  }, [apiKey, interactive, showKeyInput, setShowKeyInput, homeLocation, routeGeometry, origin, destination, mapContainer, allowMapSelection]);
 
   // Actualizar el comportamiento del mapa cuando cambia el modo de selección
   useEffect(() => {
