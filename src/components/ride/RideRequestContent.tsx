@@ -75,6 +75,15 @@ const RideRequestContent: React.FC = () => {
     console.log("New destination from map:", coords);
   };
 
+  // Function to handle selection of a saved location
+  const handleSelectSavedLocation = (coordinates: MapCoordinates, address?: string) => {
+    setOriginCoords(coordinates);
+    if (address) {
+      setOrigin(address);
+    }
+    console.log("Selected saved location:", coordinates);
+  };
+
   // Function to calculate estimates
   const calculateEstimates = async () => {
     if (!originCoords || !destinationCoords) {
@@ -145,6 +154,8 @@ const RideRequestContent: React.FC = () => {
         useManualSelection={useManualSelection}
         setUseManualSelection={setUseManualSelection}
         handleUseCurrentLocation={handleUseCurrentLocation}
+        originCoords={originCoords}
+        onSelectLocation={handleSelectSavedLocation}
       />
       
       {/* Map viewer */}

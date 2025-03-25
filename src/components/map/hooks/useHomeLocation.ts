@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
 import { zoomToHomeLocation } from '../services/MapRoutingService';
+import { useFavoriteLocations } from '@/hooks/useFavoriteLocations';
 
 const HOME_LOCATION_KEY = 'user_home_location';
 
@@ -10,21 +11,33 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
   const [homeLocation, setHomeLocation] = useState<MapCoordinates | null>(null);
   const [showHomeMarker, setShowHomeMarker] = useState<boolean>(false);
   const [isHomeLocation, setIsHomeLocation] = useState<boolean>(false);
+  const { getLocationByType, saveFavoriteLocation } = useFavoriteLocations();
 
   // Load home location on mount
   useEffect(() => {
     try {
+      // First check if we have a home in the favorites system
+      const homeFromFavorites = getLocationByType('home');
+      
+      if (homeFromFavorites) {
+        setHomeLocation(homeFromFavorites.coordinates);
+        setShowHomeMarker(true);
+        console.log("Loaded home location from favorites:", homeFromFavorites.coordinates);
+        return;
+      }
+      
+      // Fall back to legacy system
       const savedHomeLocation = localStorage.getItem(HOME_LOCATION_KEY);
       if (savedHomeLocation) {
         const parsedHome = JSON.parse(savedHomeLocation);
         setHomeLocation(parsedHome);
         setShowHomeMarker(true);
-        console.log("Loaded home location:", parsedHome);
+        console.log("Loaded home location from legacy storage:", parsedHome);
       }
     } catch (error) {
       console.error("Error loading home location:", error);
     }
-  }, []);
+  }, [getLocationByType]);
 
   // Check if current origin is home location
   useEffect(() => {
@@ -49,7 +62,19 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
     
     try {
       console.log("Saving home location:", origin);
+      
+      // Save in both systems - new favorites system and legacy
       localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(origin));
+      
+      // Save in favorites system
+      saveFavoriteLocation({
+        name: "Mi Casa",
+        coordinates: origin,
+        type: "home",
+        icon: "🏠",
+        id: "home"
+      });
+      
       setHomeLocation(origin);
       setShowHomeMarker(true);
       console.log("Home location saved:", origin);
@@ -65,7 +90,7 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
       return;
     }
     
-    // Asegurar que el marcador de origen se actualice correctamente
+    // Ensure the origin marker updates correctly
     console.log("Setting home as origin:", homeLocation);
     onOriginChange(homeLocation);
     setIsHomeLocation(true);
