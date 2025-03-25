@@ -1,93 +1,105 @@
 
 import React from "react";
-import { AlertCircle, Clock, ArrowUpRight, Activity } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AlertTriangle, Clock, ArrowUp } from "lucide-react";
 
 interface TrafficInfoProps {
-  estimatedTime: number | null;
   trafficLevel: 'low' | 'moderate' | 'heavy' | null;
+  estimatedTime: number | null;
   arrivalTime: string | null;
 }
 
-const TrafficInfo: React.FC<TrafficInfoProps> = ({
+const TrafficInfo: React.FC<TrafficInfoProps> = ({ 
+  trafficLevel, 
   estimatedTime,
-  trafficLevel,
-  arrivalTime
+  arrivalTime 
 }) => {
-  if (!estimatedTime) return null;
-  
-  const getTrafficStatusColor = () => {
-    switch(trafficLevel) {
+  if (!trafficLevel || !estimatedTime || !arrivalTime) {
+    return null;
+  }
+
+  const getTrafficColor = () => {
+    switch (trafficLevel) {
       case 'low':
         return 'text-green-500';
       case 'moderate':
-        return 'text-yellow-500';
+        return 'text-amber-500';
       case 'heavy':
         return 'text-red-500';
       default:
         return 'text-gray-500';
     }
   };
-  
-  const getTrafficMessage = () => {
-    switch(trafficLevel) {
+
+  const getTrafficIcon = () => {
+    switch (trafficLevel) {
+      case 'low':
+        return <ArrowUp size={16} className="text-green-500" />;
+      case 'moderate':
+        return <Clock size={16} className="text-amber-500" />;
+      case 'heavy':
+        return <AlertTriangle size={16} className="text-red-500" />;
+      default:
+        return <Clock size={16} className="text-gray-500" />;
+    }
+  };
+
+  const getTrafficText = () => {
+    switch (trafficLevel) {
       case 'low':
         return 'Tráfico fluido';
       case 'moderate':
         return 'Tráfico moderado';
       case 'heavy':
-        return 'Tráfico congestionado';
+        return 'Tráfico intenso';
       default:
-        return 'Sin información de tráfico';
+        return 'Tráfico desconocido';
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-      <h2 className="text-lg font-semibold mb-3">Información de tráfico</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Información de tráfico</h2>
+        <div className={`flex items-center ${getTrafficColor()}`}>
+          {getTrafficIcon()}
+          <span className="ml-1 text-sm font-medium">{getTrafficText()}</span>
+        </div>
+      </div>
       
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
           <div className="flex items-center">
             <Clock size={18} className="text-gray-500 mr-2" />
-            <span className="text-gray-700">Tiempo estimado:</span>
+            <span className="text-gray-700">Tiempo de viaje:</span>
           </div>
           <span className="font-medium">{estimatedTime} minutos</span>
         </div>
         
-        {arrivalTime && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <ArrowUpRight size={18} className="text-gray-500 mr-2" />
-              <span className="text-gray-700">Hora de llegada:</span>
-            </div>
-            <span className="font-medium">{arrivalTime}</span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <Clock size={18} className="text-gray-500 mr-2" />
+            <span className="text-gray-700">Hora de llegada estimada:</span>
+          </div>
+          <span className="font-medium">{arrivalTime}</span>
+        </div>
+        
+        {trafficLevel === 'moderate' && (
+          <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md mt-2">
+            <p className="flex items-center">
+              <AlertTriangle size={16} className="mr-2" />
+              <span>Hay algo de congestión en la ruta que podría afectar el tiempo de llegada.</span>
+            </p>
           </div>
         )}
         
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Activity size={18} className="text-gray-500 mr-2" />
-            <span className="text-gray-700">Estado del tráfico:</span>
+        {trafficLevel === 'heavy' && (
+          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md mt-2">
+            <p className="flex items-center">
+              <AlertTriangle size={16} className="mr-2" />
+              <span>Hay congestión importante en la ruta. El tiempo de llegada puede aumentar considerablemente.</span>
+            </p>
           </div>
-          <span className={cn("font-medium", getTrafficStatusColor())}>
-            {getTrafficMessage()}
-          </span>
-        </div>
-        
-        {trafficLevel === 'moderate' || trafficLevel === 'heavy' ? (
-          <div className="mt-2 flex items-start rounded-md bg-amber-50 p-3 text-sm">
-            <AlertCircle size={18} className="mr-2 mt-0.5 text-amber-500" />
-            <div>
-              <p className="font-medium text-amber-800">Aviso de tráfico</p>
-              <p className="text-amber-700 mt-1">
-                {trafficLevel === 'heavy' 
-                  ? "Hay congestión en la ruta. Se ha ajustado el tiempo estimado."
-                  : "Hay tráfico moderado en algunas partes de la ruta."}
-              </p>
-            </div>
-          </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

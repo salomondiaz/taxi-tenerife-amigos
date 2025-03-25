@@ -6,6 +6,7 @@ import { useMapRouting } from './useMapRouting';
 import { useMapEvents } from './useMapEvents';
 import { useHomeLocation } from './useHomeLocation';
 import { loadLastMapPosition } from '../services/MapRoutingService';
+import { toast } from '@/hooks/use-toast';
 
 interface UseMapInitializationProps {
   mapContainer: React.RefObject<HTMLDivElement>;
@@ -73,28 +74,28 @@ export function useMapInitialization({
         center: [28.2916, -16.6291], // Default to TENERIFE_CENTER
         zoom: 11,
         interactive: interactive,
-        dragRotate: false, // Deshabilitar rotación con arrastre
-        pitchWithRotate: false, // Deshabilitar inclinación con rotación
-        dragPan: !allowMapSelection, // Deshabilitar pan con arrastre si estamos en modo selección
+        dragRotate: false, // Disable rotation with drag
+        pitchWithRotate: false, // Disable pitch with rotation
+        dragPan: !allowMapSelection, // Disable pan with drag if we're in selection mode
       });
       
-      // Deshabilitar completamente la rotación del mapa
+      // Disable map rotation completely
       newMap.touchZoomRotate.disableRotation();
       
       if (interactive) {
-        // Solo agregar los controles de navegación básicos
+        // Only add basic navigation controls
         const navControl = new mapboxgl.NavigationControl({
-          showCompass: false, // Ocultar la brújula para evitar rotaciones
-          showZoom: true,     // Mantener los controles de zoom
-          visualizePitch: false // No visualizar la inclinación
+          showCompass: false, // Hide compass to prevent rotations
+          showZoom: true,     // Keep zoom controls
+          visualizePitch: false // Don't visualize pitch
         });
         
         newMap.addControl(navControl, 'top-right');
         
-        // Deshabilitar el doble clic para zoom
+        // Disable double click for zoom
         newMap.doubleClickZoom.disable();
         
-        // Reducir la sensibilidad del scroll para zoom
+        // Reduce scroll sensitivity for zoom
         newMap.scrollZoom.setWheelZoomRate(0.5);
         
         // Add geolocation button
@@ -103,23 +104,27 @@ export function useMapInitialization({
             positionOptions: {
               enableHighAccuracy: true
             },
-            trackUserLocation: false, // Cambiar a false para evitar tracking continuo
+            trackUserLocation: false, // Change to false to avoid continuous tracking
             showUserHeading: true
           }),
           'top-right'
         );
       }
       
-      // Configuración especial para selección en el mapa
+      // Special configuration for map selection
       if (allowMapSelection) {
-        // Eventos específicos para prevenir manipulación del mapa en modo selección
+        // Specific events to prevent map manipulation in selection mode
         newMap.on('dragstart', (e) => {
           if (selectionMode !== 'none') {
-            e.preventDefault();
+            // We can't use preventDefault here since it doesn't exist on this event type
+            // Instead we'll use stopPropagation to prevent the drag behavior
+            if (e.originalEvent) {
+              e.originalEvent.stopPropagation();
+            }
           }
         });
         
-        // Prevenir zoom con scroll en modo selección
+        // Prevent zoom with scroll in selection mode
         newMap.scrollZoom.disable();
       }
       
@@ -127,7 +132,7 @@ export function useMapInitialization({
         // Load last map position when map is ready
         loadLastMapPosition(newMap);
         
-        // Si hay geometría de ruta, dibujarla
+        // If there's route geometry, draw it
         if (routeGeometry && origin && destination) {
           try {
             if (newMap.getSource('route')) {
@@ -159,11 +164,11 @@ export function useMapInitialization({
               }
             });
           } catch (error) {
-            console.error("Error dibujando ruta desde geometría:", error);
+            console.error("Error drawing route from geometry:", error);
           }
         }
         
-        // Notificar al usuario sobre el modo de selección
+        // Notify user about selection mode
         if (allowMapSelection && selectionMode === 'origin') {
           toast({
             title: "Selección de punto de origen",
@@ -178,7 +183,7 @@ export function useMapInitialization({
         newMap.remove();
       };
     } catch (error) {
-      console.error("Error al inicializar el mapa:", error);
+      console.error("Error initializing map:", error);
       setShowKeyInput(true);
       return undefined;
     }

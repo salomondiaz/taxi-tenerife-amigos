@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 
@@ -24,13 +24,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
     onLocationFound: onOriginChange
   });
 
-  // Determinar el tipo de cursor basado en el modo de selección
+  // Determine cursor style based on selection mode
   const getCursorStyle = () => {
     if (!allowMapSelection) return 'default';
     
     switch(selectionMode) {
       case 'origin':
-        return 'crosshair';
       case 'destination':
         return 'crosshair';
       default:
@@ -38,24 +37,36 @@ const MapContainer: React.FC<MapContainerProps> = ({
     }
   };
 
-  // Prevenir eventos predeterminados del contenedor cuando estamos en modo de selección
+  // Prevent default events on container when in selection mode
   useEffect(() => {
     if (!mapContainer.current) return;
     
     const container = mapContainer.current;
     
-    const preventDefaultDrag = (e: Event) => {
+    const preventDefaultEvents = (e: Event) => {
       if (allowMapSelection && selectionMode !== 'none') {
         e.preventDefault();
         e.stopPropagation();
       }
     };
     
-    // Prevenir eventos de arrastre estándar cuando estamos en modo de selección
-    container.addEventListener('dragstart', preventDefaultDrag, { passive: false });
+    // Prevent standard drag events when in selection mode
+    container.addEventListener('dragstart', preventDefaultEvents, { passive: false });
+    container.addEventListener('click', (e) => {
+      if (allowMapSelection && selectionMode !== 'none') {
+        // Don't stop propagation here as we want the click to be handled
+        // by the map click handler in useMapEvents
+      }
+    }, { passive: false });
+    
+    // Prevent zoom and other gestures
+    container.addEventListener('wheel', preventDefaultEvents, { passive: false });
+    container.addEventListener('touchstart', preventDefaultEvents, { passive: false });
     
     return () => {
-      container.removeEventListener('dragstart', preventDefaultDrag);
+      container.removeEventListener('dragstart', preventDefaultEvents);
+      container.removeEventListener('wheel', preventDefaultEvents);
+      container.removeEventListener('touchstart', preventDefaultEvents);
     };
   }, [mapContainer, allowMapSelection, selectionMode]);
 
