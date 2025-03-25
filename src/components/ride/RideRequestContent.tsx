@@ -2,23 +2,22 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MapCoordinates } from "@/components/map/types";
+import { toast } from "@/hooks/use-toast";
 
 // Components
 import LocationSelector from "@/components/ride/LocationSelector";
 import MapViewer from "@/components/ride/MapViewer";
-import PriceEstimator from "@/components/ride/PriceEstimator";
-import RideDetails from "@/components/ride/RideDetails";
-import TrafficInfo from "@/components/ride/TrafficInfo";
 import InfoSection from "@/components/ride/InfoSection";
-import RidePaymentInfo from "@/components/ride/PaymentInfo";
 import RequestHeader from "@/components/ride/header/RequestHeader";
+import RouteCalculator from "@/components/ride/RouteCalculator";
+import RouteResults from "@/components/ride/RouteResults";
 
 // Custom hooks
 import { useLocationTracker } from "@/hooks/useLocationTracker";
 import { useGeocodingService } from "@/hooks/useGeocodingService";
 import { useEstimateCalculator } from "@/hooks/useEstimateCalculator";
 import { useRideRequest } from "@/hooks/useRideRequest";
-import { toast } from "@/hooks/use-toast";
+import { useTrafficCalculator } from "@/hooks/useTrafficCalculator";
 
 const RideRequestContent: React.FC = () => {
   const location = useLocation();
@@ -29,10 +28,6 @@ const RideRequestContent: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
-  
-  // New states for traffic information
-  const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'heavy' | null>(null);
-  const [arrivalTime, setArrivalTime] = useState<string | null>(null);
   
   // Custom hooks
   const { 
@@ -55,6 +50,12 @@ const RideRequestContent: React.FC = () => {
   } = useEstimateCalculator();
 
   const { requestRide } = useRideRequest();
+  
+  const {
+    trafficLevel,
+    arrivalTime,
+    updateTrafficInfo
+  } = useTrafficCalculator();
 
   // Handle origin change from map
   const handleOriginChange = (coords: MapCoordinates) => {
@@ -72,27 +73,6 @@ const RideRequestContent: React.FC = () => {
       setDestination(coords.address);
     }
     console.log("New destination from map:", coords);
-  };
-
-  // Calculate estimated arrival time
-  const calculateArrivalTime = (estimatedTimeMinutes: number) => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + estimatedTimeMinutes);
-    
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    
-    return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
-  };
-
-  // Simulate traffic level based on distance and time
-  const calculateTrafficLevel = (distance: number, time: number): 'low' | 'moderate' | 'heavy' => {
-    // Average speed in km/h
-    const avgSpeed = distance / (time / 60);
-    
-    if (avgSpeed > 40) return 'low';
-    if (avgSpeed > 25) return 'moderate';
-    return 'heavy';
   };
 
   // Function to calculate estimates
@@ -124,18 +104,7 @@ const RideRequestContent: React.FC = () => {
           
           // Calculate traffic information
           if (routeData.distance && routeData.time) {
-            const traffic = calculateTrafficLevel(routeData.distance, routeData.time);
-            setTrafficLevel(traffic);
-            
-            // Adjust estimated time based on traffic
-            let adjustedTime = routeData.time;
-            if (traffic === 'moderate') {
-              adjustedTime = Math.ceil(adjustedTime * 1.2); // 20% more time
-            } else if (traffic === 'heavy') {
-              adjustedTime = Math.ceil(adjustedTime * 1.5); // 50% more time
-            }
-            
-            setArrivalTime(calculateArrivalTime(adjustedTime));
+            updateTrafficInfo(routeData.distance, routeData.time);
           }
         }
       }
@@ -188,8 +157,8 @@ const RideRequestContent: React.FC = () => {
         handleDestinationChange={handleDestinationChange}
       />
       
-      {/* Price estimator */}
-      <PriceEstimator
+      {/* Route calculator */}
+      <RouteCalculator
         origin={origin}
         originCoords={originCoords}
         destination={destination}
@@ -198,30 +167,16 @@ const RideRequestContent: React.FC = () => {
         calculateEstimates={calculateEstimates}
       />
 
-      {/* Traffic information */}
-      {estimatedTime !== null && (
-        <TrafficInfo 
-          estimatedTime={estimatedTime}
-          trafficLevel={trafficLevel}
-          arrivalTime={arrivalTime}
-        />
-      )}
-
-      {/* Ride details */}
-      {estimatedPrice !== null && (
-        <>
-          <RideDetails
-            estimatedPrice={estimatedPrice}
-            estimatedTime={estimatedTime}
-            estimatedDistance={estimatedDistance}
-            isLoading={isLoading}
-            handleRequestRide={handleRequestRide}
-          />
-          
-          {/* Payment information */}
-          <RidePaymentInfo />
-        </>
-      )}
+      {/* Route results */}
+      <RouteResults
+        estimatedPrice={estimatedPrice}
+        estimatedTime={estimatedTime}
+        estimatedDistance={estimatedDistance}
+        trafficLevel={trafficLevel}
+        arrivalTime={arrivalTime}
+        isLoading={isLoading}
+        handleRequestRide={handleRequestRide}
+      />
 
       {/* Information section */}
       <InfoSection />
