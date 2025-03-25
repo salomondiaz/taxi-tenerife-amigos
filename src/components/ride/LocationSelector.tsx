@@ -134,7 +134,28 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4">¿Cómo quieres indicar las ubicaciones?</h2>
+        <h2 className="text-lg font-semibold mb-4">¿De dónde a dónde vas?</h2>
+        
+        {/* Home location options - prominently at the top */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 bg-blue-50 p-3 rounded-lg">
+          <Button
+            variant="default"
+            className="w-full flex items-center justify-center bg-tenerife-blue hover:bg-tenerife-blue/90"
+            onClick={useHomeAddress}
+          >
+            <Home size={18} className="mr-2" />
+            Usar mi casa como origen
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="w-full flex items-center justify-center"
+            onClick={saveHomeAddress}
+          >
+            <Home size={18} className="mr-2" />
+            Guardar esta dirección como mi casa
+          </Button>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <Button
@@ -162,26 +183,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
           >
             <Target size={18} className="mr-2" />
             Usar mi ubicación
-          </Button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-center"
-            onClick={useHomeAddress}
-          >
-            <Home size={18} className="mr-2" />
-            Usar mi casa
-          </Button>
-          
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-center"
-            onClick={saveHomeAddress}
-          >
-            <Home size={18} className="mr-2" />
-            Guardar como mi casa
           </Button>
         </div>
         
@@ -224,6 +225,18 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {useManualSelection && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm font-medium mb-2 text-blue-800">Instrucciones para selección en el mapa:</p>
+            <ul className="text-sm text-blue-700 list-disc list-inside">
+              <li>Haz <strong>doble clic</strong> en el mapa para marcar el origen (marcador azul)</li>
+              <li>Usa los botones del mapa para cambiar entre selección de origen y destino</li>
+              <li>Para destino, haz <strong>doble clic</strong> en el mapa (marcador rojo)</li>
+              <li>Tu casa aparecerá marcada con un icono de casa verde</li>
+            </ul>
           </div>
         )}
       </div>

@@ -25,9 +25,9 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ map, coordinates,
       const markerEl = document.createElement('div');
       markerEl.className = 'destination-marker';
       
-      // Use red color for destination marker
+      // Use red color for destination marker (increased size)
       markerEl.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#ea384c" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#ea384c" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
           <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#ea384c"/>
         </svg>
@@ -47,7 +47,11 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ map, coordinates,
             
           if (coordinates.address) {
             markerRef.current.setPopup(
-              new mapboxgl.Popup({ offset: 25 }).setText(coordinates.address)
+              new mapboxgl.Popup({ offset: 25 }).setText("Destino: " + coordinates.address)
+            );
+          } else {
+            markerRef.current.setPopup(
+              new mapboxgl.Popup({ offset: 25 }).setText("Punto de destino")
             );
           }
           
@@ -96,7 +100,11 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ map, coordinates,
         
         if (coordinates.address) {
           markerRef.current.setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setText(coordinates.address)
+            new mapboxgl.Popup({ offset: 25 }).setText("Destino: " + coordinates.address)
+          );
+        } else {
+          markerRef.current.setPopup(
+            new mapboxgl.Popup({ offset: 25 }).setText("Punto de destino")
           );
         }
       } catch (error) {

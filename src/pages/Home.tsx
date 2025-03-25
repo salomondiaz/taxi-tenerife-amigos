@@ -5,16 +5,25 @@ import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation } from "lucide-react";
+import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, testMode } = useAppContext();
   const [recentRides, setRecentRides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { getLocationByType } = useFavoriteLocations();
+  const [homeLocation, setHomeLocation] = useState<any>(null);
 
   useEffect(() => {
+    // Check if home location exists
+    const home = getLocationByType('home');
+    if (home) {
+      setHomeLocation(home);
+    }
+    
     const loadData = async () => {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -78,10 +87,14 @@ const Home = () => {
     };
     
     loadData();
-  }, [testMode]);
+  }, [testMode, getLocationByType]);
 
   const handleRequestRide = () => {
     navigate("/request-ride");
+  };
+  
+  const handleSetHomeLocation = () => {
+    navigate("/request-ride", { state: { setHomeLocation: true } });
   };
 
   const formatDate = (date: Date) => {
@@ -147,6 +160,59 @@ const Home = () => {
         </div>
         
         <div className="px-6 py-8">
+          {/* Home location section */}
+          <section className="mb-8">
+            <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-6">
+              <h2 className="text-xl font-semibold mb-3 text-blue-800 flex items-center gap-2">
+                <Home className="text-tenerife-blue" size={24} />
+                Mi Casa
+              </h2>
+              
+              {homeLocation ? (
+                <div>
+                  <p className="text-blue-700 mb-2">
+                    {homeLocation.address || `${homeLocation.coordinates.lat.toFixed(6)}, ${homeLocation.coordinates.lng.toFixed(6)}`}
+                  </p>
+                  <div className="flex gap-3 mt-4">
+                    <Button
+                      variant="default"
+                      className="flex-1 bg-tenerife-blue"
+                      onClick={() => navigate("/request-ride", { 
+                        state: { useHomeAsOrigin: true } 
+                      })}
+                    >
+                      <MapPin size={16} className="mr-2" />
+                      Viajar desde casa
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleSetHomeLocation}
+                    >
+                      <Home size={16} className="mr-2" />
+                      Cambiar ubicación
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-blue-700 mb-4">
+                    No has guardado la ubicación de tu casa. Configúrala para acceder más rápido a ella.
+                  </p>
+                  <Button
+                    variant="default"
+                    className="w-full bg-tenerife-blue"
+                    onClick={handleSetHomeLocation}
+                  >
+                    <Home size={16} className="mr-2" />
+                    Configurar Mi Casa
+                  </Button>
+                </div>
+              )}
+            </div>
+          </section>
+          
           <section className="py-6">
             <div className="container px-4 mx-auto">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -158,7 +224,7 @@ const Home = () => {
                 <div className="space-y-4">
                   <div className="flex gap-2 items-start">
                     <div className="mt-2">
-                      <MapPin size={18} className="text-gray-400" />
+                      <MapPin size={18} className="text-blue-500" />
                     </div>
                     <div className="flex-1">
                       <label htmlFor="pickup" className="block text-sm font-medium text-gray-700 mb-1">
@@ -175,7 +241,7 @@ const Home = () => {
                   
                   <div className="flex gap-2 items-start">
                     <div className="mt-2">
-                      <Navigation size={18} className="text-gray-400" />
+                      <Navigation size={18} className="text-red-500" />
                     </div>
                     <div className="flex-1">
                       <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
