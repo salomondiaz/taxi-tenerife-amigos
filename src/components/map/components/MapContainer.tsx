@@ -9,6 +9,8 @@ interface MapContainerProps {
   allowMapSelection: boolean;
   apiKey: string;
   onOriginChange?: (coordinates: MapCoordinates) => void;
+  homeLocation?: MapCoordinates;
+  showHomeMarker?: boolean;
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({ 
@@ -16,7 +18,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
   selectionMode, 
   allowMapSelection,
   apiKey,
-  onOriginChange 
+  onOriginChange,
+  homeLocation,
+  showHomeMarker
 }) => {
   // Determine cursor style based on selection mode
   const getCursorStyle = () => {
