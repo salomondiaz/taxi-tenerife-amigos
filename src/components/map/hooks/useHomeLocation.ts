@@ -64,12 +64,13 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
       return;
     }
     
+    // Asegurar que el marcador de origen se actualice correctamente
+    console.log("Setting home as origin:", homeLocation);
     onOriginChange(homeLocation);
     setIsHomeLocation(true);
     
     // Zoom to home location
     zoomToHomeLocation(map, homeLocation);
-    console.log("Using home as origin:", homeLocation);
   };
 
   return {

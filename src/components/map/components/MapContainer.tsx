@@ -28,7 +28,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
     <div 
       ref={mapContainer} 
       className="w-full h-full rounded-lg shadow-sm overflow-hidden"
-      style={{ cursor: allowMapSelection && selectionMode !== 'none' ? 'crosshair' : 'default' }}
+      style={{ cursor: allowMapSelection && selectionMode !== 'none' ? 'pointer' : 'default' }}
     />
   );
 };

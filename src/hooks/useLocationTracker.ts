@@ -18,6 +18,19 @@ export const useLocationTracker = (initialDestination?: string) => {
     }
   }, [initialDestination, origin]);
   
+  // Escuchar evento personalizado para forzar actualización
+  useEffect(() => {
+    const handleHomeAddressUsed = () => {
+      console.log("Home address used event detected");
+    };
+    
+    window.addEventListener('home-address-used', handleHomeAddressUsed);
+    
+    return () => {
+      window.removeEventListener('home-address-used', handleHomeAddressUsed);
+    };
+  }, []);
+  
   const handleUseCurrentLocation = async () => {
     try {
       if (navigator.geolocation) {
@@ -33,6 +46,8 @@ export const useLocationTracker = (initialDestination?: string) => {
               lng: position.coords.longitude
             };
             
+            console.log("Current location obtained:", coords);
+            
             // Intentar obtener la dirección
             const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
             if (apiKey) {
@@ -44,6 +59,7 @@ export const useLocationTracker = (initialDestination?: string) => {
                   if (data.features && data.features.length > 0) {
                     const address = data.features[0].place_name;
                     setOrigin(address);
+                    console.log("Address found for current location:", address);
                   } else {
                     setOrigin("Ubicación actual");
                   }

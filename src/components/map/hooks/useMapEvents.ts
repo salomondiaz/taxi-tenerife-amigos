@@ -1,16 +1,15 @@
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { toast } from '@/hooks/use-toast';
-import { MapSelectionMode, MapCoordinates } from '../types';
+import { MapCoordinates, MapSelectionMode } from '../types';
 import { reverseGeocode } from '../services/MapboxService';
 
 interface UseMapEventsProps {
   map: mapboxgl.Map | null;
   apiKey: string;
   selectionMode: MapSelectionMode;
-  onOriginSelect?: (coords: MapCoordinates) => void;
-  onDestinationSelect?: (coords: MapCoordinates) => void;
+  onOriginSelect?: (coordinates: MapCoordinates) => void;
+  onDestinationSelect?: (coordinates: MapCoordinates) => void;
 }
 
 export function useMapEvents({
@@ -20,66 +19,56 @@ export function useMapEvents({
   onOriginSelect,
   onDestinationSelect
 }: UseMapEventsProps) {
-  const handleMapClick = useCallback(async (e: mapboxgl.MapMouseEvent) => {
-    if (!map || !apiKey || selectionMode === 'none') return;
-    
-    // Check if map is fully loaded and initialized
-    if (!map.loaded()) {
-      console.log("Map not fully loaded, skipping click handler");
-      return;
-    }
-    
-    const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-    console.log(`Map click in ${selectionMode} mode:`, coords);
-    
-    try {
-      const address = await reverseGeocode(coords, apiKey);
-      const coordsWithAddress = { ...coords, address: address || undefined };
-      
-      if (selectionMode === 'origin' && onOriginSelect) {
-        console.log("Setting origin coordinates:", coordsWithAddress);
-        onOriginSelect(coordsWithAddress);
-        toast({
-          title: "Origen seleccionado",
-          description: address || "Ubicación seleccionada en el mapa",
-        });
-      } else if (selectionMode === 'destination' && onDestinationSelect) {
-        console.log("Setting destination coordinates:", coordsWithAddress);
-        onDestinationSelect(coordsWithAddress);
-        toast({
-          title: "Destino seleccionado",
-          description: address || "Ubicación seleccionada en el mapa",
-        });
-      }
-    } catch (error) {
-      console.error("Error processing map click:", error);
-      toast({
-        title: "Error al seleccionar ubicación",
-        description: "No se pudo procesar la selección en el mapa",
-        variant: "destructive",
-      });
-    }
-  }, [map, apiKey, selectionMode, onOriginSelect, onDestinationSelect]);
-  
+  // Handle map click events for selection
   useEffect(() => {
     if (!map) return;
-    console.log("Setting up map click handler, selection mode:", selectionMode);
     
-    // Only attach the click handler when the map is fully loaded
-    const handleLoad = () => {
-      console.log("Map loaded, attaching click handler");
-      map.on('click', handleMapClick);
+    const handleMapClick = async (e: mapboxgl.MapMouseEvent) => {
+      console.log("Map clicked in mode:", selectionMode);
+      
+      if (selectionMode === 'none') return;
+      
+      const lngLat = e.lngLat;
+      const coordinates = {
+        lat: lngLat.lat,
+        lng: lngLat.lng
+      };
+      
+      try {
+        // Obtain address via reverse geocoding
+        const address = await reverseGeocode(coordinates, apiKey);
+        const coordsWithAddress = { ...coordinates, address };
+        
+        if (selectionMode === 'origin' && onOriginSelect) {
+          console.log("Setting origin to:", coordsWithAddress);
+          onOriginSelect(coordsWithAddress);
+        } else if (selectionMode === 'destination' && onDestinationSelect) {
+          console.log("Setting destination to:", coordsWithAddress);
+          onDestinationSelect(coordsWithAddress);
+        }
+      } catch (error) {
+        console.error("Error during reverse geocoding:", error);
+        
+        // Even if geocoding fails, still set the coordinates
+        if (selectionMode === 'origin' && onOriginSelect) {
+          onOriginSelect(coordinates);
+        } else if (selectionMode === 'destination' && onDestinationSelect) {
+          onDestinationSelect(coordinates);
+        }
+      }
     };
     
-    if (map.loaded()) {
+    // Only add click handler if we're in selection mode
+    if (selectionMode !== 'none') {
+      map.getCanvas().style.cursor = 'pointer';
       map.on('click', handleMapClick);
     } else {
-      map.once('load', handleLoad);
+      map.getCanvas().style.cursor = '';
     }
     
     return () => {
       map.off('click', handleMapClick);
-      map.off('load', handleLoad);
+      map.getCanvas().style.cursor = '';
     };
-  }, [map, handleMapClick, selectionMode]);
+  }, [map, apiKey, selectionMode, onOriginSelect, onDestinationSelect]);
 }

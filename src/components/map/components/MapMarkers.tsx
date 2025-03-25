@@ -32,6 +32,13 @@ const MapMarkers: React.FC<MapMarkersProps> = ({
 }) => {
   if (!map) return null;
   
+  // Verificamos que el mapa esté completamente cargado
+  if (!map.loaded() || !map.getContainer()) {
+    return null;
+  }
+  
+  console.log("Rendering markers - Origin:", origin, "Destination:", destination, "Home:", homeLocation);
+  
   return (
     <>
       {origin && (

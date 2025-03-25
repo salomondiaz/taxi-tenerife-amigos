@@ -29,6 +29,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
 }) => {
   const toggleSelectionMode = () => {
     setUseManualSelection(!useManualSelection);
+    
     if (useManualSelection) {
       toast({
         title: "Modo de selección en el mapa desactivado",
@@ -66,6 +67,12 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
         title: "Dirección de casa cargada",
         description: "Se ha establecido tu casa como punto de origen",
       });
+      
+      // Forzar actualización del componente
+      setTimeout(() => {
+        const homeAddressEvent = new CustomEvent('home-address-used');
+        window.dispatchEvent(homeAddressEvent);
+      }, 100);
     } else {
       toast({
         title: "No hay dirección guardada",
