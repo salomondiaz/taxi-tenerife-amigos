@@ -58,17 +58,34 @@ export function useMapEvents({
       }
     };
     
-    // Only add click handler if we're in selection mode
-    if (selectionMode !== 'none') {
-      map.getCanvas().style.cursor = 'pointer';
-      map.on('click', handleMapClick);
-    } else {
-      map.getCanvas().style.cursor = '';
+    // Only add click handler if we're in selection mode and map is valid
+    if (selectionMode !== 'none' && map && map.getCanvas()) {
+      try {
+        map.getCanvas().style.cursor = 'pointer';
+        map.on('click', handleMapClick);
+      } catch (error) {
+        console.error("Error setting cursor style:", error);
+      }
+    } else if (map && map.getCanvas()) {
+      try {
+        map.getCanvas().style.cursor = '';
+      } catch (error) {
+        console.error("Error resetting cursor style:", error);
+      }
     }
     
     return () => {
-      map.off('click', handleMapClick);
-      map.getCanvas().style.cursor = '';
+      // Clean up only if map still exists
+      if (map) {
+        try {
+          map.off('click', handleMapClick);
+          if (map.getCanvas()) {
+            map.getCanvas().style.cursor = '';
+          }
+        } catch (error) {
+          console.error("Error in cleanup of map events:", error);
+        }
+      }
     };
   }, [map, apiKey, selectionMode, onOriginSelect, onDestinationSelect]);
 }

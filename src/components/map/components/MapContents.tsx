@@ -73,7 +73,7 @@ const MapContents: React.FC<MapContentsProps> = ({
         allowMapSelection={allowMapSelection}
         origin={origin}
         homeLocation={homeLocation}
-        saveHomeLocation={saveHomeLocation}
+        saveHomeLocation={() => origin && saveHomeLocation(origin)}
         useHomeAsOrigin={useHomeAsOrigin}
       />
     </>
