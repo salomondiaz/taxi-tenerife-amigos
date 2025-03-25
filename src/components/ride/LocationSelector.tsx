@@ -17,6 +17,7 @@ interface LocationSelectorProps {
 }
 
 const HOME_ADDRESS_KEY = 'home_address';
+const HOME_LOCATION_KEY = 'user_home_location';
 
 const LocationSelector: React.FC<LocationSelectorProps> = ({
   origin,
@@ -46,20 +47,56 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   const saveHomeAddress = () => {
     if (origin) {
       localStorage.setItem(HOME_ADDRESS_KEY, origin);
-      toast({
-        title: "Dirección guardada",
-        description: "Tu casa ha sido guardada correctamente",
-      });
+      
+      // Verificar si tenemos coordenadas en homeLocation (para compatibilidad)
+      const homeLocationJSON = localStorage.getItem(HOME_LOCATION_KEY);
+      if (!homeLocationJSON) {
+        // Si no hay coordenadas guardadas, mostrar mensaje informativo
+        toast({
+          title: "Dirección guardada",
+          description: "Para guardar la ubicación exacta, usa la opción 'Guardar como Mi Casa' en el mapa",
+        });
+      } else {
+        toast({
+          title: "Dirección guardada",
+          description: "Tu casa ha sido guardada correctamente",
+        });
+      }
     } else {
       toast({
         title: "No hay dirección para guardar",
-        description: "Por favor, introduce primero una dirección de origen",
+        description: "Por favor, introduce primero una dirección de origen o selecciónala en el mapa",
         variant: "destructive",
       });
     }
   };
 
   const useHomeAddress = () => {
+    // Intentar obtener primero de HOME_LOCATION_KEY (nuevo sistema)
+    const homeLocationJSON = localStorage.getItem(HOME_LOCATION_KEY);
+    if (homeLocationJSON) {
+      try {
+        const homeLocation = JSON.parse(homeLocationJSON);
+        if (homeLocation.address) {
+          setOrigin(homeLocation.address);
+          toast({
+            title: "Dirección de casa cargada",
+            description: "Se ha establecido tu casa como punto de origen",
+          });
+          
+          // Forzar actualización del componente
+          setTimeout(() => {
+            const homeAddressEvent = new CustomEvent('home-address-used');
+            window.dispatchEvent(homeAddressEvent);
+          }, 100);
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing home location:", error);
+      }
+    }
+    
+    // Si no hay datos en el nuevo sistema o no tienen dirección, usar el antiguo
     const homeAddress = localStorage.getItem(HOME_ADDRESS_KEY);
     if (homeAddress) {
       setOrigin(homeAddress);

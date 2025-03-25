@@ -48,6 +48,7 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
     }
     
     try {
+      console.log("Saving home location:", origin);
       localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(origin));
       setHomeLocation(origin);
       setShowHomeMarker(true);

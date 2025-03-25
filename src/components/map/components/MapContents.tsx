@@ -23,7 +23,7 @@ interface MapContentsProps {
   apiKey: string;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
-  saveHomeLocation: (location: MapCoordinates) => void;
+  saveHomeLocation: () => void;
   useHomeAsOrigin: () => void;
 }
 
@@ -155,19 +155,33 @@ const MapContents: React.FC<MapContentsProps> = ({
         homeLocation={homeLocation}
         saveHomeLocation={() => {
           if (origin) {
-            saveHomeLocation(origin);
+            saveHomeLocation();
             toast({
               title: "Casa guardada",
               description: "Tu ubicación actual ha sido guardada como tu casa",
             });
+          } else {
+            toast({
+              title: "No hay ubicación para guardar",
+              description: "Selecciona primero una ubicación de origen",
+              variant: "destructive"
+            });
           }
         }}
         useHomeAsOrigin={() => {
-          useHomeAsOrigin();
-          toast({
-            title: "Casa como origen",
-            description: "Tu casa ha sido establecida como punto de origen",
-          });
+          if (homeLocation) {
+            useHomeAsOrigin();
+            toast({
+              title: "Casa como origen",
+              description: "Tu casa ha sido establecida como punto de origen",
+            });
+          } else {
+            toast({
+              title: "No hay casa guardada",
+              description: "Primero debes guardar una ubicación como tu casa",
+              variant: "destructive"
+            });
+          }
         }}
       />
     </>
