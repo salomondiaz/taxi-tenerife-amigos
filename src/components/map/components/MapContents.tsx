@@ -6,6 +6,7 @@ import MapMarkers from './MapMarkers';
 import MapSelectionControls from './MapSelectionControls';
 import HomeLocationControls from './HomeLocationControls';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
+import { toast } from '@/hooks/use-toast';
 
 interface MapContentsProps {
   map: mapboxgl.Map | null;
@@ -45,8 +46,34 @@ const MapContents: React.FC<MapContentsProps> = ({
   // Current location handler for MapSelectionControls
   const { getLocation } = useCurrentLocation({
     apiKey,
-    onLocationFound: onOriginChange
+    onLocationFound: (coords) => {
+      if (onOriginChange) {
+        onOriginChange(coords);
+        toast({
+          title: "Ubicación actual como origen",
+          description: coords.address || "Se ha establecido tu ubicación actual como punto de origen"
+        });
+      }
+    }
   });
+
+  // Función para manejar cambios en el modo de selección
+  const handleSelectionModeChange = (mode: MapSelectionMode) => {
+    setSelectionMode(mode);
+    
+    // Mostrar mensaje al usuario cuando cambia el modo
+    if (mode === 'origin') {
+      toast({
+        title: "Selecciona el origen",
+        description: "Haz clic en el mapa para seleccionar el punto de origen",
+      });
+    } else if (mode === 'destination') {
+      toast({
+        title: "Selecciona el destino",
+        description: "Haz clic en el mapa para seleccionar el punto de destino",
+      });
+    }
+  };
 
   return (
     <>
@@ -65,7 +92,7 @@ const MapContents: React.FC<MapContentsProps> = ({
       <MapSelectionControls 
         allowMapSelection={allowMapSelection}
         selectionMode={selectionMode}
-        setSelectionMode={setSelectionMode}
+        setSelectionMode={handleSelectionModeChange}
         onUseCurrentLocation={getLocation}
       />
       
@@ -73,8 +100,22 @@ const MapContents: React.FC<MapContentsProps> = ({
         allowMapSelection={allowMapSelection}
         origin={origin}
         homeLocation={homeLocation}
-        saveHomeLocation={() => origin && saveHomeLocation(origin)}
-        useHomeAsOrigin={useHomeAsOrigin}
+        saveHomeLocation={() => {
+          if (origin) {
+            saveHomeLocation(origin);
+            toast({
+              title: "Casa guardada",
+              description: "Tu ubicación actual ha sido guardada como tu casa",
+            });
+          }
+        }}
+        useHomeAsOrigin={() => {
+          useHomeAsOrigin();
+          toast({
+            title: "Casa como origen",
+            description: "Tu casa ha sido establecida como punto de origen",
+          });
+        }}
       />
     </>
   );

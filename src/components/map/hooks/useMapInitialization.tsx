@@ -72,14 +72,27 @@ export function useMapInitialization({
         style: 'mapbox://styles/mapbox/streets-v11',
         center: [28.2916, -16.6291], // Default to TENERIFE_CENTER
         zoom: 11,
-        interactive: interactive
+        interactive: interactive,
+        dragRotate: false, // Deshabilitar rotación con arrastre
+        pitchWithRotate: false, // Deshabilitar inclinación con rotación
+        dragPan: true, // Mantener habilitado el pan con arrastre
       });
       
       if (interactive) {
-        newMap.addControl(
-          new mapboxgl.NavigationControl(),
-          'top-right'
-        );
+        // Solo agregar los controles de navegación básicos
+        const navControl = new mapboxgl.NavigationControl({
+          showCompass: false, // Ocultar la brújula para evitar rotaciones
+          showZoom: true,     // Mantener los controles de zoom
+          visualizePitch: false // No visualizar la inclinación
+        });
+        
+        newMap.addControl(navControl, 'top-right');
+        
+        // Deshabilitar el doble clic para zoom
+        newMap.doubleClickZoom.disable();
+        
+        // Reducir la sensibilidad del scroll para zoom
+        newMap.scrollZoom.setWheelZoomRate(0.5);
         
         // Add geolocation button
         newMap.addControl(
@@ -87,7 +100,7 @@ export function useMapInitialization({
             positionOptions: {
               enableHighAccuracy: true
             },
-            trackUserLocation: true,
+            trackUserLocation: false, // Cambiar a false para evitar tracking continuo
             showUserHeading: true
           }),
           'top-right'

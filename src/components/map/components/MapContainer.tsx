@@ -24,11 +24,25 @@ const MapContainer: React.FC<MapContainerProps> = ({
     onLocationFound: onOriginChange
   });
 
+  // Determinar el tipo de cursor basado en el modo de selección
+  const getCursorStyle = () => {
+    if (!allowMapSelection) return 'default';
+    
+    switch(selectionMode) {
+      case 'origin':
+        return 'crosshair';
+      case 'destination':
+        return 'crosshair';
+      default:
+        return 'default';
+    }
+  };
+
   return (
     <div 
       ref={mapContainer} 
       className="w-full h-full rounded-lg shadow-sm overflow-hidden"
-      style={{ cursor: allowMapSelection && selectionMode !== 'none' ? 'pointer' : 'default' }}
+      style={{ cursor: getCursorStyle() }}
     />
   );
 };
