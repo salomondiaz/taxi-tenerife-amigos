@@ -11,6 +11,7 @@ import InfoSection from "@/components/ride/InfoSection";
 import RequestHeader from "@/components/ride/header/RequestHeader";
 import RouteCalculator from "@/components/ride/RouteCalculator";
 import RouteResults from "@/components/ride/RouteResults";
+import StripePaymentProvider from "@/components/payment/StripePaymentProvider";
 
 // Custom hooks
 import { useLocationTracker } from "@/hooks/useLocationTracker";
@@ -31,6 +32,7 @@ const RideRequestContent: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   
   // Custom hooks
   const { 
@@ -175,68 +177,71 @@ const RideRequestContent: React.FC = () => {
   };
 
   // Process ride request
-  const handleRequestRide = () => {
+  const handleRequestRide = (paymentMethodId: string) => {
     requestRide(
       origin, 
       destination, 
       originCoords, 
       destinationCoords, 
       estimatedPrice, 
-      estimatedDistance
+      estimatedDistance,
+      paymentMethodId
     );
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <RequestHeader />
-      
-      {/* Location selector */}
-      <LocationSelector
-        origin={origin}
-        setOrigin={setOrigin}
-        destination={destination}
-        setDestination={setDestination}
-        useManualSelection={useManualSelection}
-        setUseManualSelection={setUseManualSelection}
-        handleUseCurrentLocation={handleUseCurrentLocation}
-        originCoords={originCoords}
-        onSelectLocation={handleSelectSavedLocation}
-      />
-      
-      {/* Map viewer */}
-      <MapViewer
-        useManualSelection={useManualSelection}
-        originCoords={originCoords}
-        destinationCoords={destinationCoords}
-        routeGeometry={routeGeometry}
-        handleOriginChange={handleOriginChange}
-        handleDestinationChange={handleDestinationChange}
-      />
-      
-      {/* Route calculator */}
-      <RouteCalculator
-        origin={origin}
-        originCoords={originCoords}
-        destination={destination}
-        destinationCoords={destinationCoords}
-        isLoading={isLoading}
-        calculateEstimates={calculateEstimates}
-      />
+    <StripePaymentProvider>
+      <div className="min-h-screen p-6">
+        <RequestHeader />
+        
+        {/* Location selector */}
+        <LocationSelector
+          origin={origin}
+          setOrigin={setOrigin}
+          destination={destination}
+          setDestination={setDestination}
+          useManualSelection={useManualSelection}
+          setUseManualSelection={setUseManualSelection}
+          handleUseCurrentLocation={handleUseCurrentLocation}
+          originCoords={originCoords}
+          onSelectLocation={handleSelectSavedLocation}
+        />
+        
+        {/* Map viewer */}
+        <MapViewer
+          useManualSelection={useManualSelection}
+          originCoords={originCoords}
+          destinationCoords={destinationCoords}
+          routeGeometry={routeGeometry}
+          handleOriginChange={handleOriginChange}
+          handleDestinationChange={handleDestinationChange}
+        />
+        
+        {/* Route calculator */}
+        <RouteCalculator
+          origin={origin}
+          originCoords={originCoords}
+          destination={destination}
+          destinationCoords={destinationCoords}
+          isLoading={isLoading}
+          calculateEstimates={calculateEstimates}
+        />
 
-      {/* Route results */}
-      <RouteResults
-        estimatedPrice={estimatedPrice}
-        estimatedTime={estimatedTime}
-        estimatedDistance={estimatedDistance}
-        trafficLevel={trafficLevel}
-        arrivalTime={arrivalTime}
-        isLoading={isLoading}
-        handleRequestRide={handleRequestRide}
-      />
+        {/* Route results */}
+        <RouteResults
+          estimatedPrice={estimatedPrice}
+          estimatedTime={estimatedTime}
+          estimatedDistance={estimatedDistance}
+          trafficLevel={trafficLevel}
+          arrivalTime={arrivalTime}
+          isLoading={isLoading}
+          handleRequestRide={handleRequestRide}
+        />
 
-      {/* Information section */}
-      <InfoSection />
-    </div>
+        {/* Information section */}
+        <InfoSection />
+      </div>
+    </StripePaymentProvider>
   );
 };
 

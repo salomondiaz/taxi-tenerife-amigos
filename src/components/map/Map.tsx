@@ -2,13 +2,13 @@
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { MapProps } from './types';
-import MapDisplay from './MapDisplay';
+import GoogleMapDisplay from './GoogleMapDisplay';
 import { useDriverSimulation } from './hooks/useDriverSimulation';
 
 const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();
   
-  // This hook is only responsible for simulating driver movement
+  // Esta función solo simula el movimiento del conductor
   useDriverSimulation({
     testMode,
     showDriverPosition: props.showDriverPosition || false,
@@ -17,7 +17,7 @@ const Map: React.FC<MapProps> = (props) => {
     driverPosition: props.driverPosition
   });
 
-  return <MapDisplay {...props} />;
+  return <GoogleMapDisplay {...props} />;
 };
 
 export default Map;

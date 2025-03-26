@@ -1,112 +1,69 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 import { useAppContext } from "@/context/AppContext";
+import { toast } from "@/hooks/use-toast";
 import { MapCoordinates } from "@/components/map/types";
 
-const RIDE_HISTORY_KEY = 'ride_history';
-
-type RideHistoryEntry = {
-  id: string;
-  origin: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
-  destination: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
-  status: "pending" | "accepted" | "ongoing" | "completed" | "cancelled";
-  requestTime: string; // ISO string
-  price: number;
-  distance: number | null;
-};
-
-export function useRideRequest() {
+export const useRideRequest = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { setCurrentRide } = useAppContext();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const saveRideToHistory = (ride: RideHistoryEntry) => {
-    try {
-      const historyJSON = localStorage.getItem(RIDE_HISTORY_KEY);
-      const history: RideHistoryEntry[] = historyJSON ? JSON.parse(historyJSON) : [];
-      
-      history.unshift(ride);
-      
-      const trimmedHistory = history.slice(0, 20);
-      
-      localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(trimmedHistory));
-      
-      console.log("Ride saved to history:", ride);
-    } catch (error) {
-      console.error("Error saving ride to history:", error);
-    }
-  };
 
   const requestRide = (
     origin: string,
     destination: string,
     originCoords: MapCoordinates | null,
     destinationCoords: MapCoordinates | null,
-    estimatedPrice: number | null,
-    estimatedDistance: number | null
+    estimatedPrice: number,
+    estimatedDistance: number,
+    paymentMethodId: string
   ) => {
-    if (!origin || !destination || !estimatedPrice || !originCoords || !destinationCoords) {
+    if (!originCoords || !destinationCoords) {
       toast({
         title: "Información incompleta",
-        description: "Por favor, calcula primero el precio estimado",
+        description: "Por favor, asegúrate de seleccionar un origen y un destino válidos",
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
 
+    // Aquí se haría la llamada a la API para solicitar un viaje
+    // En este caso, simulamos un tiempo de respuesta
     setTimeout(() => {
-      const rideId = `ride-${Date.now()}`;
-      const requestTime = new Date();
-      
-      const newRide = {
-        id: rideId,
-        origin: {
-          address: origin,
-          lat: originCoords.lat,
-          lng: originCoords.lng,
-        },
-        destination: {
-          address: destination,
-          lat: destinationCoords.lat,
-          lng: destinationCoords.lng,
-        },
-        status: "pending" as "pending" | "accepted" | "ongoing" | "completed" | "cancelled",
-        requestTime: requestTime,
+      const rideData = {
+        id: `ride-${Date.now()}`,
+        origin: originCoords,
+        destination: destinationCoords,
+        originAddress: origin,
+        destinationAddress: destination,
         price: estimatedPrice,
         distance: estimatedDistance,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        paymentMethodId: paymentMethodId,
       };
 
-      setCurrentRide(newRide);
-      
-      saveRideToHistory({
-        ...newRide,
-        requestTime: requestTime.toISOString(),
-      });
+      // Guardar en el contexto de la aplicación
+      setCurrentRide(rideData);
 
+      // Mostrar notificación de éxito
       toast({
         title: "¡Viaje solicitado!",
-        description: "Buscando conductores disponibles...",
+        description: "Buscando conductor disponible...",
       });
 
-      setIsLoading(false);
-      navigate("/tracking");
+      // Redirigir a la página de seguimiento
+      navigate("/ride-tracking");
+
+      setIsSubmitting(false);
     }, 1500);
   };
 
   return {
     requestRide,
-    isLoading,
-    setIsLoading
+    isSubmitting,
   };
-}
+};
