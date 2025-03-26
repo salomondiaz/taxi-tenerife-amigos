@@ -1,4 +1,3 @@
-
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
 import { TENERIFE_BOUNDS, TENERIFE_CENTER } from './MapboxService';

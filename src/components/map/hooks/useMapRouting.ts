@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
@@ -6,9 +5,9 @@ import {
   drawRoute, 
   fitMapToBounds, 
   resetMapToTenerife, 
-  TENERIFE_CENTER,
   zoomToHomeLocation
 } from '../services/MapRoutingService';
+import { TENERIFE_CENTER } from '../services/MapboxService';
 import { API_KEY_STORAGE_KEY } from '../types';
 
 export function useMapRouting(
