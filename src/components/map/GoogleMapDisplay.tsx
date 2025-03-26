@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer, InfoWindow } from '@react-google-maps/api';
 import { MapProps } from './types';
@@ -33,7 +34,8 @@ const googleMapOptions = {
   ]
 };
 
-const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places', 'geometry'];
+// Corregir la definición de libraries para que sea compatible con el tipo esperado
+const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places', 'geometry'];
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   origin,
