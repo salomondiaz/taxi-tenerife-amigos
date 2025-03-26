@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
-import { MapCoordinates } from "@/components/map/types";
+import { MapCoordinates, Ride } from "@/components/map/types";
 
 export const useRideRequest = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,17 +33,23 @@ export const useRideRequest = () => {
     // Aquí se haría la llamada a la API para solicitar un viaje
     // En este caso, simulamos un tiempo de respuesta
     setTimeout(() => {
-      const rideData = {
+      const rideData: Ride = {
         id: `ride-${Date.now()}`,
-        origin: originCoords,
-        destination: destinationCoords,
-        originAddress: origin,
-        destinationAddress: destination,
+        origin: {
+          address: origin,
+          lat: originCoords.lat,
+          lng: originCoords.lng
+        },
+        destination: {
+          address: destination,
+          lat: destinationCoords.lat,
+          lng: destinationCoords.lng
+        },
+        status: "pending",
+        requestTime: new Date(),
         price: estimatedPrice,
         distance: estimatedDistance,
-        status: "pending",
         createdAt: new Date().toISOString(),
-        requestTime: new Date().toISOString(), // Añadiendo el campo requerido
         paymentMethodId: paymentMethodId,
       };
 

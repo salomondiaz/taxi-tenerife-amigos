@@ -35,14 +35,21 @@ export interface MapProps {
 // Definición para los tipos de Ride
 export interface Ride {
   id: string;
-  origin: MapCoordinates;
-  destination: MapCoordinates;
-  originAddress: string;
-  destinationAddress: string;
-  price: number;
-  distance: number;
-  status: string;
+  origin: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  destination: {
+    address: string;
+    lat: number;
+    lng: number;
+  };
+  status: "pending" | "accepted" | "ongoing" | "completed" | "cancelled";
+  requestTime: Date;
+  price?: number;
+  distance?: number;
+  driver?: any;
   createdAt: string;
-  requestTime: string; // Campo requerido
   paymentMethodId: string;
 }
