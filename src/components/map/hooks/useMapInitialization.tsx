@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates, MapSelectionMode } from '../types';
@@ -7,6 +6,7 @@ import { useMapEvents } from './useMapEvents';
 import { useHomeLocation } from './useHomeLocation';
 import { loadLastMapPosition } from '../services/MapRoutingService';
 import { toast } from '@/hooks/use-toast';
+import { TENERIFE_CENTER, TENERIFE_BOUNDS } from '../services/MapboxService';
 
 interface UseMapInitializationProps {
   mapContainer: React.RefObject<HTMLDivElement>;
@@ -71,11 +71,15 @@ export function useMapInitialization({
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: [-16.6291, 28.2916], // Default to TENERIFE_CENTER - Fixed order to [lng, lat]
+        center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
         zoom: 11,
         interactive: true,
         dragRotate: false,
         pitchWithRotate: false,
+        maxBounds: [
+          [TENERIFE_BOUNDS.minLng - 0.1, TENERIFE_BOUNDS.minLat - 0.1],
+          [TENERIFE_BOUNDS.maxLng + 0.1, TENERIFE_BOUNDS.maxLat + 0.1]
+        ]
       });
       
       // Disable map rotation completely

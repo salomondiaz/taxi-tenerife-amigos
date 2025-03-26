@@ -1,13 +1,9 @@
 
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
+import { TENERIFE_BOUNDS, TENERIFE_CENTER } from './MapboxService';
 
-// Tenerife coordinates for centering the map
-export const TENERIFE_CENTER = {
-  lat: 28.2916,
-  lng: -16.6291
-};
-
+// Draw route between points
 export const drawRoute = (
   map: mapboxgl.Map, 
   origin: MapCoordinates, 
@@ -22,8 +18,16 @@ export const drawRoute = (
   try {
     console.log("Drawing route from", origin, "to", destination);
     
+    // Check if coordinates are within Tenerife boundaries
+    if (!isWithinTenerifeBounds(origin) || !isWithinTenerifeBounds(destination)) {
+      console.error("Origin or destination outside of Tenerife bounds");
+      return;
+    }
+    
     // Check if map source exists and remove it safely
     if (map.getSource('route')) {
+      map.removeLayer('route-arrows');
+      map.removeLayer('route-glow');
       map.removeLayer('route');
       map.removeSource('route');
     }
@@ -118,6 +122,16 @@ export const drawRoute = (
   }
 };
 
+// Helper function to check if coordinates are within Tenerife
+function isWithinTenerifeBounds(coords: MapCoordinates): boolean {
+  return (
+    coords.lng >= TENERIFE_BOUNDS.minLng && 
+    coords.lng <= TENERIFE_BOUNDS.maxLng && 
+    coords.lat >= TENERIFE_BOUNDS.minLat && 
+    coords.lat <= TENERIFE_BOUNDS.maxLat
+  );
+}
+
 export const fitMapToBounds = (
   map: mapboxgl.Map,
   origin: MapCoordinates,
@@ -127,6 +141,13 @@ export const fitMapToBounds = (
   
   try {
     console.log("Fitting map to bounds");
+    
+    // Verify coordinates are within Tenerife
+    if (!isWithinTenerifeBounds(origin) || !isWithinTenerifeBounds(destination)) {
+      console.error("Cannot fit to bounds: coordinates outside Tenerife");
+      resetMapToTenerife(map);
+      return;
+    }
     
     // Create bounds from the route points
     const bounds = new mapboxgl.LngLatBounds()
@@ -161,13 +182,9 @@ export const resetMapToTenerife = (map: mapboxgl.Map): void => {
   
   try {
     const center = map.getCenter();
-    const lat = center.lat;
-    const lng = center.lng;
     
     // If map drifts too far from Tenerife, reset it
-    const maxDistance = 2; // Degrees
-    if (Math.abs(lat - TENERIFE_CENTER.lat) > maxDistance || 
-        Math.abs(lng - TENERIFE_CENTER.lng) > maxDistance) {
+    if (!isPointNearTenerife(center.lng, center.lat)) {
       console.log("Map drifted away from Tenerife, resetting...");
       map.flyTo({
         center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
@@ -183,6 +200,15 @@ export const resetMapToTenerife = (map: mapboxgl.Map): void => {
   }
 };
 
+// Helper function to check if a point is near Tenerife
+function isPointNearTenerife(lng: number, lat: number): boolean {
+  const maxDistance = 0.5; // Closer constraint
+  return (
+    Math.abs(lng - TENERIFE_CENTER.lng) <= maxDistance && 
+    Math.abs(lat - TENERIFE_CENTER.lat) <= maxDistance
+  );
+}
+
 // New function to zoom to home location
 export const zoomToHomeLocation = (
   map: mapboxgl.Map,
@@ -191,6 +217,17 @@ export const zoomToHomeLocation = (
   if (!map || !map.loaded()) return;
   
   try {
+    // Verify home location is within Tenerife
+    if (!isWithinTenerifeBounds(homeLocation)) {
+      console.warn("Home location outside Tenerife, using center instead");
+      map.flyTo({
+        center: [TENERIFE_CENTER.lng, TENERIFE_CENTER.lat],
+        zoom: 12,
+        essential: true
+      });
+      return;
+    }
+    
     console.log("Zooming to home location:", homeLocation);
     
     map.flyTo({
@@ -239,11 +276,8 @@ export const loadLastMapPosition = (map: mapboxgl.Map): void => {
       
       // Check if position is within Tenerife area before applying
       const center = mapPosition.center;
-      const maxDistance = 2; // Degrees
       
-      if (Math.abs(center.lat - TENERIFE_CENTER.lat) <= maxDistance && 
-          Math.abs(center.lng - TENERIFE_CENTER.lng) <= maxDistance) {
-        
+      if (isPointNearTenerife(center.lng, center.lat)) {
         map.flyTo({
           center: [center.lng, center.lat],
           zoom: mapPosition.zoom,

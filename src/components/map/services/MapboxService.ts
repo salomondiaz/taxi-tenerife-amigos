@@ -7,6 +7,14 @@ export const TENERIFE_CENTER = {
   lng: -16.6291
 };
 
+// Define Tenerife bounding box (approximate)
+export const TENERIFE_BOUNDS = {
+  minLng: -16.92,
+  minLat: 28.00,
+  maxLng: -16.10,
+  maxLat: 28.59
+};
+
 export async function geocodeAddress(
   address: string,
   apiKey: string
@@ -17,7 +25,7 @@ export async function geocodeAddress(
     console.log("Geocoding query:", searchQuery);
     
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=${TENERIFE_CENTER.lng},${TENERIFE_CENTER.lat}&bbox=-16.9,28.0,-16.1,28.6`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${apiKey}&limit=1&country=es&proximity=${TENERIFE_CENTER.lng},${TENERIFE_CENTER.lat}&bbox=${TENERIFE_BOUNDS.minLng},${TENERIFE_BOUNDS.minLat},${TENERIFE_BOUNDS.maxLng},${TENERIFE_BOUNDS.maxLat}`
     );
     
     const data = await response.json();
@@ -25,6 +33,14 @@ export async function geocodeAddress(
     
     if (data.features && data.features.length > 0) {
       const [lng, lat] = data.features[0].center;
+
+      // Verificar que las coordenadas están dentro de Tenerife
+      if (lng < TENERIFE_BOUNDS.minLng || lng > TENERIFE_BOUNDS.maxLng || 
+          lat < TENERIFE_BOUNDS.minLat || lat > TENERIFE_BOUNDS.maxLat) {
+        console.warn("Coordinates outside of Tenerife bounds:", lng, lat);
+        return null;
+      }
+      
       return { 
         lng, 
         lat, 
@@ -44,6 +60,13 @@ export async function reverseGeocode(
   apiKey: string
 ): Promise<string | null> {
   try {
+    // Verificar que las coordenadas están dentro de Tenerife
+    if (coordinates.lng < TENERIFE_BOUNDS.minLng || coordinates.lng > TENERIFE_BOUNDS.maxLng || 
+        coordinates.lat < TENERIFE_BOUNDS.minLat || coordinates.lat > TENERIFE_BOUNDS.maxLat) {
+      console.warn("Coordinates outside of Tenerife bounds:", coordinates);
+      return "Ubicación fuera de Tenerife";
+    }
+    
     const response = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${apiKey}&limit=1&country=es&proximity=${TENERIFE_CENTER.lng},${TENERIFE_CENTER.lat}&language=es`
     );

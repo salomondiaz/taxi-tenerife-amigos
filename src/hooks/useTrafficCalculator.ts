@@ -20,8 +20,15 @@ export const useTrafficCalculator = () => {
 
   // Simulate traffic level based on distance and time
   const calculateTrafficLevel = (distance: number, time: number): 'low' | 'moderate' | 'heavy' => {
+    // If the values seem unreasonable for Tenerife (>100km), default to moderate
+    if (distance > 100 || time > 180) {
+      console.warn("Distance or time outside reasonable range for Tenerife", { distance, time });
+      return 'moderate';
+    }
+    
     // Average speed in km/h
     const avgSpeed = distance / (time / 60);
+    console.log("Calculated average speed:", avgSpeed, "km/h");
     
     if (avgSpeed > 40) return 'low';
     if (avgSpeed > 25) return 'moderate';
@@ -31,6 +38,17 @@ export const useTrafficCalculator = () => {
   // Update traffic information
   const updateTrafficInfo = (distance: number, time: number) => {
     console.log("Calculating traffic for distance:", distance, "km and time:", time, "min");
+    
+    // Verify reasonable values for Tenerife
+    if (distance > 100 || distance <= 0 || time <= 0) {
+      console.error("Invalid distance or time values for traffic calculation", { distance, time });
+      toast({
+        title: "Error de cálculo",
+        description: "No se pudo calcular la información de tráfico con los valores proporcionados",
+        variant: "destructive"
+      });
+      return null;
+    }
     
     const traffic = calculateTrafficLevel(distance, time);
     setTrafficLevel(traffic);
