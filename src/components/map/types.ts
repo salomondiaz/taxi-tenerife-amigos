@@ -1,3 +1,4 @@
+
 export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
 
 export type MapCoordinates = {
@@ -29,4 +30,19 @@ export interface MapProps {
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   allowMapSelection?: boolean;
   showRoute?: boolean;
+}
+
+// Definición para los tipos de Ride
+export interface Ride {
+  id: string;
+  origin: MapCoordinates;
+  destination: MapCoordinates;
+  originAddress: string;
+  destinationAddress: string;
+  price: number;
+  distance: number;
+  status: string;
+  createdAt: string;
+  requestTime: string; // Campo requerido
+  paymentMethodId: string;
 }

@@ -57,6 +57,9 @@ const TrafficInfo: React.FC<TrafficInfoProps> = ({ trafficLevel, arrivalTime }) 
         </div>
       );
       break;
+    
+    default:
+      return null;
   }
   
   return content;

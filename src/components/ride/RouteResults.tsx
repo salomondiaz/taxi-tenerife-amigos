@@ -9,8 +9,8 @@ interface RouteResultsProps {
   estimatedPrice: number;
   estimatedTime: number;
   estimatedDistance: number;
-  trafficLevel: string;
-  arrivalTime: string;
+  trafficLevel: 'low' | 'moderate' | 'heavy' | null;
+  arrivalTime: string | null;
   isLoading: boolean;
   handleRequestRide: (paymentMethodId: string) => void;
 }

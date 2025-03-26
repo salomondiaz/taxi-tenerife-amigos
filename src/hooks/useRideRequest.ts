@@ -43,6 +43,7 @@ export const useRideRequest = () => {
         distance: estimatedDistance,
         status: "pending",
         createdAt: new Date().toISOString(),
+        requestTime: new Date().toISOString(), // Añadiendo el campo requerido
         paymentMethodId: paymentMethodId,
       };
 

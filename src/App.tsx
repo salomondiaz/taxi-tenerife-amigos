@@ -1,6 +1,6 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppContextProvider } from "@/context/AppContext";
+import { AppContext, useAppContext } from "@/context/AppContext";
 
 // Pages
 import Index from "@/pages/Index";
@@ -26,7 +26,7 @@ import StripePaymentProvider from "@/components/payment/StripePaymentProvider";
 function App() {
   return (
     <BrowserRouter>
-      <AppContextProvider>
+      <AppContext>
         <StripePaymentProvider>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -47,7 +47,7 @@ function App() {
           </Routes>
           <Toaster />
         </StripePaymentProvider>
-      </AppContextProvider>
+      </AppContext>
     </BrowserRouter>
   );
 }

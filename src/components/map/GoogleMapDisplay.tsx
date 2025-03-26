@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer, InfoWindow } from '@react-google-maps/api';
 import { MapProps } from './types';
@@ -8,13 +7,11 @@ import { Button } from '@/components/ui/button';
 import { useFavoriteLocations } from '@/hooks/useFavoriteLocations';
 import { Loader2, Home, MapPin, Navigation } from 'lucide-react';
 
-// Coordenadas centrales de Tenerife
 const TENERIFE_CENTER = {
   lat: 28.2916,
   lng: -16.6291
 };
 
-// Opciones por defecto del mapa
 const mapContainerStyle = {
   width: '100%',
   height: '100%',
@@ -35,6 +32,8 @@ const googleMapOptions = {
     }
   ]
 };
+
+const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places', 'geometry'];
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   origin,
@@ -57,13 +56,11 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const { favoriteLocations, saveFavoriteLocation } = useFavoriteLocations();
   const homeLocation = favoriteLocations.find(loc => loc.type === 'home');
   
-  // Cargar la API de Google Maps
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || 'AIzaSyCbfe8aqbD8YBmCZzNA1wkJrtLFeznyMLI', // API key proporcionada como fallback
-    libraries: ['places', 'directions']
+    googleMapsApiKey: apiKey || 'AIzaSyCbfe8aqbD8YBmCZzNA1wkJrtLFeznyMLI',
+    libraries: libraries
   });
 
-  // Calcular ruta cuando origen y destino están disponibles
   useEffect(() => {
     if (isLoaded && origin && destination) {
       const directionsService = new google.maps.DirectionsService();
@@ -87,7 +84,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   }, [isLoaded, origin, destination]);
 
-  // Centrar el mapa cuando cambia el origen o destino
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
 
@@ -95,7 +91,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       const bounds = new google.maps.LatLngBounds();
       bounds.extend({ lat: origin.lat, lng: origin.lng });
       bounds.extend({ lat: destination.lat, lng: destination.lng });
-      mapRef.current.fitBounds(bounds, 50); // 50px de padding
+      mapRef.current.fitBounds(bounds, 50);
     } else if (origin) {
       mapRef.current.setCenter({ lat: origin.lat, lng: origin.lng });
       mapRef.current.setZoom(15);
@@ -114,14 +110,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   }, [isLoaded, origin, destination, homeLocation, mapRef.current]);
 
-  // Manejar el clic en el mapa para seleccionar origen o destino
   const handleMapClick = (e: google.maps.MapMouseEvent) => {
     if (!allowMapSelection || selectionMode === 'none' || !e.latLng) return;
     
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
-    // Geocodificar para obtener la dirección
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
@@ -145,7 +139,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           });
         }
         
-        // Volver al modo "ninguno" después de seleccionar
         setSelectionMode('none');
       } else {
         toast({
@@ -157,14 +150,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     });
   };
 
-  // Manejar el arrastre de marcadores
   const handleMarkerDragEnd = (e: google.maps.MapMouseEvent, type: 'origin' | 'destination' | 'home') => {
     if (!e.latLng) return;
     
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     
-    // Geocodificar para obtener la dirección
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
@@ -195,7 +186,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     });
   };
 
-  // Guardar ubicación como casa
   const saveAsHome = (coords: {lat: number, lng: number, address?: string}) => {
     saveFavoriteLocation({
       id: 'home',
@@ -252,7 +242,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           mapRef.current = map;
         }}
       >
-        {/* Renderizar ruta */}
         {directions && (
           <DirectionsRenderer
             options={{
@@ -267,7 +256,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           />
         )}
         
-        {/* Marcador de origen */}
         {origin && (
           <Marker
             position={{ lat: origin.lat, lng: origin.lng }}
@@ -286,7 +274,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           />
         )}
         
-        {/* Marcador de destino */}
         {destination && (
           <Marker
             position={{ lat: destination.lat, lng: destination.lng }}
@@ -305,7 +292,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           />
         )}
         
-        {/* Marcador de casa */}
         {homeLocation && (
           <Marker
             position={{ 
@@ -327,7 +313,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           />
         )}
         
-        {/* Marcador del conductor */}
         {showDriverPosition && driverPosition && (
           <Marker
             position={{ lat: driverPosition.lat, lng: driverPosition.lng }}
@@ -343,7 +328,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           />
         )}
         
-        {/* Ventana de información para los marcadores */}
         {selectedMarker === 'origin' && origin && (
           <InfoWindow
             position={{ lat: origin.lat, lng: origin.lng }}
@@ -395,7 +379,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         )}
       </GoogleMap>
       
-      {/* Controles de selección en el mapa */}
       {allowMapSelection && (
         <div className="absolute top-4 left-4 z-10 bg-white rounded-md shadow-md p-2 flex gap-2">
           <Button
@@ -419,7 +402,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         </div>
       )}
       
-      {/* Mensaje de ayuda */}
       {selectionMode !== 'none' && (
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white py-2 px-4 rounded-full z-10">
           <p className="text-sm">
@@ -430,7 +412,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         </div>
       )}
       
-      {/* Botón de ubicación actual */}
       <Button
         variant="default"
         size="icon"
@@ -444,7 +425,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
                   lng: position.coords.longitude
                 };
                 
-                // Geocodificar para obtener la dirección
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ location: coords }, (results, status) => {
                   if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
