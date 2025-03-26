@@ -76,7 +76,9 @@ export function useFavoriteLocations() {
       
       // Check if we're updating an existing location
       const updated = favoriteLocations.map(loc => 
-        (loc.type === location.type && location.type !== 'favorite') ? newLocation : loc
+        (loc.type === location.type && location.type !== 'favorite') || loc.id === newLocation.id
+          ? newLocation 
+          : loc
       );
       
       // If it's not an update, add it as a new location
@@ -104,6 +106,51 @@ export function useFavoriteLocations() {
       toast({
         title: "Error",
         description: "No se pudo guardar la ubicación favorita",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  // Function to edit an existing favorite location
+  const editFavoriteLocation = (id: string, updates: Partial<Omit<FavoriteLocation, 'id'>>) => {
+    try {
+      const locationIndex = favoriteLocations.findIndex(loc => loc.id === id);
+      
+      if (locationIndex === -1) {
+        toast({
+          title: "Error",
+          description: "No se encontró la ubicación para editar",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      const updatedLocation = {
+        ...favoriteLocations[locationIndex],
+        ...updates
+      };
+      
+      const newLocations = [...favoriteLocations];
+      newLocations[locationIndex] = updatedLocation;
+      
+      // Save to localStorage
+      localStorage.setItem(FAVORITE_LOCATIONS_KEY, JSON.stringify(newLocations));
+      
+      // If it's a home location, also update the old format
+      if (updatedLocation.type === 'home') {
+        localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(updatedLocation.coordinates));
+      }
+      
+      setFavoriteLocations(newLocations);
+      console.log("Updated favorite location:", updatedLocation);
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating favorite location:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la ubicación favorita",
         variant: "destructive"
       });
       return false;
@@ -146,6 +193,7 @@ export function useFavoriteLocations() {
   return {
     favoriteLocations,
     saveFavoriteLocation,
+    editFavoriteLocation,
     removeFavoriteLocation,
     getLocationByType,
     getLocationsByType,

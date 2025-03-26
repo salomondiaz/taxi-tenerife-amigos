@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Home, Briefcase, Star, Plus, X, MapPin } from "lucide-react";
+import { Home, Briefcase, Star, Plus, X, MapPin, Edit, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FavoriteLocation, FavoriteLocationType, useFavoriteLocations } from "@/hooks/useFavoriteLocations";
 import { MapCoordinates } from "@/components/map/types";
@@ -35,10 +35,12 @@ const FavoriteLocations: React.FC<FavoriteLocationsProps> = ({
   currentCoordinates,
   onSelectLocation
 }) => {
-  const { favoriteLocations, saveFavoriteLocation, removeFavoriteLocation } = useFavoriteLocations();
+  const { favoriteLocations, saveFavoriteLocation, editFavoriteLocation, removeFavoriteLocation } = useFavoriteLocations();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
   const [newLocationType, setNewLocationType] = useState<FavoriteLocationType>("favorite");
+  const [editingLocation, setEditingLocation] = useState<FavoriteLocation | null>(null);
 
   // Function to get the appropriate icon for a location type
   const getLocationIcon = (type: FavoriteLocationType) => {
@@ -90,6 +92,26 @@ const FavoriteLocations: React.FC<FavoriteLocationsProps> = ({
     }
   };
 
+  // Handle editing a favorite location
+  const handleEditFavorite = () => {
+    if (!editingLocation) return;
+
+    const success = editFavoriteLocation(editingLocation.id, {
+      name: editingLocation.name,
+      type: editingLocation.type,
+      icon: editingLocation.type === 'home' ? '🏠' : editingLocation.type === 'work' ? '💼' : '⭐'
+    });
+
+    if (success) {
+      toast({
+        title: "Ubicación actualizada",
+        description: `${editingLocation.name} ha sido actualizada`
+      });
+      setIsEditDialogOpen(false);
+      setEditingLocation(null);
+    }
+  };
+
   // Handle selecting a favorite location
   const handleSelectFavorite = (location: FavoriteLocation) => {
     onSelectLocation(location.coordinates, location.coordinates.address);
@@ -97,6 +119,13 @@ const FavoriteLocations: React.FC<FavoriteLocationsProps> = ({
       title: "Ubicación seleccionada",
       description: `${location.name} ha sido establecida como punto de origen`
     });
+  };
+
+  // Handle initiating edit of a favorite location
+  const handleStartEdit = (location: FavoriteLocation, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent selecting when removing
+    setEditingLocation({...location});
+    setIsEditDialogOpen(true);
   };
 
   // Handle removing a favorite location
@@ -184,6 +213,66 @@ const FavoriteLocations: React.FC<FavoriteLocationsProps> = ({
         </Dialog>
       </div>
 
+      {/* Diálogo de edición */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar ubicación favorita</DialogTitle>
+            <DialogDescription>
+              Modifica los detalles de esta ubicación favorita.
+            </DialogDescription>
+          </DialogHeader>
+          {editingLocation && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-name" className="text-right">
+                  Nombre
+                </Label>
+                <Input
+                  id="edit-name"
+                  value={editingLocation.name}
+                  onChange={(e) => setEditingLocation({...editingLocation, name: e.target.value})}
+                  placeholder="Ej: Mi casa, Oficina, etc."
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-type" className="text-right">
+                  Tipo
+                </Label>
+                <Select
+                  value={editingLocation.type}
+                  onValueChange={(value) => setEditingLocation({...editingLocation, type: value as FavoriteLocationType})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Tipo de ubicación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="home">Casa 🏠</SelectItem>
+                    <SelectItem value="work">Trabajo 💼</SelectItem>
+                    <SelectItem value="favorite">Favorito ⭐</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editingLocation.coordinates?.address && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Dirección</Label>
+                  <div className="col-span-3 text-sm text-gray-500 truncate">
+                    {editingLocation.coordinates.address}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditFavorite}>Guardar cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {favoriteLocations.length === 0 ? (
         <div className="text-center py-6 text-gray-500">
           <MapPin className="mx-auto h-8 w-8 text-gray-300 mb-2" />
@@ -207,15 +296,26 @@ const FavoriteLocations: React.FC<FavoriteLocationsProps> = ({
                   )}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
-                onClick={(e) => handleRemoveFavorite(location.id, location.name, e)}
-              >
-                <X size={16} />
-                <span className="sr-only">Remove</span>
-              </Button>
+              <div className="flex space-x-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                  onClick={(e) => handleStartEdit(location, e)}
+                >
+                  <Edit size={16} />
+                  <span className="sr-only">Editar</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full opacity-70 hover:opacity-100"
+                  onClick={(e) => handleRemoveFavorite(location.id, location.name, e)}
+                >
+                  <X size={16} />
+                  <span className="sr-only">Eliminar</span>
+                </Button>
+              </div>
             </div>
           ))}
         </div>

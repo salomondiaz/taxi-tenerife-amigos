@@ -11,7 +11,7 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
   const [homeLocation, setHomeLocation] = useState<MapCoordinates | null>(null);
   const [showHomeMarker, setShowHomeMarker] = useState<boolean>(false);
   const [isHomeLocation, setIsHomeLocation] = useState<boolean>(false);
-  const { getLocationByType, saveFavoriteLocation } = useFavoriteLocations();
+  const { getLocationByType, saveFavoriteLocation, editFavoriteLocation } = useFavoriteLocations();
 
   // Load home location on mount
   useEffect(() => {
@@ -99,11 +99,37 @@ export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinate
     zoomToHomeLocation(map, homeLocation);
   };
 
+  // Update home location coordinates
+  const updateHomeLocation = (newCoordinates: MapCoordinates) => {
+    if (!newCoordinates) {
+      console.error("No coordinates provided to update home location");
+      return;
+    }
+    
+    try {
+      console.log("Updating home location:", newCoordinates);
+      
+      // Update in favorites system
+      editFavoriteLocation("home", {
+        coordinates: newCoordinates
+      });
+      
+      // Update in legacy system
+      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(newCoordinates));
+      
+      setHomeLocation(newCoordinates);
+      console.log("Home location updated:", newCoordinates);
+    } catch (error) {
+      console.error("Error updating home location:", error);
+    }
+  };
+
   return {
     homeLocation,
     showHomeMarker,
     isHomeLocation,
     saveHomeLocation,
-    useHomeAsOrigin
+    useHomeAsOrigin,
+    updateHomeLocation
   };
 }

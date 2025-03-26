@@ -15,7 +15,7 @@ export type MapDriverPosition = {
   timestamp?: number;
 };
 
-export type MapSelectionMode = 'none' | 'origin' | 'destination';
+export type MapSelectionMode = 'none' | 'origin' | 'destination' | 'edit-home';
 
 export interface MapProps {
   origin?: MapCoordinates;
@@ -30,6 +30,7 @@ export interface MapProps {
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   allowMapSelection?: boolean;
   showRoute?: boolean;
+  allowHomeEditing?: boolean;
 }
 
 // Definición para los tipos de Ride

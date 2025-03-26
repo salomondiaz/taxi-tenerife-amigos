@@ -1,31 +1,26 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
 
 interface OriginMarkerProps {
   map: mapboxgl.Map;
   coordinates: MapCoordinates;
-  onDragEnd?: (coords: MapCoordinates) => void;
+  onDragEnd?: (coordinates: MapCoordinates) => void;
 }
 
 const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd }) => {
-  const markerRef = React.useRef<mapboxgl.Marker | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
 
-  React.useEffect(() => {
-    if (!map) return;
-
-    // Check if the map is fully loaded and has a container
-    if (!map.getContainer()) {
-      console.error("Map container is not available");
-      return;
-    }
+  useEffect(() => {
+    if (!map || !map.getContainer()) return;
 
     try {
+      // Define marker element
       const markerEl = document.createElement('div');
       markerEl.className = 'origin-marker';
       
-      // Use blue color for origin marker (increased size)
+      // Use pin icon for origin marker
       markerEl.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#1E88E5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
@@ -33,124 +28,88 @@ const OriginMarker: React.FC<OriginMarkerProps> = ({ map, coordinates, onDragEnd
         </svg>
       `;
       
-      // Add pulse effect
-      const pulseCircle = document.createElement('div');
-      pulseCircle.className = 'origin-pulse-circle';
-      markerEl.appendChild(pulseCircle);
+      // Create marker
+      markerRef.current = new mapboxgl.Marker({
+        element: markerEl,
+        draggable: !!onDragEnd
+      })
+        .setLngLat([coordinates.lng, coordinates.lat])
+        .addTo(map);
       
-      // Add CSS for pulse effect
-      const style = document.createElement('style');
-      style.textContent = `
-        .origin-pulse-circle {
-          width: 30px;
-          height: 30px;
-          border-radius: 50%;
-          background: rgba(30, 136, 229, 0.3);
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: -1;
-          animation: origin-pulse 2s infinite;
-        }
-        
-        @keyframes origin-pulse {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(2);
-            opacity: 0;
-          }
-        }
-      `;
-      document.head.appendChild(style);
+      // Add popup
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setHTML(`
+          <div>
+            <h3 class="font-bold">Punto de Origen</h3>
+            <p class="text-sm">${coordinates.address || "Ubicación seleccionada"}</p>
+          </div>
+        `);
       
-      console.log("Creating origin marker at:", coordinates);
+      markerRef.current.setPopup(popup);
       
-      // Only create and add the marker if the map is ready
-      const addMarker = () => {
-        try {
-          markerRef.current = new mapboxgl.Marker({
-            element: markerEl,
-            draggable: !!onDragEnd
-          })
-            .setLngLat([coordinates.lng, coordinates.lat])
-            .addTo(map);
-            
-          if (coordinates.address) {
-            markerRef.current.setPopup(
-              new mapboxgl.Popup({ offset: 25 }).setText("Origen: " + coordinates.address)
-            );
-          } else {
-            markerRef.current.setPopup(
-              new mapboxgl.Popup({ offset: 25 }).setText("Punto de origen")
-            );
-          }
+      // Handle drag end if callback provided
+      if (onDragEnd) {
+        markerRef.current.on('dragend', () => {
+          if (!markerRef.current) return;
           
-          // Mostrar popup automáticamente
-          markerRef.current.togglePopup();
+          const lngLat = markerRef.current.getLngLat();
+          const newCoords = {
+            lat: lngLat.lat,
+            lng: lngLat.lng
+          };
           
-          // Add drag end event listener
-          if (onDragEnd && markerRef.current) {
-            markerRef.current.on('dragend', () => {
-              const lngLat = markerRef.current?.getLngLat();
-              if (lngLat) {
-                onDragEnd({ lat: lngLat.lat, lng: lngLat.lng });
+          // Try to geocode the new position
+          try {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: { lat: newCoords.lat, lng: newCoords.lng } }, (results, status) => {
+              if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+                onDragEnd({
+                  ...newCoords,
+                  address: results[0].formatted_address
+                });
+              } else {
+                onDragEnd(newCoords);
               }
             });
+          } catch (error) {
+            console.error("Error geocoding origin position:", error);
+            onDragEnd(newCoords);
           }
-        } catch (error) {
-          console.error("Error creating origin marker:", error);
-        }
-      };
-
-      // Check if the map is fully loaded before adding the marker
-      if (map.loaded()) {
-        addMarker();
-      } else {
-        map.once('load', addMarker);
+        });
       }
     } catch (error) {
-      console.error("Error in OriginMarker useEffect:", error);
+      console.error("Error creating origin marker:", error);
     }
 
     return () => {
       if (markerRef.current) {
-        try {
-          markerRef.current.remove();
-        } catch (error) {
-          console.error("Error removing origin marker:", error);
-        }
+        markerRef.current.remove();
         markerRef.current = null;
       }
-      map.off('load', () => {}); // Clean up any load event listeners
     };
-  }, [map, coordinates, onDragEnd]);
+  }, [map, onDragEnd]);
 
   // Update marker position if coordinates change
-  React.useEffect(() => {
+  useEffect(() => {
     if (markerRef.current && coordinates) {
-      try {
-        markerRef.current.setLngLat([coordinates.lng, coordinates.lat]);
-        
-        if (coordinates.address) {
-          markerRef.current.setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setText("Origen: " + coordinates.address)
-          );
-        } else {
-          markerRef.current.setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setText("Punto de origen")
-          );
+      markerRef.current.setLngLat([coordinates.lng, coordinates.lat]);
+      
+      // Update popup content if address changes
+      if (coordinates.address) {
+        const popup = markerRef.current.getPopup();
+        if (popup) {
+          popup.setHTML(`
+            <div>
+              <h3 class="font-bold">Punto de Origen</h3>
+              <p class="text-sm">${coordinates.address}</p>
+            </div>
+          `);
         }
-      } catch (error) {
-        console.error("Error updating origin marker:", error);
       }
     }
   }, [coordinates]);
 
-  return null; // This is a non-visual component that manipulates the map directly
+  return null;
 };
 
 export default OriginMarker;
