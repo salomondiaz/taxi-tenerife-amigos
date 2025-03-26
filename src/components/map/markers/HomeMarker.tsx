@@ -5,6 +5,7 @@ import { MapCoordinates } from '../types';
 import { Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useFavoriteLocations } from '@/hooks/useFavoriteLocations';
+import { reverseGeocode } from '../services/MapboxService';
 
 interface HomeMarkerProps {
   map: mapboxgl.Map;
@@ -207,31 +208,22 @@ const HomeMarker: React.FC<HomeMarkerProps> = ({ map, coordinates }) => {
           lng: lngLat.lng
         };
         
-        // Geocode the new position to get address
-        const geocoder = new mapboxgl.Geocoder({
-          accessToken: map.getStyle().sources.openmaptiles.url.includes('mapbox') 
-            ? map.getStyle().sources.openmaptiles.url.split('access_token=')[1]
-            : ''
-        });
+        // Get the access token from the map
+        const token = mapboxgl.accessToken;
         
-        if (geocoder.query) {
-          geocoder.query(`${newCoords.lng},${newCoords.lat}`, (err, result) => {
-            if (err) {
-              console.error("Error geocoding home position:", err);
-              updateHomeLocation(newCoords);
-              return;
-            }
-            
-            if (result && result.features && result.features.length > 0) {
-              const address = result.features[0].place_name;
+        if (token) {
+          // Use our existing reverse geocoding service
+          reverseGeocode(newCoords, token)
+            .then(address => {
               updateHomeLocation({
                 ...newCoords,
-                address: address
+                address: address || "Mi hogar"
               });
-            } else {
+            })
+            .catch(error => {
+              console.error("Error with reverse geocoding:", error);
               updateHomeLocation(newCoords);
-            }
-          });
+            });
         } else {
           // Fallback for Google Maps
           try {
