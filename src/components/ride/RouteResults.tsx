@@ -32,6 +32,13 @@ const RouteResults: React.FC<RouteResultsProps> = ({
   const formattedTime = estimatedTime ? `${estimatedTime} min` : "---";
   const formattedDistance = estimatedDistance ? `${estimatedDistance.toFixed(1)} km` : "---";
   
+  console.log("RouteResults rendering with:", {
+    trafficLevel,
+    arrivalTime,
+    hasResults,
+    isLoading
+  });
+  
   if (!hasResults && !isLoading) {
     return null; // Don't show the component if no results and not loading
   }

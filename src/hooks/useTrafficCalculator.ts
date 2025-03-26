@@ -30,6 +30,8 @@ export const useTrafficCalculator = () => {
 
   // Update traffic information
   const updateTrafficInfo = (distance: number, time: number) => {
+    console.log("Calculating traffic for distance:", distance, "km and time:", time, "min");
+    
     const traffic = calculateTrafficLevel(distance, time);
     setTrafficLevel(traffic);
     
@@ -61,6 +63,8 @@ export const useTrafficCalculator = () => {
         variant = 'destructive';
         break;
     }
+    
+    console.log("Traffic level:", traffic, "Adjusted time:", adjustedTime, "Arrival time:", arrival);
     
     toast({
       title: `Hora estimada de llegada: ${arrival}`,
