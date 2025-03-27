@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -380,10 +379,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     if (origin) bounds.extend({ lat: origin.lat, lng: origin.lng });
     if (destination) bounds.extend({ lat: destination.lat, lng: destination.lng });
     
-    // Fix: Change padding from object to number
-    mapRef.current.fitBounds(bounds, { 
-      padding: 100  // Changed from object to number
-    });
+    mapRef.current.fitBounds(bounds);
   }, [origin, destination, showRoute]);
 
   return (
