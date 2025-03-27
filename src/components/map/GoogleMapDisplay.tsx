@@ -1,7 +1,10 @@
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
+import { useGoogleMapMarkers } from './hooks/useGoogleMapMarkers';
+import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
+import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   origin,
@@ -21,41 +24,42 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const originMarkerRef = useRef<google.maps.Marker | null>(null);
-  const destinationMarkerRef = useRef<google.maps.Marker | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const homeMarkerRef = useRef<google.maps.Marker | null>(null);
-  const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | 'none'>(allowMapSelection ? 'origin' : 'none');
-  const homeLocationKey = 'user_home_location';
-  
-  useEffect(() => {
-    if (!mapContainerRef.current || !apiKey) return;
 
-    if (!window.google?.maps) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      
-      script.onload = initializeMap;
-      script.onerror = () => {
-        console.error('Error loading Google Maps API');
-        toast({
-          title: 'Error',
-          description: 'No se pudo cargar Google Maps',
-          variant: 'destructive'
-        });
-      };
-      
-      document.body.appendChild(script);
-      return () => {
-        document.body.removeChild(script);
-      };
-    } else {
-      initializeMap();
-    }
-  }, [apiKey]);
+  // Use custom hooks for map functionality
+  const { 
+    updateMarkers, 
+    saveHomeLocation 
+  } = useGoogleMapMarkers({
+    mapRef,
+    origin,
+    destination,
+    allowHomeEditing,
+    allowMapSelection,
+    onOriginChange,
+    onDestinationChange
+  });
 
+  const { 
+    handleMapClick, 
+    selectionMode, 
+    createSelectionControls 
+  } = useGoogleMapSelection({
+    mapRef,
+    allowMapSelection,
+    onOriginChange,
+    onDestinationChange
+  });
+
+  useGoogleMapRouting({
+    mapRef,
+    directionsRendererRef,
+    origin,
+    destination,
+    showRoute
+  });
+
+  // Initialize the map
   const initializeMap = useCallback(() => {
     if (!mapContainerRef.current) return;
     
@@ -109,235 +113,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
 
     updateMarkers();
-  }, []);
+  }, [allowHomeEditing, allowMapSelection, handleMapClick, createSelectionControls, interactive, origin, updateMarkers]);
 
-  const updateMarkers = () => {
-    if (!mapRef.current) return;
-    
-    // Create or update the origin marker (blue)
-    if (origin) {
-      if (originMarkerRef.current) {
-        originMarkerRef.current.setPosition({ lat: origin.lat, lng: origin.lng });
-      } else {
-        originMarkerRef.current = new google.maps.Marker({
-          position: { lat: origin.lat, lng: origin.lng },
-          map: mapRef.current,
-          icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-            scaledSize: new google.maps.Size(40, 40)
-          },
-          draggable: allowMapSelection,
-          title: 'Origen'
-        });
-        
-        if (allowMapSelection && onOriginChange) {
-          originMarkerRef.current.addListener('dragend', () => {
-            const position = originMarkerRef.current?.getPosition();
-            if (position) {
-              reverseGeocode(position.lat(), position.lng(), (address) => {
-                onOriginChange({
-                  lat: position.lat(),
-                  lng: position.lng(),
-                  address: address
-                });
-              });
-            }
-          });
-        }
-      }
-    } else if (originMarkerRef.current) {
-      originMarkerRef.current.setMap(null);
-      originMarkerRef.current = null;
-    }
-
-    // Create or update the destination marker (red)
-    if (destination) {
-      if (destinationMarkerRef.current) {
-        destinationMarkerRef.current.setPosition({ lat: destination.lat, lng: destination.lng });
-      } else {
-        // Fix: Changed icon to RED for destination marker
-        destinationMarkerRef.current = new google.maps.Marker({
-          position: { lat: destination.lat, lng: destination.lng },
-          map: mapRef.current,
-          icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-            scaledSize: new google.maps.Size(40, 40)
-          },
-          draggable: allowMapSelection,
-          title: 'Destino'
-        });
-        
-        if (allowMapSelection && onDestinationChange) {
-          destinationMarkerRef.current.addListener('dragend', () => {
-            const position = destinationMarkerRef.current?.getPosition();
-            if (position) {
-              reverseGeocode(position.lat(), position.lng(), (address) => {
-                onDestinationChange({
-                  lat: position.lat(),
-                  lng: position.lng(),
-                  address: address
-                });
-              });
-            }
-          });
-        }
-      }
-    } else if (destinationMarkerRef.current) {
-      destinationMarkerRef.current.setMap(null);
-      destinationMarkerRef.current = null;
-    }
-    
-    // Create or update home marker if needed
-    updateHomeMarker();
-  };
-
-  // Added a separate function to handle home marker logic
-  const updateHomeMarker = () => {
-    if (!mapRef.current) return;
-    
-    try {
-      const homeLocationJSON = localStorage.getItem(homeLocationKey);
-      if (homeLocationJSON) {
-        const homeLocation = JSON.parse(homeLocationJSON);
-        
-        // Check if origin location is the home location
-        const isOriginHome = origin && 
-          homeLocation && 
-          ((Math.abs(origin.lat - homeLocation.lat) < 0.0001 && 
-            Math.abs(origin.lng - homeLocation.lng) < 0.0001) ||
-           (origin.address && origin.address.includes("Mi Casa")));
-        
-        // Show home marker if we're at home location or if we have allowHomeEditing enabled
-        if (isOriginHome || allowHomeEditing) {
-          if (homeMarkerRef.current) {
-            homeMarkerRef.current.setPosition({ lat: homeLocation.lat, lng: homeLocation.lng });
-          } else {
-            // Create a more visible home icon
-            homeMarkerRef.current = new google.maps.Marker({
-              position: { lat: homeLocation.lat, lng: homeLocation.lng },
-              map: mapRef.current,
-              icon: {
-                url: 'https://maps.google.com/mapfiles/kml/shapes/homegardenbusiness.png',
-                scaledSize: new google.maps.Size(40, 40)
-              },
-              title: 'Mi Casa'
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error showing home marker:', error);
-    }
-  };
-
-  const calculateAndDisplayRoute = () => {
-    if (!mapRef.current || !origin || !destination || !directionsRendererRef.current) return;
-    
-    const directionsService = new google.maps.DirectionsService();
-    
-    directionsService.route(
-      {
-        origin: { lat: origin.lat, lng: origin.lng },
-        destination: { lat: destination.lat, lng: destination.lng },
-        travelMode: google.maps.TravelMode.DRIVING,
-        avoidHighways: false,
-        avoidTolls: false,
-      },
-      (response, status) => {
-        if (status === google.maps.DirectionsStatus.OK && response) {
-          directionsRendererRef.current?.setDirections(response);
-        } else {
-          console.error('Error calculating route:', status);
-          toast({
-            title: 'Error',
-            description: 'No se pudo calcular la ruta',
-            variant: 'destructive'
-          });
-        }
-      }
-    );
-  };
-
-  const handleMapClick = (event: google.maps.MapMouseEvent) => {
-    if (!mapRef.current || selectionMode === 'none' || !event.latLng) return;
-    
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-    
-    reverseGeocode(lat, lng, (address) => {
-      const coordinates = { lat, lng, address };
-      
-      if (selectionMode === 'origin' && onOriginChange) {
-        onOriginChange(coordinates);
-        setSelectionMode('destination');
-      } else if (selectionMode === 'destination' && onDestinationChange) {
-        onDestinationChange(coordinates);
-        setSelectionMode('none');
-      }
-    });
-  };
-
-  const reverseGeocode = (lat: number, lng: number, callback: (address: string) => void) => {
-    const geocoder = new google.maps.Geocoder();
-    
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-        callback(results[0].formatted_address);
-      } else {
-        console.error('Error reverse geocoding:', status);
-        callback(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-      }
-    });
-  };
-
-  const createSelectionControls = (controlDiv: HTMLDivElement) => {
-    controlDiv.style.padding = '10px';
-    controlDiv.style.backgroundColor = 'white';
-    controlDiv.style.borderRadius = '8px';
-    controlDiv.style.margin = '10px';
-    controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
-    controlDiv.style.textAlign = 'center';
-    
-    const originButton = document.createElement('button');
-    originButton.style.backgroundColor = selectionMode === 'origin' ? '#1E88E5' : 'white';
-    originButton.style.color = selectionMode === 'origin' ? 'white' : 'black';
-    originButton.style.border = 'none';
-    originButton.style.borderRadius = '4px';
-    originButton.style.padding = '8px 12px';
-    originButton.style.margin = '0 5px';
-    originButton.style.fontSize = '14px';
-    originButton.style.cursor = 'pointer';
-    originButton.textContent = 'Seleccionar Origen';
-    originButton.onclick = () => {
-      setSelectionMode('origin');
-      originButton.style.backgroundColor = '#1E88E5';
-      originButton.style.color = 'white';
-      destButton.style.backgroundColor = 'white';
-      destButton.style.color = 'black';
-    };
-    
-    const destButton = document.createElement('button');
-    destButton.style.backgroundColor = selectionMode === 'destination' ? '#1E88E5' : 'white';
-    destButton.style.color = selectionMode === 'destination' ? 'white' : 'black';
-    destButton.style.border = 'none';
-    destButton.style.borderRadius = '4px';
-    destButton.style.padding = '8px 12px';
-    destButton.style.margin = '0 5px';
-    destButton.style.fontSize = '14px';
-    destButton.style.cursor = 'pointer';
-    destButton.textContent = 'Seleccionar Destino';
-    destButton.onclick = () => {
-      setSelectionMode('destination');
-      destButton.style.backgroundColor = '#1E88E5';
-      destButton.style.color = 'white';
-      originButton.style.backgroundColor = 'white';
-      originButton.style.color = 'black';
-    };
-    
-    controlDiv.appendChild(originButton);
-    controlDiv.appendChild(destButton);
-  };
-
+  // Create home button
   const createHomeButton = (controlDiv: HTMLDivElement) => {
     controlDiv.style.padding = '10px';
     controlDiv.style.backgroundColor = 'white';
@@ -355,53 +133,39 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     button.style.cursor = 'pointer';
     button.innerHTML = '<span style="font-size: 16px;">🏠</span> Guardar Casa';
     
-    button.onclick = () => {
-      if (origin) {
-        try {
-          localStorage.setItem(homeLocationKey, JSON.stringify(origin));
-          toast({
-            title: 'Casa guardada',
-            description: 'Tu ubicación de casa ha sido guardada',
-          });
-          
-          updateHomeMarker();
-        } catch (error) {
-          console.error('Error saving home location:', error);
-          toast({
-            title: 'Error',
-            description: 'No se pudo guardar la ubicación de tu casa',
-            variant: 'destructive'
-          });
-        }
-      } else {
-        toast({
-          title: 'Sin ubicación',
-          description: 'Selecciona primero una ubicación',
-          variant: 'destructive'
-        });
-      }
-    };
+    button.onclick = saveHomeLocation;
     
     controlDiv.appendChild(button);
   };
 
+  // Initialize map when API key is available
   useEffect(() => {
-    updateMarkers();
-  }, [origin, destination, mapRef.current]);
+    if (!mapContainerRef.current || !apiKey) return;
 
-  useEffect(() => {
-    if (!mapRef.current || !origin || !destination) return;
-    
-    if (showRoute) {
-      calculateAndDisplayRoute();
+    if (!window.google?.maps) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = initializeMap;
+      script.onerror = () => {
+        console.error('Error loading Google Maps API');
+        toast({
+          title: 'Error',
+          description: 'No se pudo cargar Google Maps',
+          variant: 'destructive'
+        });
+      };
+      
+      document.body.appendChild(script);
+      return () => {
+        document.body.removeChild(script);
+      };
+    } else {
+      initializeMap();
     }
-    
-    const bounds = new google.maps.LatLngBounds();
-    if (origin) bounds.extend({ lat: origin.lat, lng: origin.lng });
-    if (destination) bounds.extend({ lat: destination.lat, lng: destination.lng });
-    
-    mapRef.current.fitBounds(bounds);
-  }, [origin, destination, showRoute]);
+  }, [apiKey, initializeMap]);
 
   return (
     <div
