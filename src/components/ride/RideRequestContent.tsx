@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MapCoordinates } from "@/components/map/types";
@@ -15,6 +14,7 @@ import StripePaymentProvider from "@/components/payment/StripePaymentProvider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Home } from "lucide-react";
+import MapComponent from "@/components/Map";
 
 // Custom hooks
 import { useLocationTracker } from "@/hooks/useLocationTracker";
@@ -286,7 +286,7 @@ const RideRequestContent: React.FC = () => {
           </div>
           
           <div className="h-72 mb-6 border rounded-lg overflow-hidden">
-            <Map 
+            <MapComponent 
               origin={originCoords || undefined}
               className="h-full"
               onOriginChange={handleOriginChange}
