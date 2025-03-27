@@ -10,8 +10,16 @@ const GOOGLE_MAPS_API_KEY = 'AIzaSyBBhFX2uXJtOBZFWqKKACGEBYqKKn80lrg';
 const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();
 
-  // Pass all props to GoogleMapDisplay including the API key
-  return <GoogleMapDisplay apiKey={GOOGLE_MAPS_API_KEY} {...props} />;
+  // Check if we should show the home marker
+  const showHomeMarker = props.origin?.address?.toLowerCase().includes('mi casa') || 
+                        props.origin?.address?.toLowerCase().includes('home');
+
+  // Pass all props to GoogleMapDisplay including the API key and home marker flag
+  return <GoogleMapDisplay 
+    apiKey={GOOGLE_MAPS_API_KEY} 
+    allowHomeEditing={showHomeMarker || props.allowHomeEditing}
+    {...props} 
+  />;
 };
 
 // Exportaciones

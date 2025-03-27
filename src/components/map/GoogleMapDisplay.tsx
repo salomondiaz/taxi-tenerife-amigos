@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -113,6 +114,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const updateMarkers = () => {
     if (!mapRef.current) return;
     
+    // Create or update the origin marker (blue)
     if (origin) {
       if (originMarkerRef.current) {
         originMarkerRef.current.setPosition({ lat: origin.lat, lng: origin.lng });
@@ -148,10 +150,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       originMarkerRef.current = null;
     }
 
+    // Create or update the destination marker (red)
     if (destination) {
       if (destinationMarkerRef.current) {
         destinationMarkerRef.current.setPosition({ lat: destination.lat, lng: destination.lng });
       } else {
+        // Fix: Changed icon to RED for destination marker
         destinationMarkerRef.current = new google.maps.Marker({
           position: { lat: destination.lat, lng: destination.lng },
           map: mapRef.current,
@@ -183,15 +187,32 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       destinationMarkerRef.current = null;
     }
     
-    if (allowHomeEditing) {
-      try {
-        const homeLocationJSON = localStorage.getItem(homeLocationKey);
-        if (homeLocationJSON) {
-          const homeLocation = JSON.parse(homeLocationJSON);
-          
+    // Create or update home marker if needed
+    updateHomeMarker();
+  };
+
+  // Added a separate function to handle home marker logic
+  const updateHomeMarker = () => {
+    if (!mapRef.current) return;
+    
+    try {
+      const homeLocationJSON = localStorage.getItem(homeLocationKey);
+      if (homeLocationJSON) {
+        const homeLocation = JSON.parse(homeLocationJSON);
+        
+        // Check if origin location is the home location
+        const isOriginHome = origin && 
+          homeLocation && 
+          ((Math.abs(origin.lat - homeLocation.lat) < 0.0001 && 
+            Math.abs(origin.lng - homeLocation.lng) < 0.0001) ||
+           (origin.address && origin.address.includes("Mi Casa")));
+        
+        // Show home marker if we're at home location or if we have allowHomeEditing enabled
+        if (isOriginHome || allowHomeEditing) {
           if (homeMarkerRef.current) {
             homeMarkerRef.current.setPosition({ lat: homeLocation.lat, lng: homeLocation.lng });
           } else {
+            // Create a more visible home icon
             homeMarkerRef.current = new google.maps.Marker({
               position: { lat: homeLocation.lat, lng: homeLocation.lng },
               map: mapRef.current,
@@ -203,9 +224,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             });
           }
         }
-      } catch (error) {
-        console.error('Error showing home marker:', error);
       }
+    } catch (error) {
+      console.error('Error showing home marker:', error);
     }
   };
 
@@ -343,7 +364,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             description: 'Tu ubicación de casa ha sido guardada',
           });
           
-          updateMarkers();
+          updateHomeMarker();
         } catch (error) {
           console.error('Error saving home location:', error);
           toast({
