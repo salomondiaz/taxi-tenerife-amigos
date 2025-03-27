@@ -171,7 +171,7 @@ const Home = () => {
               {homeLocation ? (
                 <div>
                   <p className="text-blue-700 mb-2">
-                    {homeLocation.address || `${homeLocation.coordinates.lat.toFixed(6)}, ${homeLocation.coordinates.lng.toFixed(6)}`}
+                    {homeLocation.coordinates.address || `${homeLocation.coordinates.lat.toFixed(6)}, ${homeLocation.coordinates.lng.toFixed(6)}`}
                   </p>
                   <div className="flex gap-3 mt-4">
                     <Button
@@ -346,40 +346,6 @@ const Home = () => {
                 </Button>
               </div>
             )}
-          </div>
-          
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Destinos populares</h2>
-            
-            <div className="space-y-3">
-              {[
-                { name: "Loro Parque", address: "Puerto de la Cruz", icon: "🐬" },
-                { name: "Playa Jardín", address: "Puerto de la Cruz", icon: "🏖️" },
-                { name: "Drago Milenario", address: "Icod de los Vinos", icon: "🌳" },
-                { name: "La Orotava Centro", address: "La Orotava", icon: "🏛️" },
-              ].map((destination, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    navigate("/request-ride", { 
-                      state: { destination: destination.name } 
-                    });
-                  }}
-                  className="w-full flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                      <span className="text-lg">{destination.icon}</span>
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-gray-800">{destination.name}</h3>
-                      <p className="text-sm text-gray-500">{destination.address}</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={20} className="text-gray-400" />
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </div>
