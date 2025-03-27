@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -28,11 +27,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | 'none'>(allowMapSelection ? 'origin' : 'none');
   const homeLocationKey = 'user_home_location';
   
-  // Initialize Google Maps
   useEffect(() => {
     if (!mapContainerRef.current || !apiKey) return;
 
-    // Load Google Maps API script if not already loaded
     if (!window.google?.maps) {
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
@@ -56,15 +53,11 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     } else {
       initializeMap();
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
-  // Initialize the map
   const initializeMap = useCallback(() => {
     if (!mapContainerRef.current) return;
     
-    // Center on Tenerife by default
     const tenerife = { lat: 28.2916, lng: -16.6291 };
     const initialCenter = origin ? { lat: origin.lat, lng: origin.lng } : tenerife;
     
@@ -87,7 +80,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
     
-    // Add directions renderer
     directionsRendererRef.current = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
       polylineOptions: {
@@ -99,18 +91,15 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     directionsRendererRef.current.setMap(mapRef.current);
     
-    // Add click listener for map selection
     if (allowMapSelection) {
       mapRef.current.addListener('click', handleMapClick);
       
-      // Add selection controls to the map
       const controlDiv = document.createElement('div');
       createSelectionControls(controlDiv);
       
       mapRef.current.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
     }
     
-    // Add home button if needed
     if (allowHomeEditing) {
       const homeButtonDiv = document.createElement('div');
       createHomeButton(homeButtonDiv);
@@ -118,44 +107,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       mapRef.current.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
     }
 
-    // Update markers and directions
     updateMarkers();
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update markers when origin or destination changes
-  useEffect(() => {
-    updateMarkers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, destination, mapRef.current]);
-
-  // Update route when origin and destination change
-  useEffect(() => {
-    if (!mapRef.current || !origin || !destination) return;
-    
-    if (showRoute) {
-      calculateAndDisplayRoute();
-    }
-    
-    // Fit bounds to include both markers
-    const bounds = new google.maps.LatLngBounds();
-    if (origin) bounds.extend({ lat: origin.lat, lng: origin.lng });
-    if (destination) bounds.extend({ lat: destination.lat, lng: destination.lng });
-    
-    mapRef.current.fitBounds(bounds, {
-      padding: 100,
-      maxZoom: 15
-    });
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin, destination, showRoute]);
-
-  // Function to update markers on the map
   const updateMarkers = () => {
     if (!mapRef.current) return;
     
-    // Update origin marker
     if (origin) {
       if (originMarkerRef.current) {
         originMarkerRef.current.setPosition({ lat: origin.lat, lng: origin.lng });
@@ -171,7 +128,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           title: 'Origen'
         });
         
-        // Add drag listener for origin marker
         if (allowMapSelection && onOriginChange) {
           originMarkerRef.current.addListener('dragend', () => {
             const position = originMarkerRef.current?.getPosition();
@@ -192,7 +148,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       originMarkerRef.current = null;
     }
 
-    // Update destination marker
     if (destination) {
       if (destinationMarkerRef.current) {
         destinationMarkerRef.current.setPosition({ lat: destination.lat, lng: destination.lng });
@@ -208,7 +163,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           title: 'Destino'
         });
         
-        // Add drag listener for destination marker
         if (allowMapSelection && onDestinationChange) {
           destinationMarkerRef.current.addListener('dragend', () => {
             const position = destinationMarkerRef.current?.getPosition();
@@ -229,7 +183,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       destinationMarkerRef.current = null;
     }
     
-    // Show home marker if we're in home editing mode
     if (allowHomeEditing) {
       try {
         const homeLocationJSON = localStorage.getItem(homeLocationKey);
@@ -256,7 +209,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   };
 
-  // Calculate and display route
   const calculateAndDisplayRoute = () => {
     if (!mapRef.current || !origin || !destination || !directionsRendererRef.current) return;
     
@@ -285,7 +237,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     );
   };
 
-  // Handle map clicks for selection mode
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!mapRef.current || selectionMode === 'none' || !event.latLng) return;
     
@@ -305,7 +256,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     });
   };
 
-  // Reverse geocode coordinates to get address
   const reverseGeocode = (lat: number, lng: number, callback: (address: string) => void) => {
     const geocoder = new google.maps.Geocoder();
     
@@ -319,7 +269,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     });
   };
 
-  // Create selection mode controls
   const createSelectionControls = (controlDiv: HTMLDivElement) => {
     controlDiv.style.padding = '10px';
     controlDiv.style.backgroundColor = 'white';
@@ -328,7 +277,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
     controlDiv.style.textAlign = 'center';
     
-    // Origin button
     const originButton = document.createElement('button');
     originButton.style.backgroundColor = selectionMode === 'origin' ? '#1E88E5' : 'white';
     originButton.style.color = selectionMode === 'origin' ? 'white' : 'black';
@@ -347,7 +295,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       destButton.style.color = 'black';
     };
     
-    // Destination button
     const destButton = document.createElement('button');
     destButton.style.backgroundColor = selectionMode === 'destination' ? '#1E88E5' : 'white';
     destButton.style.color = selectionMode === 'destination' ? 'white' : 'black';
@@ -370,7 +317,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     controlDiv.appendChild(destButton);
   };
 
-  // Create home button for saving home location
   const createHomeButton = (controlDiv: HTMLDivElement) => {
     controlDiv.style.padding = '10px';
     controlDiv.style.backgroundColor = 'white';
@@ -397,7 +343,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             description: 'Tu ubicación de casa ha sido guardada',
           });
           
-          // Update home marker
           updateMarkers();
         } catch (error) {
           console.error('Error saving home location:', error);
@@ -418,6 +363,26 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     controlDiv.appendChild(button);
   };
+
+  useEffect(() => {
+    updateMarkers();
+  }, [origin, destination, mapRef.current]);
+
+  useEffect(() => {
+    if (!mapRef.current || !origin || !destination) return;
+    
+    if (showRoute) {
+      calculateAndDisplayRoute();
+    }
+    
+    const bounds = new google.maps.LatLngBounds();
+    if (origin) bounds.extend({ lat: origin.lat, lng: origin.lng });
+    if (destination) bounds.extend({ lat: destination.lat, lng: destination.lng });
+    
+    mapRef.current.fitBounds(bounds, { 
+      padding: 100 
+    });
+  }, [origin, destination, showRoute]);
 
   return (
     <div
