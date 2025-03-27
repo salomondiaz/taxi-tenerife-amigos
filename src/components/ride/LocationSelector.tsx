@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 import FavoriteLocations from "./FavoriteLocations";
 import { MapCoordinates } from "@/components/map/types";
+import GooglePlacesAutocomplete from "@/components/map/GooglePlacesAutocomplete";
 
 interface LocationSelectorProps {
   origin: string;
@@ -18,6 +19,8 @@ interface LocationSelectorProps {
   handleUseCurrentLocation: () => void;
   originCoords?: MapCoordinates | null;
   onSelectLocation?: (coordinates: MapCoordinates, address?: string) => void;
+  googleMapsApiKey?: string;
+  onPlaceSelected?: (coordinates: MapCoordinates) => void;
 }
 
 const HOME_ADDRESS_KEY = 'home_address';
@@ -32,7 +35,9 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
   setUseManualSelection,
   handleUseCurrentLocation,
   originCoords,
-  onSelectLocation
+  onSelectLocation,
+  googleMapsApiKey,
+  onPlaceSelected
 }) => {
   const toggleSelectionMode = () => {
     setUseManualSelection(!useManualSelection);
@@ -130,6 +135,20 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       onSelectLocation(coordinates, address);
     }
   };
+  
+  const handleOriginPlaceSelected = (coordinates: MapCoordinates) => {
+    if (onSelectLocation) {
+      onSelectLocation(coordinates, coordinates.address);
+    }
+    if (onPlaceSelected) {
+      onPlaceSelected(coordinates);
+    }
+  };
+  
+  const handleDestinationPlaceSelected = (coordinates: MapCoordinates) => {
+    // Solo para el destino, no necesitamos actualizar la ubicación guardada
+    setDestination(coordinates.address || "");
+  };
 
   return (
     <div className="space-y-6">
@@ -186,7 +205,43 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
           </Button>
         </div>
         
-        {!useManualSelection && (
+        {!useManualSelection && googleMapsApiKey && (
+          <div className="space-y-4">
+            <div className="flex gap-2 items-start">
+              <div className="mt-2">
+                <MapPin size={18} className="text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <GooglePlacesAutocomplete
+                  label="Punto de recogida"
+                  placeholder="¿Dónde te recogemos? (especifica 'Tenerife' en la dirección)"
+                  value={origin}
+                  onChange={setOrigin}
+                  onPlaceSelected={handleOriginPlaceSelected}
+                  apiKey={googleMapsApiKey}
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2 items-start">
+              <div className="mt-2">
+                <Navigation size={18} className="text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <GooglePlacesAutocomplete
+                  label="Destino"
+                  placeholder="¿A dónde vas? (especifica 'Tenerife' en la dirección)"
+                  value={destination}
+                  onChange={setDestination}
+                  onPlaceSelected={handleDestinationPlaceSelected}
+                  apiKey={googleMapsApiKey}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {!useManualSelection && !googleMapsApiKey && (
           <div className="space-y-4">
             <div className="flex gap-2 items-start">
               <div className="mt-2">

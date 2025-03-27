@@ -6,8 +6,10 @@ import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation, Home as HomeIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
+import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
+import GooglePlacesAutocomplete from "@/components/map/GooglePlacesAutocomplete";
+import { MapCoordinates } from "@/components/map/types";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -16,6 +18,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const { getLocationByType } = useFavoriteLocations();
   const [homeLocation, setHomeLocation] = useState<any>(null);
+  const [pickup, setPickup] = useState("");
+  const [destination, setDestination] = useState("");
 
   useEffect(() => {
     // Check if home location exists
@@ -96,6 +100,37 @@ const Home = () => {
   const handleSetHomeLocation = () => {
     navigate("/request-ride", { state: { setHomeLocation: true } });
   };
+  
+  const handleRequestSpecificRide = () => {
+    if (pickup && destination) {
+      navigate("/request-ride", { 
+        state: { 
+          origin: pickup,
+          destination: destination 
+        } 
+      });
+    } else if (!pickup) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, indica el punto de recogida",
+        variant: "destructive"
+      });
+    } else if (!destination) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, indica el destino",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handlePickupSelected = (coordinates: MapCoordinates) => {
+    setPickup(coordinates.address || "");
+  };
+  
+  const handleDestinationSelected = (coordinates: MapCoordinates) => {
+    setDestination(coordinates.address || "");
+  };
 
   const formatDate = (date: Date) => {
     const today = new Date();
@@ -154,7 +189,7 @@ const Home = () => {
             variant="default" 
             className="w-full bg-white text-tenerife-blue hover:bg-gray-100 transition-colors shadow-lg"
           >
-            <MapPin size={20} />
+            <MapPin size={20} className="mr-2" />
             Solicitar un taxi
           </Button>
         </div>
@@ -227,14 +262,13 @@ const Home = () => {
                       <MapPin size={18} className="text-blue-500" />
                     </div>
                     <div className="flex-1">
-                      <label htmlFor="pickup" className="block text-sm font-medium text-gray-700 mb-1">
-                        Punto de recogida
-                      </label>
-                      <Input 
-                        id="pickup"
-                        type="text"
+                      <GooglePlacesAutocomplete
+                        label="Punto de recogida"
                         placeholder="¿Dónde te recogemos?"
-                        className="w-full"
+                        value={pickup}
+                        onChange={setPickup}
+                        onPlaceSelected={handlePickupSelected}
+                        apiKey={GOOGLE_MAPS_API_KEY}
                       />
                     </div>
                   </div>
@@ -244,14 +278,13 @@ const Home = () => {
                       <Navigation size={18} className="text-red-500" />
                     </div>
                     <div className="flex-1">
-                      <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">
-                        Destino
-                      </label>
-                      <Input 
-                        id="destination"
-                        type="text"
+                      <GooglePlacesAutocomplete
+                        label="Destino"
                         placeholder="¿A dónde vas?"
-                        className="w-full"
+                        value={destination}
+                        onChange={setDestination}
+                        onPlaceSelected={handleDestinationSelected}
+                        apiKey={GOOGLE_MAPS_API_KEY}
                       />
                     </div>
                   </div>
@@ -269,6 +302,7 @@ const Home = () => {
                       variant="default"
                       size="default"
                       className="flex-1 bg-tenerife-blue hover:bg-tenerife-blue/90"
+                      onClick={handleRequestSpecificRide}
                     >
                       <Car size={18} className="mr-2" />
                       Solicitar ahora

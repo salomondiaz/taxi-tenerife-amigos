@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MapCoordinates } from "@/components/map/types";
@@ -15,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Home } from "lucide-react";
 import MapComponent from "@/components/Map";
+import GooglePlacesAutocomplete from "@/components/map/GooglePlacesAutocomplete";
+import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
 
 // Custom hooks
 import { useLocationTracker } from "@/hooks/useLocationTracker";
@@ -104,6 +107,18 @@ const RideRequestContent: React.FC = () => {
       setDestination(coords.address);
     }
     console.log("New destination from map:", coords);
+  };
+
+  // Handle place selected from Google Places Autocomplete
+  const handlePlaceSelected = (coords: MapCoordinates) => {
+    if (setHomeLocationMode) {
+      setOriginCoords(coords);
+      setHomeAddress(coords.address || "");
+      toast({
+        title: "Ubicación seleccionada",
+        description: "Ubicación seleccionada como tu casa. Puedes guardarla haciendo clic en 'Guardar Mi Casa'."
+      });
+    }
   };
 
   // Function to handle selection of a saved location
@@ -228,16 +243,16 @@ const RideRequestContent: React.FC = () => {
           </p>
           
           <div className="mb-6">
-            <label htmlFor="homeAddress" className="block text-sm font-medium text-gray-700 mb-1">
-              Dirección de tu casa
-            </label>
-            <Input
-              id="homeAddress"
-              value={homeAddress}
-              onChange={(e) => setHomeAddress(e.target.value)}
+            <GooglePlacesAutocomplete
+              label="Dirección de tu casa"
               placeholder="Ej: Calle Principal 123, Puerto de la Cruz, Tenerife"
-              className="w-full mb-2"
+              value={homeAddress}
+              onChange={setHomeAddress}
+              onPlaceSelected={handlePlaceSelected}
+              apiKey={GOOGLE_MAPS_API_KEY}
+              className="w-full mb-4"
             />
+            
             <Button 
               variant="outline" 
               className="w-full" 
@@ -332,6 +347,8 @@ const RideRequestContent: React.FC = () => {
           handleUseCurrentLocation={handleUseCurrentLocation}
           originCoords={originCoords}
           onSelectLocation={handleSelectSavedLocation}
+          googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+          onPlaceSelected={handlePlaceSelected}
         />
         
         {/* Map viewer */}
