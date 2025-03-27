@@ -60,6 +60,14 @@ export function useGoogleMapMarkers({
           });
         }
       }
+      
+      // Check if this is a home location
+      const isHome = origin.address?.toLowerCase().includes('mi casa') || 
+                     origin.address?.toLowerCase().includes('home');
+      
+      if (isHome) {
+        updateHomeMarker();
+      }
     } else if (originMarkerRef.current) {
       originMarkerRef.current.setMap(null);
       originMarkerRef.current = null;

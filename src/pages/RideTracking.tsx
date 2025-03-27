@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowLeft, MapPin, Car, Phone, Star, User, Clock } from "lucide-react";
@@ -8,6 +7,8 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Map from "@/components/Map";
+
+const RIDE_HISTORY_KEY = 'ride_history';
 
 const RideTracking = () => {
   const navigate = useNavigate();
@@ -164,8 +165,48 @@ const RideTracking = () => {
     }
   };
   
+  const saveRideToHistory = () => {
+    if (!currentRide) return;
+    
+    try {
+      // Get existing history
+      const historyJSON = localStorage.getItem(RIDE_HISTORY_KEY);
+      let history = [];
+      
+      if (historyJSON) {
+        history = JSON.parse(historyJSON);
+      }
+      
+      // Add current ride to history
+      const historyItem = {
+        id: currentRide.id,
+        origin: currentRide.origin,
+        destination: currentRide.destination,
+        requestTime: currentRide.requestTime,
+        status: rideStatus,
+        driver: driver,
+        price: currentRide.price,
+        distance: currentRide.distance,
+        rating: null // User can rate later
+      };
+      
+      // Add to beginning of array
+      history.unshift(historyItem);
+      
+      // Save back to local storage
+      localStorage.setItem(RIDE_HISTORY_KEY, JSON.stringify(history));
+      
+      console.log("Ride saved to history:", historyItem);
+    } catch (error) {
+      console.error("Error saving ride to history:", error);
+    }
+  };
+  
   const handleCancelRide = () => {
     if (rideStatus === "completed") {
+      // Save completed ride to history
+      saveRideToHistory();
+      
       navigate("/home");
       return;
     }
@@ -176,6 +217,9 @@ const RideTracking = () => {
         ...currentRide,
         status: "cancelled",
       });
+      
+      // Save cancelled ride to history
+      saveRideToHistory();
       
       toast({
         title: "Viaje cancelado",
@@ -196,6 +240,8 @@ const RideTracking = () => {
 
   const handleRateDriver = () => {
     if (currentRide) {
+      // Save completed ride to history before rating
+      saveRideToHistory();
       navigate(`/rate-driver/${currentRide.id}`);
     }
   };
