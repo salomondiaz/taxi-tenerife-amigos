@@ -37,6 +37,8 @@ const MapViewer: React.FC<MapViewerProps> = ({
           onOriginChange={handleOriginChange}
           onDestinationChange={handleDestinationChange}
           allowMapSelection={useManualSelection}
+          showRoute={destinationCoords !== null}
+          interactive={true}
         />
       </div>
       
@@ -47,6 +49,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
             <li>Usa los botones en el mapa para seleccionar origen o destino</li>
             <li>Haz clic en el mapa en la ubicación deseada</li>
             <li>Puedes arrastrar los marcadores para ajustar la posición</li>
+            <li>Usa los controles de zoom para acercar o alejar el mapa</li>
             <li>Una vez seleccionados origen y destino, calcula el precio</li>
           </ul>
         </div>

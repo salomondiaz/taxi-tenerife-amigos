@@ -1,470 +1,434 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer, InfoWindow } from '@react-google-maps/api';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { MapProps } from './types';
-import { useGoogleMapKey } from './hooks/useGoogleMapKey';
 import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { useFavoriteLocations } from '@/hooks/useFavoriteLocations';
-import { Loader2, Home, MapPin, Navigation } from 'lucide-react';
-
-const TENERIFE_CENTER = {
-  lat: 28.2916,
-  lng: -16.6291
-};
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '0.5rem'
-};
-
-const googleMapOptions = {
-  disableDefaultUI: false,
-  zoomControl: true,
-  mapTypeControl: false,
-  streetViewControl: false,
-  fullscreenControl: false,
-  styles: [
-    {
-      featureType: "poi",
-      elementType: "labels",
-      stylers: [{ visibility: "off" }]
-    }
-  ]
-};
-
-// Corregir la definición de libraries para que sea compatible con el tipo esperado
-const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places', 'geometry'];
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   origin,
   destination,
   routeGeometry,
-  showDriverPosition = false,
-  driverPosition,
+  className = '',
   style,
-  className = "",
   interactive = true,
+  showDriverPosition,
+  driverPosition,
   onOriginChange,
   onDestinationChange,
-  allowMapSelection = false
+  allowMapSelection = false,
+  showRoute = true,
+  allowHomeEditing = false,
+  apiKey
 }) => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const { apiKey, setApiKey, isValidKey } = useGoogleMapKey();
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-  const [selectionMode, setSelectionMode] = useState<'none' | 'origin' | 'destination'>('none');
-  const [selectedMarker, setSelectedMarker] = useState<'origin' | 'destination' | 'home' | null>(null);
-  const { favoriteLocations, saveFavoriteLocation } = useFavoriteLocations();
-  const homeLocation = favoriteLocations.find(loc => loc.type === 'home');
+  const originMarkerRef = useRef<google.maps.Marker | null>(null);
+  const destinationMarkerRef = useRef<google.maps.Marker | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const homeMarkerRef = useRef<google.maps.Marker | null>(null);
+  const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | 'none'>(allowMapSelection ? 'origin' : 'none');
+  const homeLocationKey = 'user_home_location';
   
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || 'AIzaSyCbfe8aqbD8YBmCZzNA1wkJrtLFeznyMLI',
-    libraries: libraries
-  });
-
+  // Initialize Google Maps
   useEffect(() => {
-    if (isLoaded && origin && destination) {
-      const directionsService = new google.maps.DirectionsService();
+    if (!mapContainerRef.current || !apiKey) return;
+
+    // Load Google Maps API script if not already loaded
+    if (!window.google?.maps) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
       
-      directionsService.route(
-        {
-          origin: { lat: origin.lat, lng: origin.lng },
-          destination: { lat: destination.lat, lng: destination.lng },
-          travelMode: google.maps.TravelMode.DRIVING
-        },
-        (result, status) => {
-          if (status === google.maps.DirectionsStatus.OK) {
-            setDirections(result);
-          } else {
-            console.error(`Error getting directions: ${status}`);
-          }
-        }
-      );
-    } else {
-      setDirections(null);
-    }
-  }, [isLoaded, origin, destination]);
-
-  useEffect(() => {
-    if (!isLoaded || !mapRef.current) return;
-
-    if (origin && destination) {
-      const bounds = new google.maps.LatLngBounds();
-      bounds.extend({ lat: origin.lat, lng: origin.lng });
-      bounds.extend({ lat: destination.lat, lng: destination.lng });
-      mapRef.current.fitBounds(bounds, 50);
-    } else if (origin) {
-      mapRef.current.setCenter({ lat: origin.lat, lng: origin.lng });
-      mapRef.current.setZoom(15);
-    } else if (destination) {
-      mapRef.current.setCenter({ lat: destination.lat, lng: destination.lng });
-      mapRef.current.setZoom(15);
-    } else if (homeLocation) {
-      mapRef.current.setCenter({ 
-        lat: homeLocation.coordinates.lat, 
-        lng: homeLocation.coordinates.lng 
-      });
-      mapRef.current.setZoom(15);
-    } else {
-      mapRef.current.setCenter(TENERIFE_CENTER);
-      mapRef.current.setZoom(10);
-    }
-  }, [isLoaded, origin, destination, homeLocation, mapRef.current]);
-
-  const handleMapClick = (e: google.maps.MapMouseEvent) => {
-    if (!allowMapSelection || selectionMode === 'none' || !e.latLng) return;
-    
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-    
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-        const coords = {
-          lat,
-          lng,
-          address: results[0].formatted_address
-        };
-        
-        if (selectionMode === 'origin' && onOriginChange) {
-          onOriginChange(coords);
-          toast({
-            title: "Origen seleccionado",
-            description: coords.address || "Ubicación seleccionada como origen"
-          });
-        } else if (selectionMode === 'destination' && onDestinationChange) {
-          onDestinationChange(coords);
-          toast({
-            title: "Destino seleccionado",
-            description: coords.address || "Ubicación seleccionada como destino"
-          });
-        }
-        
-        setSelectionMode('none');
-      } else {
+      script.onload = initializeMap;
+      script.onerror = () => {
+        console.error('Error loading Google Maps API');
         toast({
-          title: "Error de geocodificación",
-          description: "No se pudo obtener la dirección de esta ubicación",
-          variant: "destructive"
+          title: 'Error',
+          description: 'No se pudo cargar Google Maps',
+          variant: 'destructive'
         });
+      };
+      
+      document.body.appendChild(script);
+      return () => {
+        document.body.removeChild(script);
+      };
+    } else {
+      initializeMap();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiKey]);
+
+  // Initialize the map
+  const initializeMap = useCallback(() => {
+    if (!mapContainerRef.current) return;
+    
+    // Center on Tenerife by default
+    const tenerife = { lat: 28.2916, lng: -16.6291 };
+    const initialCenter = origin ? { lat: origin.lat, lng: origin.lng } : tenerife;
+    
+    const mapOptions: google.maps.MapOptions = {
+      center: initialCenter,
+      zoom: 12,
+      mapTypeControl: false,
+      fullscreenControl: false,
+      streetViewControl: false,
+      zoomControl: true,
+      gestureHandling: interactive ? 'greedy' : 'none',
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    };
+    
+    mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
+    
+    // Add directions renderer
+    directionsRendererRef.current = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: '#1E88E5',
+        strokeWeight: 5,
+        strokeOpacity: 0.7
       }
     });
-  };
+    
+    directionsRendererRef.current.setMap(mapRef.current);
+    
+    // Add click listener for map selection
+    if (allowMapSelection) {
+      mapRef.current.addListener('click', handleMapClick);
+      
+      // Add selection controls to the map
+      const controlDiv = document.createElement('div');
+      createSelectionControls(controlDiv);
+      
+      mapRef.current.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
+    }
+    
+    // Add home button if needed
+    if (allowHomeEditing) {
+      const homeButtonDiv = document.createElement('div');
+      createHomeButton(homeButtonDiv);
+      
+      mapRef.current.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
+    }
 
-  const handleMarkerDragEnd = (e: google.maps.MapMouseEvent, type: 'origin' | 'destination' | 'home') => {
-    if (!e.latLng) return;
+    // Update markers and directions
+    updateMarkers();
     
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update markers when origin or destination changes
+  useEffect(() => {
+    updateMarkers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin, destination, mapRef.current]);
+
+  // Update route when origin and destination change
+  useEffect(() => {
+    if (!mapRef.current || !origin || !destination) return;
     
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-        const coords = {
-          lat,
-          lng,
-          address: results[0].formatted_address
-        };
+    if (showRoute) {
+      calculateAndDisplayRoute();
+    }
+    
+    // Fit bounds to include both markers
+    const bounds = new google.maps.LatLngBounds();
+    if (origin) bounds.extend({ lat: origin.lat, lng: origin.lng });
+    if (destination) bounds.extend({ lat: destination.lat, lng: destination.lng });
+    
+    mapRef.current.fitBounds(bounds, {
+      padding: 100,
+      maxZoom: 15
+    });
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin, destination, showRoute]);
+
+  // Function to update markers on the map
+  const updateMarkers = () => {
+    if (!mapRef.current) return;
+    
+    // Update origin marker
+    if (origin) {
+      if (originMarkerRef.current) {
+        originMarkerRef.current.setPosition({ lat: origin.lat, lng: origin.lng });
+      } else {
+        originMarkerRef.current = new google.maps.Marker({
+          position: { lat: origin.lat, lng: origin.lng },
+          map: mapRef.current,
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+            scaledSize: new google.maps.Size(40, 40)
+          },
+          draggable: allowMapSelection,
+          title: 'Origen'
+        });
         
-        if (type === 'origin' && onOriginChange) {
-          onOriginChange(coords);
-        } else if (type === 'destination' && onDestinationChange) {
-          onDestinationChange(coords);
-        } else if (type === 'home') {
-          saveFavoriteLocation({
-            id: 'home',
-            name: 'Mi Casa',
-            coordinates: coords,
-            type: 'home',
-            icon: '🏠'
-          });
-          toast({
-            title: "Casa actualizada",
-            description: "La ubicación de tu casa ha sido actualizada"
+        // Add drag listener for origin marker
+        if (allowMapSelection && onOriginChange) {
+          originMarkerRef.current.addListener('dragend', () => {
+            const position = originMarkerRef.current?.getPosition();
+            if (position) {
+              reverseGeocode(position.lat(), position.lng(), (address) => {
+                onOriginChange({
+                  lat: position.lat(),
+                  lng: position.lng(),
+                  address: address
+                });
+              });
+            }
           });
         }
       }
-    });
-  };
+    } else if (originMarkerRef.current) {
+      originMarkerRef.current.setMap(null);
+      originMarkerRef.current = null;
+    }
 
-  const saveAsHome = (coords: {lat: number, lng: number, address?: string}) => {
-    saveFavoriteLocation({
-      id: 'home',
-      name: 'Mi Casa',
-      coordinates: coords,
-      type: 'home',
-      icon: '🏠'
-    });
-    toast({
-      title: "Casa guardada",
-      description: "Ubicación guardada como tu casa"
-    });
-  };
-
-  if (loadError) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 ${className}`} style={style}>
-        <div className="text-center p-4">
-          <p className="text-red-500 mb-3">Error al cargar Google Maps</p>
-          <p className="text-sm text-gray-700 mb-4">Verifica que la clave API sea válida</p>
-          <input
-            type="text"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Ingresa la clave API de Google Maps"
-            className="w-full p-2 border rounded mb-3"
-          />
-          <Button variant="default">
-            Guardar clave API
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 ${className}`} style={style}>
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <span className="ml-2">Cargando Google Maps...</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`relative ${className}`} style={style}>
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={TENERIFE_CENTER}
-        zoom={10}
-        options={googleMapOptions}
-        onClick={handleMapClick}
-        onLoad={map => {
-          mapRef.current = map;
-        }}
-      >
-        {directions && (
-          <DirectionsRenderer
-            options={{
-              directions: directions,
-              suppressMarkers: true,
-              polylineOptions: {
-                strokeColor: '#1E88E5',
-                strokeOpacity: 0.7,
-                strokeWeight: 5
-              }
-            }}
-          />
-        )}
+    // Update destination marker
+    if (destination) {
+      if (destinationMarkerRef.current) {
+        destinationMarkerRef.current.setPosition({ lat: destination.lat, lng: destination.lng });
+      } else {
+        destinationMarkerRef.current = new google.maps.Marker({
+          position: { lat: destination.lat, lng: destination.lng },
+          map: mapRef.current,
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            scaledSize: new google.maps.Size(40, 40)
+          },
+          draggable: allowMapSelection,
+          title: 'Destino'
+        });
         
-        {origin && (
-          <Marker
-            position={{ lat: origin.lat, lng: origin.lng }}
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#1E88E5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
-                  <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#1E88E5"/>
-                </svg>
-              `),
-              anchor: new google.maps.Point(24, 48),
-            }}
-            draggable={!!onOriginChange}
-            onClick={() => setSelectedMarker('origin')}
-            onDragEnd={(e) => handleMarkerDragEnd(e, 'origin')}
-          />
-        )}
-        
-        {destination && (
-          <Marker
-            position={{ lat: destination.lat, lng: destination.lng }}
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#D32F2F" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z"/>
-                  <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#D32F2F"/>
-                </svg>
-              `),
-              anchor: new google.maps.Point(24, 48),
-            }}
-            draggable={!!onDestinationChange}
-            onClick={() => setSelectedMarker('destination')}
-            onDragEnd={(e) => handleMarkerDragEnd(e, 'destination')}
-          />
-        )}
-        
-        {homeLocation && (
-          <Marker
-            position={{ 
-              lat: homeLocation.coordinates.lat, 
-              lng: homeLocation.coordinates.lng 
-            }}
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#4CAF50" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                  <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              `),
-              anchor: new google.maps.Point(24, 48),
-            }}
-            draggable={true}
-            onClick={() => setSelectedMarker('home')}
-            onDragEnd={(e) => handleMarkerDragEnd(e, 'home')}
-          />
-        )}
-        
-        {showDriverPosition && driverPosition && (
-          <Marker
-            position={{ lat: driverPosition.lat, lng: driverPosition.lng }}
-            icon={{
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#000000" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="#FFC107"/>
-                  <path d="M16 6l-8 6 8 6" stroke="#000000" fill="none"/>
-                </svg>
-              `),
-              anchor: new google.maps.Point(20, 20),
-            }}
-          />
-        )}
-        
-        {selectedMarker === 'origin' && origin && (
-          <InfoWindow
-            position={{ lat: origin.lat, lng: origin.lng }}
-            onCloseClick={() => setSelectedMarker(null)}
-          >
-            <div className="p-2">
-              <h3 className="font-bold mb-1">Punto de origen</h3>
-              <p className="text-sm">{origin.address || "Ubicación seleccionada"}</p>
-              {!homeLocation && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => saveAsHome(origin)}
-                >
-                  <Home className="mr-1 h-4 w-4" />
-                  Guardar como casa
-                </Button>
-              )}
-            </div>
-          </InfoWindow>
-        )}
-        
-        {selectedMarker === 'destination' && destination && (
-          <InfoWindow
-            position={{ lat: destination.lat, lng: destination.lng }}
-            onCloseClick={() => setSelectedMarker(null)}
-          >
-            <div className="p-2">
-              <h3 className="font-bold mb-1">Punto de destino</h3>
-              <p className="text-sm">{destination.address || "Ubicación seleccionada"}</p>
-            </div>
-          </InfoWindow>
-        )}
-        
-        {selectedMarker === 'home' && homeLocation && (
-          <InfoWindow
-            position={{ 
-              lat: homeLocation.coordinates.lat, 
-              lng: homeLocation.coordinates.lng 
-            }}
-            onCloseClick={() => setSelectedMarker(null)}
-          >
-            <div className="p-2">
-              <h3 className="font-bold mb-1">Mi Casa</h3>
-              <p className="text-sm">{homeLocation.coordinates.address || "Mi hogar"}</p>
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
-      
-      {allowMapSelection && (
-        <div className="absolute top-4 left-4 z-10 bg-white rounded-md shadow-md p-2 flex gap-2">
-          <Button
-            variant={selectionMode === 'origin' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setSelectionMode('origin')}
-            className="gap-1"
-          >
-            <MapPin size={16} className="text-blue-500" />
-            <span>Origen</span>
-          </Button>
-          <Button
-            variant={selectionMode === 'destination' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setSelectionMode('destination')}
-            className="gap-1"
-          >
-            <MapPin size={16} className="text-red-500" />
-            <span>Destino</span>
-          </Button>
-        </div>
-      )}
-      
-      {selectionMode !== 'none' && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white py-2 px-4 rounded-full z-10">
-          <p className="text-sm">
-            {selectionMode === 'origin' 
-              ? 'Haz clic en el mapa para seleccionar el origen' 
-              : 'Haz clic en el mapa para seleccionar el destino'}
-          </p>
-        </div>
-      )}
-      
-      <Button
-        variant="default"
-        size="icon"
-        className="absolute bottom-4 right-4 z-10 rounded-full h-10 w-10 bg-white text-gray-800 hover:bg-gray-100 shadow-md"
-        onClick={() => {
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const coords = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude
-                };
-                
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location: coords }, (results, status) => {
-                  if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-                    const locationData = {
-                      ...coords,
-                      address: results[0].formatted_address
-                    };
-                    
-                    if (onOriginChange) {
-                      onOriginChange(locationData);
-                      toast({
-                        title: "Ubicación actual como origen",
-                        description: locationData.address || "Se ha establecido tu ubicación actual como punto de origen"
-                      });
-                    }
-                  }
+        // Add drag listener for destination marker
+        if (allowMapSelection && onDestinationChange) {
+          destinationMarkerRef.current.addListener('dragend', () => {
+            const position = destinationMarkerRef.current?.getPosition();
+            if (position) {
+              reverseGeocode(position.lat(), position.lng(), (address) => {
+                onDestinationChange({
+                  lat: position.lat(),
+                  lng: position.lng(),
+                  address: address
                 });
-              },
-              (error) => {
-                toast({
-                  title: "Error de ubicación",
-                  description: "No se pudo obtener tu ubicación actual: " + error.message,
-                  variant: "destructive"
-                });
-              }
-            );
+              });
+            }
+          });
+        }
+      }
+    } else if (destinationMarkerRef.current) {
+      destinationMarkerRef.current.setMap(null);
+      destinationMarkerRef.current = null;
+    }
+    
+    // Show home marker if we're in home editing mode
+    if (allowHomeEditing) {
+      try {
+        const homeLocationJSON = localStorage.getItem(homeLocationKey);
+        if (homeLocationJSON) {
+          const homeLocation = JSON.parse(homeLocationJSON);
+          
+          if (homeMarkerRef.current) {
+            homeMarkerRef.current.setPosition({ lat: homeLocation.lat, lng: homeLocation.lng });
           } else {
-            toast({
-              title: "Geolocalización no soportada",
-              description: "Tu navegador no soporta la geolocalización",
-              variant: "destructive"
+            homeMarkerRef.current = new google.maps.Marker({
+              position: { lat: homeLocation.lat, lng: homeLocation.lng },
+              map: mapRef.current,
+              icon: {
+                url: 'https://maps.google.com/mapfiles/kml/shapes/homegardenbusiness.png',
+                scaledSize: new google.maps.Size(40, 40)
+              },
+              title: 'Mi Casa'
             });
           }
-        }}
-      >
-        <Navigation size={16} />
-      </Button>
-    </div>
+        }
+      } catch (error) {
+        console.error('Error showing home marker:', error);
+      }
+    }
+  };
+
+  // Calculate and display route
+  const calculateAndDisplayRoute = () => {
+    if (!mapRef.current || !origin || !destination || !directionsRendererRef.current) return;
+    
+    const directionsService = new google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+        travelMode: google.maps.TravelMode.DRIVING,
+        avoidHighways: false,
+        avoidTolls: false,
+      },
+      (response, status) => {
+        if (status === google.maps.DirectionsStatus.OK && response) {
+          directionsRendererRef.current?.setDirections(response);
+        } else {
+          console.error('Error calculating route:', status);
+          toast({
+            title: 'Error',
+            description: 'No se pudo calcular la ruta',
+            variant: 'destructive'
+          });
+        }
+      }
+    );
+  };
+
+  // Handle map clicks for selection mode
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    if (!mapRef.current || selectionMode === 'none' || !event.latLng) return;
+    
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    
+    reverseGeocode(lat, lng, (address) => {
+      const coordinates = { lat, lng, address };
+      
+      if (selectionMode === 'origin' && onOriginChange) {
+        onOriginChange(coordinates);
+        setSelectionMode('destination');
+      } else if (selectionMode === 'destination' && onDestinationChange) {
+        onDestinationChange(coordinates);
+        setSelectionMode('none');
+      }
+    });
+  };
+
+  // Reverse geocode coordinates to get address
+  const reverseGeocode = (lat: number, lng: number, callback: (address: string) => void) => {
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        callback(results[0].formatted_address);
+      } else {
+        console.error('Error reverse geocoding:', status);
+        callback(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      }
+    });
+  };
+
+  // Create selection mode controls
+  const createSelectionControls = (controlDiv: HTMLDivElement) => {
+    controlDiv.style.padding = '10px';
+    controlDiv.style.backgroundColor = 'white';
+    controlDiv.style.borderRadius = '8px';
+    controlDiv.style.margin = '10px';
+    controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
+    controlDiv.style.textAlign = 'center';
+    
+    // Origin button
+    const originButton = document.createElement('button');
+    originButton.style.backgroundColor = selectionMode === 'origin' ? '#1E88E5' : 'white';
+    originButton.style.color = selectionMode === 'origin' ? 'white' : 'black';
+    originButton.style.border = 'none';
+    originButton.style.borderRadius = '4px';
+    originButton.style.padding = '8px 12px';
+    originButton.style.margin = '0 5px';
+    originButton.style.fontSize = '14px';
+    originButton.style.cursor = 'pointer';
+    originButton.textContent = 'Seleccionar Origen';
+    originButton.onclick = () => {
+      setSelectionMode('origin');
+      originButton.style.backgroundColor = '#1E88E5';
+      originButton.style.color = 'white';
+      destButton.style.backgroundColor = 'white';
+      destButton.style.color = 'black';
+    };
+    
+    // Destination button
+    const destButton = document.createElement('button');
+    destButton.style.backgroundColor = selectionMode === 'destination' ? '#1E88E5' : 'white';
+    destButton.style.color = selectionMode === 'destination' ? 'white' : 'black';
+    destButton.style.border = 'none';
+    destButton.style.borderRadius = '4px';
+    destButton.style.padding = '8px 12px';
+    destButton.style.margin = '0 5px';
+    destButton.style.fontSize = '14px';
+    destButton.style.cursor = 'pointer';
+    destButton.textContent = 'Seleccionar Destino';
+    destButton.onclick = () => {
+      setSelectionMode('destination');
+      destButton.style.backgroundColor = '#1E88E5';
+      destButton.style.color = 'white';
+      originButton.style.backgroundColor = 'white';
+      originButton.style.color = 'black';
+    };
+    
+    controlDiv.appendChild(originButton);
+    controlDiv.appendChild(destButton);
+  };
+
+  // Create home button for saving home location
+  const createHomeButton = (controlDiv: HTMLDivElement) => {
+    controlDiv.style.padding = '10px';
+    controlDiv.style.backgroundColor = 'white';
+    controlDiv.style.borderRadius = '8px';
+    controlDiv.style.margin = '10px';
+    controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
+    
+    const button = document.createElement('button');
+    button.style.backgroundColor = '#4CAF50';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '4px';
+    button.style.padding = '8px 12px';
+    button.style.fontSize = '14px';
+    button.style.cursor = 'pointer';
+    button.innerHTML = '<span style="font-size: 16px;">🏠</span> Guardar Casa';
+    
+    button.onclick = () => {
+      if (origin) {
+        try {
+          localStorage.setItem(homeLocationKey, JSON.stringify(origin));
+          toast({
+            title: 'Casa guardada',
+            description: 'Tu ubicación de casa ha sido guardada',
+          });
+          
+          // Update home marker
+          updateMarkers();
+        } catch (error) {
+          console.error('Error saving home location:', error);
+          toast({
+            title: 'Error',
+            description: 'No se pudo guardar la ubicación de tu casa',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: 'Sin ubicación',
+          description: 'Selecciona primero una ubicación',
+          variant: 'destructive'
+        });
+      }
+    };
+    
+    controlDiv.appendChild(button);
+  };
+
+  return (
+    <div
+      ref={mapContainerRef}
+      className={`w-full h-full ${className}`}
+      style={{
+        borderRadius: '8px',
+        overflow: 'hidden',
+        ...style
+      }}
+    />
   );
 };
 
