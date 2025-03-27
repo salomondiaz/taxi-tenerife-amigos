@@ -31,6 +31,7 @@ export interface MapProps {
   allowMapSelection?: boolean;
   showRoute?: boolean;
   allowHomeEditing?: boolean;
+  apiKey?: string;
 }
 
 // Definición para los tipos de Ride
