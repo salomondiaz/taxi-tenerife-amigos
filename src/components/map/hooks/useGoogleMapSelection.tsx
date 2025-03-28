@@ -74,7 +74,7 @@ export function useGoogleMapSelection({
   }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick]);
 
   // Controles de selección desde botones en el mapa
-  const { createSelectionControls, renderFloatingButton } = MapControls({
+  const mapControls = MapControls({
     allowMapSelection,
     selectionMode,
     onSelectionModeChange: setSelectionMode,
@@ -85,7 +85,7 @@ export function useGoogleMapSelection({
     selectionMode, 
     setSelectionMode, 
     handleMapClick,
-    createSelectionControls,
-    renderFloatingButton 
+    createSelectionControls: mapControls.createSelectionControls,
+    renderFloatingButton: mapControls.renderFloatingButton
   };
 }

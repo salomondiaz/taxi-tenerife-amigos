@@ -106,6 +106,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     selectionMode, 
     setSelectionMode,
     handleMapClick,
+    createSelectionControls,
     renderFloatingButton
   } = useGoogleMapSelection({
     mapRef,
@@ -143,7 +144,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         ref={mapContainerRef}
         className="w-full h-full"
       />
-      {renderFloatingButton}
+      {renderFloatingButton && renderFloatingButton()}
     </div>
   );
 };
