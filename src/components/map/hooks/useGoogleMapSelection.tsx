@@ -4,6 +4,7 @@ import { MapCoordinates } from '../types';
 import { useMapClickHandler } from './useMapClickHandler';
 import { useMapCursor } from './useMapCursor';
 import { toast } from '@/hooks/use-toast';
+import MapControls from '../components/MapControls';
 
 interface UseGoogleMapSelectionProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
@@ -73,7 +74,7 @@ export function useGoogleMapSelection({
   }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick]);
 
   // Controles de selección desde botones en el mapa
-  const { createSelectionControls, renderFloatingButton } = require('../components/MapControls').default({
+  const { createSelectionControls, renderFloatingButton } = MapControls({
     allowMapSelection,
     selectionMode,
     onSelectionModeChange: setSelectionMode,
