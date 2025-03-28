@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { MapCoordinates } from './types';
+import { Search, X, Loader2 } from 'lucide-react';
 
 // Definir la interfaz para las props del componente
 interface GooglePlacesAutocompleteProps {
@@ -13,6 +14,7 @@ interface GooglePlacesAutocompleteProps {
   className?: string;
   apiKey: string;
   label?: string;
+  id?: string;
 }
 
 const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
@@ -22,11 +24,13 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   onPlaceSelected,
   className = '',
   apiKey,
-  label
+  label,
+  id
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Cargar el script de la API de Google Places
   useEffect(() => {
@@ -60,8 +64,8 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     document.body.appendChild(script);
     
     return () => {
-      // Limpiar el script al desmontar el componente
-      document.body.removeChild(script);
+      // No eliminamos el script para evitar recargas innecesarias
+      // ya que podría ser usado por otros componentes
     };
   }, [apiKey]);
 
@@ -73,7 +77,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       const options: google.maps.places.AutocompleteOptions = {
         fields: ['address_components', 'formatted_address', 'geometry', 'name'],
         strictBounds: false,
-        componentRestrictions: { country: 'es' } // Restringir a España (para Tenerife)
+        componentRestrictions: { country: 'es' }
       };
       
       autocompleteRef.current = new google.maps.places.Autocomplete(
@@ -91,6 +95,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       
       // Añadir listener para cuando se selecciona un lugar
       autocompleteRef.current.addListener('place_changed', () => {
+        setIsLoading(true);
         const place = autocompleteRef.current?.getPlace();
         
         if (!place || !place.geometry || !place.geometry.location) {
@@ -99,6 +104,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
             description: 'No se ha podido obtener información sobre este lugar',
             variant: 'destructive'
           });
+          setIsLoading(false);
           return;
         }
         
@@ -120,6 +126,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         
         // Actualizar el valor del input con la dirección formateada
         onChange(address);
+        setIsLoading(false);
       });
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
@@ -131,22 +138,49 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     }
   }, [scriptLoaded, onChange, onPlaceSelected]);
 
+  const handleClear = () => {
+    onChange('');
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div className={className}>
       {label && (
-        <label htmlFor="google-places-input" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={id || "google-places-input"} className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
-      <Input
-        id="google-places-input"
-        ref={inputRef}
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full"
-      />
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <Search size={16} className="text-gray-400" />
+        </div>
+        
+        <Input
+          id={id || "google-places-input"}
+          ref={inputRef}
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="pl-10 pr-10 w-full"
+        />
+        
+        {isLoading ? (
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <Loader2 size={16} className="animate-spin text-gray-400" />
+          </div>
+        ) : value ? (
+          <button 
+            type="button"
+            onClick={handleClear}
+            className="absolute inset-y-0 right-0 flex items-center pr-3"
+          >
+            <X size={16} className="text-gray-400 hover:text-gray-600" />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 };
