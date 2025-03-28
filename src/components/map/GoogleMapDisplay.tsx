@@ -28,6 +28,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
 
   // Use custom hooks for map functionality
   const { 
+    originMarkerRef,
+    destinationMarkerRef,
+    homeMarkerRef,
     updateMarkers, 
     saveHomeLocation 
   } = useGoogleMapMarkers({
@@ -97,12 +100,13 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     directionsRendererRef.current.setMap(mapRef.current);
     
-    if (allowMapSelection) {
-      // Ya no asignamos aquí el manejador de click porque lo hace el hook useGoogleMapSelection
+    // Set up map click listener if map selection is allowed
+    if (allowMapSelection && mapRef.current) {
+      mapRef.current.addListener('click', handleMapClick);
       
+      // Add selection controls to the map
       const controlDiv = document.createElement('div');
       createSelectionControls(controlDiv);
-      
       mapRef.current.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
     }
     
@@ -113,8 +117,10 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       mapRef.current.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
     }
 
+    // Update markers after map is initialized
     updateMarkers();
-  }, [allowHomeEditing, allowMapSelection, createSelectionControls, interactive, origin, updateMarkers]);
+    
+  }, [allowHomeEditing, allowMapSelection, createSelectionControls, handleMapClick, interactive, origin, updateMarkers]);
 
   // Create home button
   const createHomeButton = (controlDiv: HTMLDivElement) => {
@@ -149,7 +155,10 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       script.async = true;
       script.defer = true;
       
-      script.onload = initializeMap;
+      script.onload = () => {
+        initializeMap();
+      };
+      
       script.onerror = () => {
         console.error('Error loading Google Maps API');
         toast({
@@ -168,9 +177,16 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   }, [apiKey, initializeMap]);
 
-  // Activar selección de destino
+  // Update markers when origin or destination changes
+  useEffect(() => {
+    if (mapRef.current) {
+      updateMarkers();
+    }
+  }, [origin, destination, updateMarkers]);
+
+  // Enable destination selection
   const enableDestinationSelection = () => {
-    if (mapRef.current && !destination) {
+    if (mapRef.current) {
       setSelectionMode('destination');
       toast({
         title: "Selección de destino activada",
@@ -179,9 +195,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   };
 
-  // Botón flotante para seleccionar destino
+  // Button to enable destination selection
   const renderFloatingButton = () => {
-    if (!mapRef.current || !allowMapSelection || selectionMode === 'destination') return null;
+    if (!mapRef.current || !allowMapSelection || selectionMode === 'destination' || destination) return null;
     
     return (
       <button 

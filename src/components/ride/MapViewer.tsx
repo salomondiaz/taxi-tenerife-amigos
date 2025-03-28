@@ -16,7 +16,7 @@ interface MapViewerProps {
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
-  useManualSelection = false,
+  useManualSelection = true, // Changed default to true to enable selection by default
   originCoords,
   destinationCoords,
   routeGeometry,
@@ -73,6 +73,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
         onOriginChange={handleOriginChange}
         onDestinationChange={handleDestinationChange}
         allowMapSelection={true}
+        showRoute={true}
       />
       
       {/* Selection mode message */}

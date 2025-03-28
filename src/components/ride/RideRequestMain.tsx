@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRideRequestFlow } from "@/hooks/useRideRequestFlow";
 import { useToast } from "@/hooks/use-toast";
 import EnhancedLocationSelector from "./EnhancedLocationSelector";
@@ -31,12 +31,22 @@ const RideRequestMain: React.FC = () => {
     arrivalTime
   } = useRideRequestFlow();
 
-  const [useManualSelection, setUseManualSelection] = useState(false);
+  const [useManualSelection, setUseManualSelection] = useState(true); // Default to true to enable map selection
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
 
   // Home address management
   const HOME_ADDRESS_KEY = 'home_address';
   const HOME_LOCATION_KEY = 'user_home_location';
+
+  // Log coordinates for debugging
+  useEffect(() => {
+    console.log("Current coordinates in RideRequestMain:", { 
+      originCoords, 
+      destinationCoords,
+      origin,
+      destination
+    });
+  }, [originCoords, destinationCoords, origin, destination]);
 
   const saveHomeAddress = () => {
     if (origin) {

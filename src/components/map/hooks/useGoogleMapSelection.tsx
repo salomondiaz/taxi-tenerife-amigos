@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { MapCoordinates } from '../types';
 
@@ -20,11 +20,13 @@ export function useGoogleMapSelection({
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   // Handles map click events based on the current selection mode
-  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+  const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
     if (!event.latLng || !selectionMode) return;
 
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
+    
+    console.log("Map clicked in mode:", selectionMode, "at coordinates:", lat, lng);
     
     // Get address using reverse geocoding
     const geocoder = new google.maps.Geocoder();
@@ -63,16 +65,18 @@ export function useGoogleMapSelection({
         setSelectionMode(null);
       }
     });
-  };
+  }, [selectionMode, onOriginChange, onDestinationChange]);
 
   // Function to create selection mode controls
-  const createSelectionControls = (controlDiv: HTMLDivElement) => {
+  const createSelectionControls = useCallback((controlDiv: HTMLDivElement) => {
     // Create the UI button container
     controlDiv.style.padding = '10px';
     controlDiv.style.backgroundColor = 'white';
     controlDiv.style.borderRadius = '8px';
     controlDiv.style.margin = '10px';
     controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
+    controlDiv.style.display = 'flex';
+    controlDiv.style.gap = '5px';
     
     // Create the Origin button
     const originButton = document.createElement('button');
@@ -82,7 +86,6 @@ export function useGoogleMapSelection({
     originButton.style.border = '1px solid #ccc';
     originButton.style.borderRadius = '4px';
     originButton.style.padding = '8px 12px';
-    originButton.style.marginRight = '5px';
     originButton.style.cursor = 'pointer';
     
     // Create the Destination button
@@ -99,17 +102,31 @@ export function useGoogleMapSelection({
     originButton.onclick = (e) => {
       e.stopPropagation(); // Evitar que el evento de clic llegue al mapa
       setSelectionMode(selectionMode === 'origin' ? null : 'origin');
+      
+      if (selectionMode !== 'origin') {
+        toast({
+          title: "Selección de origen activada",
+          description: "Haz clic en el mapa para seleccionar el punto de origen"
+        });
+      }
     };
     
     destinationButton.onclick = (e) => {
       e.stopPropagation(); // Evitar que el evento de clic llegue al mapa
       setSelectionMode(selectionMode === 'destination' ? null : 'destination');
+      
+      if (selectionMode !== 'destination') {
+        toast({
+          title: "Selección de destino activada",
+          description: "Haz clic en el mapa para seleccionar el punto de destino"
+        });
+      }
     };
     
     // Add buttons to the control div
     controlDiv.appendChild(originButton);
     controlDiv.appendChild(destinationButton);
-  };
+  }, [selectionMode]);
 
   useEffect(() => {
     if (!mapRef.current || !allowMapSelection) return;
@@ -120,23 +137,13 @@ export function useGoogleMapSelection({
       clickListenerRef.current = null;
     }
 
-    // Only set up new listener if we're in selection mode
-    if (selectionMode && (selectionMode === 'origin' || selectionMode === 'destination')) {
-      clickListenerRef.current = google.maps.event.addListener(
-        mapRef.current,
-        'click',
-        handleMapClick
-      );
-      
-      // Set appropriate cursor
-      if (mapRef.current) {
+    // Set cursor based on selection mode
+    if (mapRef.current) {
+      if (selectionMode) {
         mapRef.current.setOptions({
           draggableCursor: 'crosshair'
         });
-      }
-    } else {
-      // Reset cursor when not in selection mode
-      if (mapRef.current) {
+      } else {
         mapRef.current.setOptions({
           draggableCursor: ''
         });
@@ -157,7 +164,7 @@ export function useGoogleMapSelection({
         });
       }
     };
-  }, [mapRef.current, selectionMode, allowMapSelection, onOriginChange, onDestinationChange]);
+  }, [mapRef.current, selectionMode, allowMapSelection]);
 
   return { selectionMode, setSelectionMode, handleMapClick, createSelectionControls };
 }
