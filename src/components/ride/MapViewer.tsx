@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Map from '@/components/Map';
 import { MapCoordinates } from '@/components/map/types';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ interface MapViewerProps {
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
-  useManualSelection = true, // Changed default to true to enable selection by default
+  useManualSelection = true,
   originCoords,
   destinationCoords,
   routeGeometry,
@@ -24,6 +24,15 @@ const MapViewer: React.FC<MapViewerProps> = ({
   handleDestinationChange
 }) => {
   const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | null>(null);
+
+  // Efecto para verificar si el destino ha sido seleccionado
+  useEffect(() => {
+    if (destinationCoords && selectionMode === 'destination') {
+      // Cuando se establece el destino durante el modo de selección de destino,
+      // automáticamente desactivar el modo de selección
+      setSelectionMode(null);
+    }
+  }, [destinationCoords, selectionMode]);
 
   const toggleSelectionMode = (mode: 'origin' | 'destination') => {
     if (selectionMode === mode) {
@@ -70,8 +79,20 @@ const MapViewer: React.FC<MapViewerProps> = ({
         origin={originCoords}
         destination={destinationCoords}
         routeGeometry={routeGeometry}
-        onOriginChange={handleOriginChange}
-        onDestinationChange={handleDestinationChange}
+        onOriginChange={(coords) => {
+          handleOriginChange(coords);
+          // Desactivar el modo de selección después de seleccionar
+          if (selectionMode === 'origin') {
+            setSelectionMode(null);
+          }
+        }}
+        onDestinationChange={(coords) => {
+          handleDestinationChange(coords);
+          // Desactivar el modo de selección después de seleccionar
+          if (selectionMode === 'destination') {
+            setSelectionMode(null);
+          }
+        }}
         allowMapSelection={true}
         showRoute={true}
       />

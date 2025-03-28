@@ -112,7 +112,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     allowMapSelection,
     onOriginChange,
     onDestinationChange,
-    showDestinationSelection: !destination
+    showDestinationSelection: true
   });
 
   useGoogleMapRouting({

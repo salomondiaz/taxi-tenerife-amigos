@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { MapCoordinates } from '../types';
 import { useMapClickHandler } from './useMapClickHandler';
 import { useMapCursor } from './useMapCursor';
-import { createSelectionControls, renderFloatingButton } from '../controls/SelectionControls';
+import { toast } from '@/hooks/use-toast';
 
 interface UseGoogleMapSelectionProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
@@ -22,48 +22,48 @@ export function useGoogleMapSelection({
 }: UseGoogleMapSelectionProps) {
   const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
-
-  // Get the map click handler from our custom hook
+  
+  // Usar nuestro hook personalizado para manejar los clics en el mapa
   const { handleMapClick } = useMapClickHandler({
     selectionMode,
-    onOriginChange,
-    onDestinationChange
+    onOriginChange: (coordinates) => {
+      if (onOriginChange) {
+        onOriginChange(coordinates);
+        // Desactivar el modo de selección después de seleccionar
+        setSelectionMode(null);
+      }
+    },
+    onDestinationChange: (coordinates) => {
+      if (onDestinationChange) {
+        onDestinationChange(coordinates);
+        // Desactivar el modo de selección después de seleccionar
+        setSelectionMode(null);
+      }
+    }
   });
 
-  // Apply cursor styling based on selection mode
+  // Aplicar estilo de cursor basado en el modo de selección
   useMapCursor({
     mapRef,
     selectionMode
   });
 
-  // Create map controls for selection
-  const selectionControls = createSelectionControls({
-    selectionMode,
-    setSelectionMode
-  });
-
-  // Create floating button for destination selection
-  const floatingButton = renderFloatingButton({
-    selectionMode,
-    setSelectionMode,
-    showDestinationSelection: !!showDestinationSelection
-  });
-
+  // Gestionar los eventos de clic del mapa
   useEffect(() => {
     if (!mapRef.current || !allowMapSelection) return;
 
-    // Clean up the previous listener
+    // Eliminar el listener anterior si existe
     if (clickListenerRef.current) {
       google.maps.event.removeListener(clickListenerRef.current);
       clickListenerRef.current = null;
     }
 
-    // Add a new click listener if in selection mode
+    // Añadir un nuevo listener de clic si estamos en modo selección
     if (selectionMode && mapRef.current) {
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
     }
 
-    // Cleanup listener on unmount or selection mode change
+    // Limpiar el listener al desmontar o cambiar el modo de selección
     return () => {
       if (clickListenerRef.current) {
         google.maps.event.removeListener(clickListenerRef.current);
@@ -72,11 +72,19 @@ export function useGoogleMapSelection({
     };
   }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick]);
 
+  // Controles de selección desde botones en el mapa
+  const { createSelectionControls, renderFloatingButton } = require('../components/MapControls').default({
+    allowMapSelection,
+    selectionMode,
+    onSelectionModeChange: setSelectionMode,
+    showDestinationSelection
+  });
+
   return { 
     selectionMode, 
     setSelectionMode, 
     handleMapClick,
-    createSelectionControls: selectionControls,
-    renderFloatingButton: floatingButton 
+    createSelectionControls,
+    renderFloatingButton 
   };
 }
