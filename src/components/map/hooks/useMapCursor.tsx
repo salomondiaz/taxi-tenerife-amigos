@@ -12,28 +12,27 @@ export function useMapCursor({
 }: UseMapCursorProps) {
   
   useEffect(() => {
-    if (!mapRef.current) return;
+    const currentMap = mapRef.current;
+    if (!currentMap) return;
     
     // Set cursor based on selection mode
-    if (mapRef.current) {
-      if (selectionMode) {
-        mapRef.current.setOptions({
-          draggableCursor: 'crosshair'
-        });
-      } else {
-        mapRef.current.setOptions({
-          draggableCursor: ''
-        });
-      }
+    if (selectionMode) {
+      currentMap.setOptions({
+        draggableCursor: 'crosshair'
+      });
+    } else {
+      currentMap.setOptions({
+        draggableCursor: ''
+      });
     }
     
     // Cleanup cursor on unmount or selection mode change
     return () => {
-      if (mapRef.current) {
-        mapRef.current.setOptions({
+      if (currentMap) {
+        currentMap.setOptions({
           draggableCursor: ''
         });
       }
     };
-  }, [mapRef.current, selectionMode]);
+  }, [mapRef, selectionMode]);
 }
