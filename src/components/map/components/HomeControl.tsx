@@ -5,8 +5,8 @@ interface HomeControlProps {
   onSaveHome: () => void;
 }
 
-const HomeControl: React.FC<HomeControlProps> = ({ onSaveHome }) => {
-  // Create home button
+const HomeControl = ({ onSaveHome }: HomeControlProps) => {
+  // Create a function that returns the home button creation function
   const createHomeButton = (controlDiv: HTMLDivElement) => {
     controlDiv.style.padding = '10px';
     controlDiv.style.backgroundColor = 'white';
@@ -29,7 +29,10 @@ const HomeControl: React.FC<HomeControlProps> = ({ onSaveHome }) => {
     controlDiv.appendChild(button);
   };
 
-  return { createHomeButton };
+  // Return an object with the createHomeButton function
+  return {
+    createHomeButton
+  };
 };
 
 export default HomeControl;

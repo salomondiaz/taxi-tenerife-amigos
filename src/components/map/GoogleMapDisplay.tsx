@@ -47,20 +47,29 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     directionsRendererRef.current.setMap(map);
     
-    // Set up map click listener if map selection is allowed
+    // Add selection controls to the map if map selection is allowed
     if (allowMapSelection && map) {
-      map.addListener('click', handleMapClick);
-      
       // Add selection controls to the map
       const controlDiv = document.createElement('div');
-      mapControls.createSelectionControls(controlDiv);
+      const mapControlsObj = MapControls({
+        allowMapSelection,
+        selectionMode,
+        onSelectionModeChange: setSelectionMode,
+        showDestinationSelection: !destination
+      });
+      
+      mapControlsObj.createSelectionControls(controlDiv);
       map.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
     }
     
+    // Add home button if home editing is allowed
     if (allowHomeEditing) {
       const homeButtonDiv = document.createElement('div');
-      homeControl.createHomeButton(homeButtonDiv);
+      const homeControlObj = HomeControl({
+        onSaveHome: saveHomeLocation
+      });
       
+      homeControlObj.createHomeButton(homeButtonDiv);
       map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
     }
 
@@ -96,12 +105,14 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const { 
     selectionMode, 
     setSelectionMode,
-    handleMapClick
+    handleMapClick,
+    renderFloatingButton
   } = useGoogleMapSelection({
     mapRef,
     allowMapSelection,
     onOriginChange,
-    onDestinationChange
+    onDestinationChange,
+    showDestinationSelection: !destination
   });
 
   useGoogleMapRouting({
@@ -110,18 +121,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     origin,
     destination,
     showRoute
-  });
-
-  // Map control components
-  const mapControls = MapControls({
-    allowMapSelection,
-    selectionMode,
-    onSelectionModeChange: setSelectionMode,
-    showDestinationSelection: !destination
-  });
-
-  const homeControl = HomeControl({
-    onSaveHome: saveHomeLocation
   });
 
   // Update markers when origin or destination changes
@@ -144,7 +143,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         ref={mapContainerRef}
         className="w-full h-full"
       />
-      {mapControls.renderFloatingButton()}
+      {renderFloatingButton}
     </div>
   );
 };
