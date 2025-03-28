@@ -94,7 +94,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       autocompleteRef.current.setBounds(tenerifeBounds);
       
       // Añadir listener para cuando se selecciona un lugar
-      autocompleteRef.current.addListener('place_changed', () => {
+      const placeChangedListener = autocompleteRef.current.addListener('place_changed', () => {
         setIsLoading(true);
         const place = autocompleteRef.current?.getPlace();
         
@@ -128,6 +128,13 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         onChange(address);
         setIsLoading(false);
       });
+      
+      return () => {
+        // Limpiar listener cuando el componente se desmonte
+        if (placeChangedListener) {
+          google.maps.event.removeListener(placeChangedListener);
+        }
+      };
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
       toast({

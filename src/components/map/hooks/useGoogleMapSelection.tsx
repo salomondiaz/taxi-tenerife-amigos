@@ -96,11 +96,13 @@ export function useGoogleMapSelection({
     destinationButton.style.cursor = 'pointer';
     
     // Add click handlers
-    originButton.onclick = () => {
+    originButton.onclick = (e) => {
+      e.stopPropagation(); // Evitar que el evento de clic llegue al mapa
       setSelectionMode(selectionMode === 'origin' ? null : 'origin');
     };
     
-    destinationButton.onclick = () => {
+    destinationButton.onclick = (e) => {
+      e.stopPropagation(); // Evitar que el evento de clic llegue al mapa
       setSelectionMode(selectionMode === 'destination' ? null : 'destination');
     };
     

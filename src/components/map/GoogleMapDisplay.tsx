@@ -41,8 +41,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   });
 
   const { 
-    handleMapClick, 
     selectionMode, 
+    setSelectionMode,
+    handleMapClick, 
     createSelectionControls 
   } = useGoogleMapSelection({
     mapRef,
@@ -97,7 +98,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     directionsRendererRef.current.setMap(mapRef.current);
     
     if (allowMapSelection) {
-      mapRef.current.addListener('click', handleMapClick);
+      // Ya no asignamos aquí el manejador de click porque lo hace el hook useGoogleMapSelection
       
       const controlDiv = document.createElement('div');
       createSelectionControls(controlDiv);
@@ -113,7 +114,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
 
     updateMarkers();
-  }, [allowHomeEditing, allowMapSelection, handleMapClick, createSelectionControls, interactive, origin, updateMarkers]);
+  }, [allowHomeEditing, allowMapSelection, createSelectionControls, interactive, origin, updateMarkers]);
 
   // Create home button
   const createHomeButton = (controlDiv: HTMLDivElement) => {
@@ -167,16 +168,46 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   }, [apiKey, initializeMap]);
 
+  // Activar selección de destino
+  const enableDestinationSelection = () => {
+    if (mapRef.current && !destination) {
+      setSelectionMode('destination');
+      toast({
+        title: "Selección de destino activada",
+        description: "Haz clic en el mapa para seleccionar tu destino"
+      });
+    }
+  };
+
+  // Botón flotante para seleccionar destino
+  const renderFloatingButton = () => {
+    if (!mapRef.current || !allowMapSelection || selectionMode === 'destination') return null;
+    
+    return (
+      <button 
+        className="absolute bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2"
+        onClick={enableDestinationSelection}
+      >
+        <span>Seleccionar destino</span>
+      </button>
+    );
+  };
+
   return (
     <div
-      ref={mapContainerRef}
-      className={`w-full h-full ${className}`}
+      className={`relative w-full h-full ${className}`}
       style={{
         borderRadius: '8px',
         overflow: 'hidden',
         ...style
       }}
-    />
+    >
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full"
+      />
+      {renderFloatingButton()}
+    </div>
   );
 };
 

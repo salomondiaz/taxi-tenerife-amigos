@@ -1,12 +1,13 @@
 
-import React from "react";
-import Map from "@/components/Map";
-import { MapCoordinates } from "@/components/map/types";
-import { Button } from "@/components/ui/button";
-import { MapPin, Navigation } from "lucide-react";
+import React, { useState } from 'react';
+import Map from '@/components/Map';
+import { MapCoordinates } from '@/components/map/types';
+import { Button } from '@/components/ui/button';
+import { MapPin, Navigation } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface MapViewerProps {
-  useManualSelection: boolean;
+  useManualSelection?: boolean;
   originCoords: MapCoordinates | null;
   destinationCoords: MapCoordinates | null;
   routeGeometry?: any;
@@ -15,60 +16,75 @@ interface MapViewerProps {
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
-  useManualSelection,
+  useManualSelection = false,
   originCoords,
   destinationCoords,
   routeGeometry,
   handleOriginChange,
-  handleDestinationChange,
+  handleDestinationChange
 }) => {
+  const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | null>(null);
+
+  const toggleSelectionMode = (mode: 'origin' | 'destination') => {
+    if (selectionMode === mode) {
+      setSelectionMode(null);
+    } else {
+      setSelectionMode(mode);
+      toast({
+        title: `Selección de ${mode === 'origin' ? 'origen' : 'destino'} activada`,
+        description: `Haz clic en el mapa para seleccionar el punto de ${mode === 'origin' ? 'origen' : 'destino'}`
+      });
+    }
+  };
+
   return (
-    <div className="relative h-full w-full">
-      <Map 
-        origin={originCoords || undefined}
-        destination={destinationCoords || undefined}
+    <div className="relative h-full">
+      {/* Selection controls for mobile */}
+      {useManualSelection && (
+        <div className="absolute top-3 left-0 right-0 flex justify-center z-10 mx-4">
+          <div className="bg-white rounded-lg shadow-lg flex p-1 gap-1">
+            <Button
+              onClick={() => toggleSelectionMode('origin')}
+              variant={selectionMode === 'origin' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <MapPin size={16} />
+              <span className="hidden md:inline">Origen</span>
+            </Button>
+            <Button
+              onClick={() => toggleSelectionMode('destination')}
+              variant={selectionMode === 'destination' ? 'default' : 'outline'}
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Navigation size={16} />
+              <span className="hidden md:inline">Destino</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* Main map component */}
+      <Map
+        origin={originCoords}
+        destination={destinationCoords}
         routeGeometry={routeGeometry}
-        className="h-full w-full"
         onOriginChange={handleOriginChange}
         onDestinationChange={handleDestinationChange}
         allowMapSelection={true}
-        showRoute={destinationCoords !== null}
-        interactive={true}
       />
       
-      {/* Map Legend/Info */}
-      <div className="absolute bottom-2 left-2 right-2 bg-white bg-opacity-90 rounded-lg p-3 shadow-md text-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0"></div>
-                <span className="ml-1">Origen</span>
-              </span>
-              
-              <span className="flex items-center">
-                <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0"></div>
-                <span className="ml-1">Destino</span>
-              </span>
-            </div>
-            
-            <p className="text-xs text-gray-600">
-              Toca el mapa o usa el buscador para seleccionar ubicaciones
-            </p>
+      {/* Selection mode message */}
+      {selectionMode && (
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+          <div className="bg-black/70 text-white py-2 px-4 rounded-full text-sm">
+            {selectionMode === 'origin' 
+              ? 'Haz clic para seleccionar el punto de origen' 
+              : 'Haz clic para seleccionar el punto de destino'}
           </div>
-          
-          {routeGeometry && (
-            <div className="flex items-center justify-end">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-bold">Ruta calculada</span>
-                <span className="text-xs text-gray-600">
-                  {originCoords?.address?.substring(0, 15)}... → {destinationCoords?.address?.substring(0, 15)}...
-                </span>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
