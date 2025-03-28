@@ -1,10 +1,14 @@
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
+import { useGoogleMapInitialization } from './hooks/useGoogleMapInitialization';
 import { useGoogleMapMarkers } from './hooks/useGoogleMapMarkers';
 import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
+import MapControls from './components/MapControls';
+import HomeControl from './components/HomeControl';
+import { reverseGeocode } from './services/GeocodingService';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   origin,
@@ -25,6 +29,52 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Handle map initialization
+  const handleMapReady = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+    
+    // Setup directions renderer
+    directionsRendererRef.current = new google.maps.DirectionsRenderer({
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: '#1E88E5',
+        strokeWeight: 5,
+        strokeOpacity: 0.7
+      }
+    });
+    
+    directionsRendererRef.current.setMap(map);
+    
+    // Set up map click listener if map selection is allowed
+    if (allowMapSelection && map) {
+      map.addListener('click', handleMapClick);
+      
+      // Add selection controls to the map
+      const controlDiv = document.createElement('div');
+      mapControls.createSelectionControls(controlDiv);
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
+    }
+    
+    if (allowHomeEditing) {
+      const homeButtonDiv = document.createElement('div');
+      homeControl.createHomeButton(homeButtonDiv);
+      
+      map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
+    }
+
+    setMapReady(true);
+  }, [allowHomeEditing, allowMapSelection]);
+
+  // Use our map initialization hook
+  useGoogleMapInitialization({
+    mapContainerRef,
+    origin,
+    interactive,
+    apiKey,
+    onMapReady: handleMapReady
+  });
 
   // Use custom hooks for map functionality
   const { 
@@ -46,8 +96,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const { 
     selectionMode, 
     setSelectionMode,
-    handleMapClick, 
-    createSelectionControls 
+    handleMapClick
   } = useGoogleMapSelection({
     mapRef,
     allowMapSelection,
@@ -63,151 +112,24 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showRoute
   });
 
-  // Initialize the map
-  const initializeMap = useCallback(() => {
-    if (!mapContainerRef.current) return;
-    
-    const tenerife = { lat: 28.2916, lng: -16.6291 };
-    const initialCenter = origin ? { lat: origin.lat, lng: origin.lng } : tenerife;
-    
-    const mapOptions: google.maps.MapOptions = {
-      center: initialCenter,
-      zoom: 12,
-      mapTypeControl: false,
-      fullscreenControl: false,
-      streetViewControl: false,
-      zoomControl: true,
-      gestureHandling: interactive ? 'greedy' : 'none',
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }]
-        }
-      ]
-    };
-    
-    mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
-    
-    directionsRendererRef.current = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      polylineOptions: {
-        strokeColor: '#1E88E5',
-        strokeWeight: 5,
-        strokeOpacity: 0.7
-      }
-    });
-    
-    directionsRendererRef.current.setMap(mapRef.current);
-    
-    // Set up map click listener if map selection is allowed
-    if (allowMapSelection && mapRef.current) {
-      mapRef.current.addListener('click', handleMapClick);
-      
-      // Add selection controls to the map
-      const controlDiv = document.createElement('div');
-      createSelectionControls(controlDiv);
-      mapRef.current.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
-    }
-    
-    if (allowHomeEditing) {
-      const homeButtonDiv = document.createElement('div');
-      createHomeButton(homeButtonDiv);
-      
-      mapRef.current.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
-    }
+  // Map control components
+  const mapControls = MapControls({
+    allowMapSelection,
+    selectionMode,
+    onSelectionModeChange: setSelectionMode,
+    showDestinationSelection: !destination
+  });
 
-    // Update markers after map is initialized
-    updateMarkers();
-    
-  }, [allowHomeEditing, allowMapSelection, createSelectionControls, handleMapClick, interactive, origin, updateMarkers]);
-
-  // Create home button
-  const createHomeButton = (controlDiv: HTMLDivElement) => {
-    controlDiv.style.padding = '10px';
-    controlDiv.style.backgroundColor = 'white';
-    controlDiv.style.borderRadius = '8px';
-    controlDiv.style.margin = '10px';
-    controlDiv.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
-    
-    const button = document.createElement('button');
-    button.style.backgroundColor = '#4CAF50';
-    button.style.color = 'white';
-    button.style.border = 'none';
-    button.style.borderRadius = '4px';
-    button.style.padding = '8px 12px';
-    button.style.fontSize = '14px';
-    button.style.cursor = 'pointer';
-    button.innerHTML = '<span style="font-size: 16px;">🏠</span> Guardar Casa';
-    
-    button.onclick = saveHomeLocation;
-    
-    controlDiv.appendChild(button);
-  };
-
-  // Initialize map when API key is available
-  useEffect(() => {
-    if (!mapContainerRef.current || !apiKey) return;
-
-    if (!window.google?.maps) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      
-      script.onload = () => {
-        initializeMap();
-      };
-      
-      script.onerror = () => {
-        console.error('Error loading Google Maps API');
-        toast({
-          title: 'Error',
-          description: 'No se pudo cargar Google Maps',
-          variant: 'destructive'
-        });
-      };
-      
-      document.body.appendChild(script);
-      return () => {
-        document.body.removeChild(script);
-      };
-    } else {
-      initializeMap();
-    }
-  }, [apiKey, initializeMap]);
+  const homeControl = HomeControl({
+    onSaveHome: saveHomeLocation
+  });
 
   // Update markers when origin or destination changes
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapReady && mapRef.current) {
       updateMarkers();
     }
-  }, [origin, destination, updateMarkers]);
-
-  // Enable destination selection
-  const enableDestinationSelection = () => {
-    if (mapRef.current) {
-      setSelectionMode('destination');
-      toast({
-        title: "Selección de destino activada",
-        description: "Haz clic en el mapa para seleccionar tu destino"
-      });
-    }
-  };
-
-  // Button to enable destination selection
-  const renderFloatingButton = () => {
-    if (!mapRef.current || !allowMapSelection || selectionMode === 'destination' || destination) return null;
-    
-    return (
-      <button 
-        className="absolute bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2"
-        onClick={enableDestinationSelection}
-      >
-        <span>Seleccionar destino</span>
-      </button>
-    );
-  };
+  }, [origin, destination, updateMarkers, mapReady]);
 
   return (
     <div
@@ -222,7 +144,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         ref={mapContainerRef}
         className="w-full h-full"
       />
-      {renderFloatingButton()}
+      {mapControls.renderFloatingButton()}
     </div>
   );
 };
