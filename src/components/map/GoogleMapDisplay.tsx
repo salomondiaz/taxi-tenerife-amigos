@@ -10,6 +10,7 @@ import { useGoogleMapDriverMarker } from './hooks/useGoogleMapDriverMarker';
 import MapControls from './components/MapControls';
 import HomeControl from './components/HomeControl';
 import MapSelectionIndicator from './components/MapSelectionIndicator';
+import MapSelectionControl from './controls/MapSelectionControl';
 import { reverseGeocode } from './services/GeocodingService';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
@@ -186,7 +187,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       // Si tenemos bounds de ruta, ajustar a ellos
       if (routeBounds) {
         mapRef.current.fitBounds(routeBounds, {
-          padding: { top: 50, right: 50, bottom: 50, left: 50 }
+          top: 50, right: 50, bottom: 50, left: 50
         });
         return;
       }
@@ -198,7 +199,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         bounds.extend({ lat: destination.lat, lng: destination.lng });
         
         mapRef.current.fitBounds(bounds, {
-          padding: { top: 70, right: 70, bottom: 70, left: 70 }
+          top: 70, right: 70, bottom: 70, left: 70
         });
       }
     }

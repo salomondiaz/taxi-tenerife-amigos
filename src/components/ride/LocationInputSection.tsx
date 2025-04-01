@@ -1,8 +1,10 @@
-
 import React from "react";
-import EnhancedLocationSelector from "@/components/ride/EnhancedLocationSelector";
-import { API_KEY_STORAGE_KEY } from "@/components/map/types";
+import { Button } from "@/components/ui/button";
 import { MapCoordinates } from "@/components/map/types";
+import { MapPin, Navigation, Home, LocateIcon, Search, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 interface LocationInputSectionProps {
   origin: string;
@@ -17,6 +19,7 @@ interface LocationInputSectionProps {
   isLoading: boolean;
   calculateEstimates: () => void;
   handleUseHomeAsDestination?: () => void;
+  scheduledTime?: string;
 }
 
 const LocationInputSection: React.FC<LocationInputSectionProps> = ({
@@ -31,13 +34,27 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
   saveHomeAddress,
   isLoading,
   calculateEstimates,
-  handleUseHomeAsDestination
+  handleUseHomeAsDestination,
+  scheduledTime
 }) => {
   // Obtener la API key de Google Maps
   const googleMapsApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
 
+  // Format scheduled time for display
+  const formatScheduledTime = () => {
+    if (!scheduledTime) return null;
+    
+    try {
+      const date = new Date(scheduledTime);
+      return format(date, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
+    } catch (error) {
+      console.error("Error formatting scheduled time:", error);
+      return scheduledTime;
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-white rounded-xl shadow-lg p-5">
       <h2 className="text-lg font-semibold mb-4">¿De dónde a dónde vas?</h2>
       
       <div className="p-4 bg-blue-50 rounded-lg mb-4">
@@ -65,6 +82,17 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
               <p className="text-sm truncate">{destination}</p>
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Show scheduled time if available */}
+      {scheduledTime && (
+        <div className="mt-4 flex items-center gap-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
+          <Clock className="text-amber-600" size={18} />
+          <div>
+            <p className="text-sm font-medium text-amber-800">Viaje programado</p>
+            <p className="text-xs text-amber-700">{formatScheduledTime()}</p>
+          </div>
         </div>
       )}
       

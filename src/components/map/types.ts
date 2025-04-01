@@ -35,6 +35,7 @@ export interface MapProps {
   useHomeAsDestination?: () => void;
   alwaysShowHomeMarker?: boolean;
   showHomeMarker?: boolean;
+  homeLocation?: MapCoordinates | null;
 }
 
 // Definición para los tipos de Ride

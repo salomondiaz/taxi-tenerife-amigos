@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { MapCoordinates } from '../types';
 
 interface UseGoogleMapRoutingProps {
@@ -26,7 +26,7 @@ export function useGoogleMapRouting({
     
     if (!showRoute || !origin || !destination) {
       // Clear previous route
-      directionsRendererRef.current.setDirections({ routes: [] });
+      directionsRendererRef.current.setDirections(null);
       return;
     }
     
@@ -51,14 +51,14 @@ export function useGoogleMapRouting({
             }
           } else {
             console.error("Directions request failed:", status);
-            directionsRendererRef.current?.setDirections({ routes: [] });
+            directionsRendererRef.current?.setDirections(null);
             bounds.current = null;
           }
         }
       );
     } catch (error) {
       console.error("Error calculating route:", error);
-      directionsRendererRef.current?.setDirections({ routes: [] });
+      directionsRendererRef.current?.setDirections(null);
       bounds.current = null;
     }
   }, [mapRef, directionsRendererRef, origin, destination, showRoute]);
@@ -71,7 +71,7 @@ export function useGoogleMapRouting({
   useEffect(() => {
     return () => {
       if (directionsRendererRef.current) {
-        directionsRendererRef.current.setDirections({ routes: [] });
+        directionsRendererRef.current.setDirections(null);
       }
       bounds.current = null;
     };

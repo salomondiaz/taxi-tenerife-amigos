@@ -18,6 +18,7 @@ interface MapViewSectionProps {
   saveRideToSupabase?: () => void;
   useHomeAsDestination?: () => void;
   rideId?: string;
+  allowHomeEditing?: boolean;
 }
 
 const MapViewSection: React.FC<MapViewSectionProps> = ({
