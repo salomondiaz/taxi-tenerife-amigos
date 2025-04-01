@@ -5,11 +5,14 @@ import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronRight, Star, Clock, CalendarIcon, Car, Navigation, Home as HomeIcon } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
-import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
-import GooglePlacesAutocomplete from "@/components/map/GooglePlacesAutocomplete";
-import { MapCoordinates } from "@/components/map/types";
+
+// Import our new components
+import UserGreeting from "@/components/home/UserGreeting";
+import HomeLocationSection from "@/components/home/HomeLocationSection";
+import QuickRideRequest from "@/components/home/QuickRideRequest";
+import RecentRides from "@/components/home/RecentRides";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,8 +21,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const { getLocationByType } = useFavoriteLocations();
   const [homeLocation, setHomeLocation] = useState<any>(null);
-  const [pickup, setPickup] = useState("");
-  const [destination, setDestination] = useState("");
 
   useEffect(() => {
     // Check if home location exists
@@ -96,93 +97,12 @@ const Home = () => {
   const handleRequestRide = () => {
     navigate("/request-ride");
   };
-  
-  const handleSetHomeLocation = () => {
-    navigate("/request-ride", { state: { setHomeLocation: true } });
-  };
-  
-  const handleRequestSpecificRide = () => {
-    if (pickup && destination) {
-      navigate("/request-ride", { 
-        state: { 
-          origin: pickup,
-          destination: destination 
-        } 
-      });
-    } else if (!pickup) {
-      toast({
-        title: "Información incompleta",
-        description: "Por favor, indica el punto de recogida",
-        variant: "destructive"
-      });
-    } else if (!destination) {
-      toast({
-        title: "Información incompleta",
-        description: "Por favor, indica el destino",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handlePickupSelected = (coordinates: MapCoordinates) => {
-    setPickup(coordinates.address || "");
-  };
-  
-  const handleDestinationSelected = (coordinates: MapCoordinates) => {
-    setDestination(coordinates.address || "");
-  };
-
-  const formatDate = (date: Date) => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return "Hoy";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Ayer";
-    } else {
-      return date.toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "short",
-      });
-    }
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return amount.toFixed(2) + " €";
-  };
 
   return (
     <MainLayout requireAuth>
       <div className="min-h-screen pb-16">
         <div className="bg-tenerife-blue text-white px-6 pt-12 pb-6 rounded-b-3xl shadow-md">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">Hola, {user?.name?.split(' ')[0] || 'Usuario'}</h1>
-              <p className="text-white/80 text-sm mt-1">¿A dónde quieres ir hoy?</p>
-            </div>
-            <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center">
-              {user?.profilePicture ? (
-                <img 
-                  src={user.profilePicture} 
-                  alt="Foto de perfil" 
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-              ) : (
-                <span className="text-white font-medium text-lg">
-                  {user?.name?.charAt(0) || 'U'}
-                </span>
-              )}
-            </div>
-          </div>
+          <UserGreeting user={user} />
           
           <Button 
             onClick={handleRequestRide}
@@ -196,191 +116,17 @@ const Home = () => {
         
         <div className="px-6 py-8">
           {/* Home location section */}
-          <section className="mb-8">
-            <div className="bg-blue-50 rounded-xl shadow-sm border border-blue-100 p-6">
-              <h2 className="text-xl font-semibold mb-3 text-blue-800 flex items-center gap-2">
-                <HomeIcon className="text-tenerife-blue" size={24} />
-                Mi Casa
-              </h2>
-              
-              {homeLocation ? (
-                <div>
-                  <p className="text-blue-700 mb-2">
-                    {homeLocation.coordinates.address || `${homeLocation.coordinates.lat.toFixed(6)}, ${homeLocation.coordinates.lng.toFixed(6)}`}
-                  </p>
-                  <div className="flex gap-3 mt-4">
-                    <Button
-                      variant="default"
-                      className="flex-1 bg-tenerife-blue"
-                      onClick={() => navigate("/request-ride", { 
-                        state: { useHomeAsOrigin: true } 
-                      })}
-                    >
-                      <MapPin size={16} className="mr-2" />
-                      Viajar desde casa
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={handleSetHomeLocation}
-                    >
-                      <HomeIcon size={16} className="mr-2" />
-                      Cambiar ubicación
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-blue-700 mb-4">
-                    No has guardado la ubicación de tu casa. Configúrala para acceder más rápido a ella.
-                  </p>
-                  <Button
-                    variant="default"
-                    className="w-full bg-tenerife-blue"
-                    onClick={handleSetHomeLocation}
-                  >
-                    <HomeIcon size={16} className="mr-2" />
-                    Configurar Mi Casa
-                  </Button>
-                </div>
-              )}
-            </div>
-          </section>
+          <HomeLocationSection homeLocation={homeLocation} />
           
-          <section className="py-6">
-            <div className="container px-4 mx-auto">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                  <MapPin className="text-tenerife-blue" size={20} />
-                  Solicitar un viaje
-                </h2>
-                
-                <div className="space-y-4">
-                  <div className="flex gap-2 items-start">
-                    <div className="mt-2">
-                      <MapPin size={18} className="text-blue-500" />
-                    </div>
-                    <div className="flex-1">
-                      <GooglePlacesAutocomplete
-                        label="Punto de recogida"
-                        placeholder="¿Dónde te recogemos?"
-                        value={pickup}
-                        onChange={setPickup}
-                        onPlaceSelected={handlePickupSelected}
-                        apiKey={GOOGLE_MAPS_API_KEY}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 items-start">
-                    <div className="mt-2">
-                      <Navigation size={18} className="text-red-500" />
-                    </div>
-                    <div className="flex-1">
-                      <GooglePlacesAutocomplete
-                        label="Destino"
-                        placeholder="¿A dónde vas?"
-                        value={destination}
-                        onChange={setDestination}
-                        onPlaceSelected={handleDestinationSelected}
-                        apiKey={GOOGLE_MAPS_API_KEY}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-4 mt-6">
-                    <Button 
-                      variant="outline"
-                      size="default"
-                      className="flex-1"
-                    >
-                      <CalendarIcon size={18} className="mr-2" />
-                      Programar
-                    </Button>
-                    <Button 
-                      variant="default"
-                      size="default"
-                      className="flex-1 bg-tenerife-blue hover:bg-tenerife-blue/90"
-                      onClick={handleRequestSpecificRide}
-                    >
-                      <Car size={18} className="mr-2" />
-                      Solicitar ahora
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Quick ride request section */}
+          <QuickRideRequest />
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Viajes recientes</h2>
-            
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse bg-gray-200 h-24 rounded-xl"></div>
-                ))}
-              </div>
-            ) : recentRides.length > 0 ? (
-              <div className="space-y-4">
-                {recentRides.map((ride) => (
-                  <div 
-                    key={ride.id} 
-                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="flex items-center">
-                          <span className="text-gray-500 text-sm mr-2">
-                            {formatDate(ride.date)}
-                          </span>
-                          <span className="text-gray-400 text-sm">
-                            {formatTime(ride.date)}
-                          </span>
-                        </div>
-                        <h3 className="font-medium text-gray-800 mt-1">{ride.destination}</h3>
-                      </div>
-                      <span className="font-semibold text-gray-800">
-                        {formatCurrency(ride.price)}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <Clock size={16} className="mr-1" />
-                        <span>{ride.duration} min</span>
-                        <span className="mx-2">•</span>
-                        <span>{ride.distance} km</span>
-                      </div>
-                      
-                      <div className="flex items-center text-amber-500">
-                        <Star size={16} className="mr-1 fill-amber-500" />
-                        <span>{ride.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <MapPin size={24} className="text-gray-400" />
-                </div>
-                <h3 className="text-gray-700 font-medium mb-2">No hay viajes recientes</h3>
-                <p className="text-gray-500 text-sm mb-4">
-                  Solicita tu primer viaje para verlo aquí
-                </p>
-                <Button 
-                  onClick={handleRequestRide}
-                  variant="ghost" 
-                  size="default"
-                >
-                  Solicitar ahora
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* Recent rides section */}
+          <RecentRides 
+            recentRides={recentRides} 
+            loading={loading} 
+            handleRequestRide={handleRequestRide} 
+          />
         </div>
       </div>
     </MainLayout>
