@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Map from '@/components/Map';
-import { MapCoordinates } from '@/components/map/types';
+import { MapCoordinates, MapDriverPosition } from '@/components/map/types';
 import { toast } from '@/hooks/use-toast';
 
 interface MapViewerProps {
@@ -15,6 +15,8 @@ interface MapViewerProps {
   useHomeAsDestination?: () => void;
   onMapClick?: (coords: MapCoordinates) => void;
   alwaysShowHomeMarker?: boolean;
+  showDriverPosition?: boolean;
+  driverPosition?: MapDriverPosition | null;
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
@@ -27,7 +29,9 @@ const MapViewer: React.FC<MapViewerProps> = ({
   saveRideToSupabase,
   useHomeAsDestination,
   onMapClick,
-  alwaysShowHomeMarker = false
+  alwaysShowHomeMarker = false,
+  showDriverPosition = false,
+  driverPosition = null
 }) => {
   const [selectionStep, setSelectionStep] = useState<'none' | 'origin' | 'destination'>('origin');
 
@@ -117,10 +121,12 @@ const MapViewer: React.FC<MapViewerProps> = ({
         routeGeometry={routeGeometry}
         onOriginChange={handleMapSelection}
         onDestinationChange={handleMapSelection}
-        allowMapSelection={true}
+        allowMapSelection={useManualSelection}
         showRoute={true}
         useHomeAsDestination={useHomeAsDestination}
         alwaysShowHomeMarker={alwaysShowHomeMarker}
+        showDriverPosition={showDriverPosition}
+        driverPosition={driverPosition || undefined}
       />
       
       {/* Selection mode message */}

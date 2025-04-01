@@ -1,10 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MapViewer from "./MapViewer";
 import { MapCoordinates } from "@/components/map/types";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
+import { Home, AlertCircle, Car } from "lucide-react";
+import { useDriverTracking } from "@/hooks/useDriverTracking";
+import { useRouteVisualization } from "@/hooks/useRouteVisualization";
 
 interface MapViewSectionProps {
   useManualSelection: boolean;
@@ -15,20 +17,56 @@ interface MapViewSectionProps {
   handleDestinationChange: (coords: MapCoordinates) => void;
   saveRideToSupabase?: () => void;
   useHomeAsDestination?: () => void;
+  rideId?: string;
 }
 
 const MapViewSection: React.FC<MapViewSectionProps> = ({
   useManualSelection,
   originCoords,
   destinationCoords,
-  routeGeometry,
+  routeGeometry: initialRouteGeometry,
   handleOriginChange,
   handleDestinationChange,
   saveRideToSupabase,
-  useHomeAsDestination
+  useHomeAsDestination,
+  rideId
 }) => {
   const { toast } = useToast();
   const [showHomePrompt, setShowHomePrompt] = useState<MapCoordinates | null>(null);
+
+  // Get real-time driver position and status
+  const { driverPosition, driverStatus, error: driverError, isLoading: isLoadingDriver } = useDriverTracking({ rideId });
+  
+  // Calculate and manage route visualization
+  const { routeGeometry, routeError, isCalculating } = useRouteVisualization({
+    driverPosition,
+    originCoords,
+    destinationCoords,
+    hasPickedUp: driverStatus.hasPickedUp,
+    isDriverAssigned: driverStatus.isAssigned
+  });
+
+  // Show toast if driver tracking encounters an error
+  useEffect(() => {
+    if (driverError) {
+      toast({
+        title: "Error de seguimiento",
+        description: driverError,
+        variant: "destructive",
+      });
+    }
+  }, [driverError, toast]);
+
+  // Show toast if route calculation encounters an error
+  useEffect(() => {
+    if (routeError) {
+      toast({
+        title: "Error en la ruta",
+        description: routeError,
+        variant: "destructive",
+      });
+    }
+  }, [routeError, toast]);
 
   // Handle map click with the new selection logic
   const handleMapClick = (coords: MapCoordinates) => {
@@ -85,20 +123,59 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
     setShowHomePrompt(null);
   };
 
+  // Decide which route geometry to use
+  const effectiveRouteGeometry = driverStatus.isAssigned ? routeGeometry : initialRouteGeometry;
+
   return (
     <div className="relative h-[400px] md:h-[500px] lg:h-[600px] rounded-xl overflow-hidden shadow-lg">
       <MapViewer
-        useManualSelection={useManualSelection}
+        useManualSelection={useManualSelection && !driverStatus.isAssigned}
         originCoords={originCoords}
         destinationCoords={destinationCoords}
-        routeGeometry={routeGeometry}
+        routeGeometry={effectiveRouteGeometry}
         handleOriginChange={handleOriginChange}
         handleDestinationChange={handleDestinationChange}
         saveRideToSupabase={saveRideToSupabase}
         useHomeAsDestination={useHomeAsDestination}
         onMapClick={handleMapClick}
         alwaysShowHomeMarker={true}
+        showDriverPosition={driverStatus.isAssigned}
+        driverPosition={driverPosition}
       />
+
+      {/* Driver status indicator */}
+      {rideId && !driverStatus.isAssigned && !isLoadingDriver && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-4 py-2 rounded-lg shadow-lg z-10">
+          <div className="flex items-center gap-2 text-amber-600">
+            <Car className="animate-pulse" size={18} />
+            <span className="font-medium">Buscando conductor cercano...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Route status indicator */}
+      {driverStatus.isAssigned && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white/90 px-4 py-2 rounded-lg shadow-lg z-10">
+          <div className="flex items-center gap-2 text-green-600">
+            <Car size={18} />
+            <span className="font-medium">
+              {driverStatus.hasPickedUp
+                ? "En camino a tu destino..."
+                : "El conductor está en camino..."}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Connection error indicator */}
+      {(driverError || routeError) && (
+        <div className="absolute bottom-4 left-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-10">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={18} />
+            <span>Error de conexión</span>
+          </div>
+        </div>
+      )}
 
       {/* Home travel prompt */}
       {showHomePrompt && (

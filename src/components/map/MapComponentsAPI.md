@@ -63,7 +63,62 @@ import MapViewer from '@/components/ride/MapViewer';
   useHomeAsDestination={goHome}
   onMapClick={handleMapClick}
   alwaysShowHomeMarker={true}
+  showDriverPosition={true}
+  driverPosition={driverCoordinates}
 />
+```
+
+### `MapViewSection`
+
+```tsx
+import MapViewSection from '@/components/ride/MapViewSection';
+
+<MapViewSection
+  useManualSelection={true}
+  originCoords={originCoordinates}
+  destinationCoords={destinationCoordinates}
+  routeGeometry={routeData}
+  handleOriginChange={setOrigin}
+  handleDestinationChange={setDestination}
+  saveRideToSupabase={saveRide}
+  useHomeAsDestination={goHome}
+  rideId={currentRideId}
+/>
+```
+
+## Driver Tracking Hooks
+
+### `useDriverTracking`
+
+```tsx
+import { useDriverTracking } from '@/hooks/useDriverTracking';
+
+const { 
+  driverPosition,  // Current position of the driver
+  driverStatus,    // Status object with isAssigned, isPickingUp, hasPickedUp, etc.
+  error,           // Any errors encountered
+  isLoading        // Loading state
+} = useDriverTracking({ 
+  rideId: 'ride-123' 
+});
+```
+
+### `useRouteVisualization`
+
+```tsx
+import { useRouteVisualization } from '@/hooks/useRouteVisualization';
+
+const {
+  routeGeometry,  // Route geometry for rendering
+  routeError,     // Any route calculation errors
+  isCalculating   // Loading state
+} = useRouteVisualization({
+  driverPosition,
+  originCoords,
+  destinationCoords,
+  hasPickedUp,
+  isDriverAssigned
+});
 ```
 
 ## Key Hooks
@@ -231,6 +286,40 @@ function HomeMap() {
       />
       <button onClick={handleSaveHome}>Save as Home</button>
     </>
+  );
+}
+```
+
+### Driver Tracking Map
+
+```tsx
+import { useDriverTracking } from '@/hooks/useDriverTracking';
+import { useRouteVisualization } from '@/hooks/useRouteVisualization';
+import Map from '@/components/Map';
+
+function RideTrackingMap({ rideId, origin, destination }) {
+  // Get driver position and status
+  const { driverPosition, driverStatus } = useDriverTracking({ rideId });
+  
+  // Calculate route based on driver and passenger positions
+  const { routeGeometry } = useRouteVisualization({
+    driverPosition,
+    originCoords: origin,
+    destinationCoords: destination,
+    hasPickedUp: driverStatus.hasPickedUp,
+    isDriverAssigned: driverStatus.isAssigned
+  });
+  
+  return (
+    <Map
+      origin={origin}
+      destination={destination}
+      routeGeometry={routeGeometry}
+      showDriverPosition={driverStatus.isAssigned}
+      driverPosition={driverPosition}
+      showRoute={true}
+      interactive={true}
+    />
   );
 }
 ```
