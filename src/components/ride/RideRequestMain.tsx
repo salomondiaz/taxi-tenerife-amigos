@@ -8,6 +8,9 @@ import MapViewSection from "./MapViewSection";
 import EstimateSection from "./EstimateSection";
 
 const RideRequestMain: React.FC = () => {
+  // Move useToast to the top level before using it
+  const { toast } = useToast();
+  
   const {
     origin,
     setOrigin,
@@ -200,9 +203,6 @@ const RideRequestMain: React.FC = () => {
       });
     }
   };
-  
-  // For toast notifications
-  const { toast } = useToast();
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
