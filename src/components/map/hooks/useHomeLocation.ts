@@ -2,125 +2,72 @@
 import { useState, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MapCoordinates } from '../types';
-import { zoomToHomeLocation } from '../services/MapRoutingService';
-import { useFavoriteLocations } from '@/hooks/useFavoriteLocations';
+import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
+import { useHomeMapInteraction } from './useHomeMapInteraction';
+import { toast } from '@/hooks/use-toast';
 
-const HOME_LOCATION_KEY = 'user_home_location';
-
-export function useHomeLocation(map: mapboxgl.Map | null, origin?: MapCoordinates, onOriginChange?: (coordinates: MapCoordinates) => void) {
+/**
+ * Main hook for managing home location in the map
+ */
+export function useHomeLocation(
+  map: mapboxgl.Map | null, 
+  origin?: MapCoordinates, 
+  onOriginChange?: (coordinates: MapCoordinates) => void
+) {
   const [homeLocation, setHomeLocation] = useState<MapCoordinates | null>(null);
   const [showHomeMarker, setShowHomeMarker] = useState<boolean>(false);
   const [isHomeLocation, setIsHomeLocation] = useState<boolean>(false);
-  const { getLocationByType, saveFavoriteLocation, editFavoriteLocation } = useFavoriteLocations();
+  
+  // Use the separated storage and interaction hooks
+  const { loadHomeLocation, saveHomeLocation: storeHomeLocation, updateHomeLocation } = useHomeLocationStorage();
+  const { useHomeAsOrigin, isHomeLocation: checkIsHomeLocation } = useHomeMapInteraction(map, homeLocation, onOriginChange);
 
   // Load home location on mount
   useEffect(() => {
-    try {
-      // First check if we have a home in the favorites system
-      const homeFromFavorites = getLocationByType('home');
-      
-      if (homeFromFavorites) {
-        setHomeLocation(homeFromFavorites.coordinates);
-        setShowHomeMarker(true);
-        console.log("Loaded home location from favorites:", homeFromFavorites.coordinates);
-        return;
-      }
-      
-      // Fall back to legacy system
-      const savedHomeLocation = localStorage.getItem(HOME_LOCATION_KEY);
-      if (savedHomeLocation) {
-        const parsedHome = JSON.parse(savedHomeLocation);
-        setHomeLocation(parsedHome);
-        setShowHomeMarker(true);
-        console.log("Loaded home location from legacy storage:", parsedHome);
-      }
-    } catch (error) {
-      console.error("Error loading home location:", error);
+    const storedLocation = loadHomeLocation();
+    if (storedLocation) {
+      setHomeLocation(storedLocation);
+      setShowHomeMarker(true);
     }
-  }, [getLocationByType]);
+  }, [loadHomeLocation]);
 
   // Check if current origin is home location
   useEffect(() => {
     if (origin && homeLocation) {
-      const isHome = 
-        Math.abs(origin.lat - homeLocation.lat) < 0.0001 && 
-        Math.abs(origin.lng - homeLocation.lng) < 0.0001;
-      
+      const isHome = checkIsHomeLocation(origin);
       setIsHomeLocation(isHome);
       console.log("Is home location:", isHome);
     } else {
       setIsHomeLocation(false);
     }
-  }, [origin, homeLocation]);
+  }, [origin, homeLocation, checkIsHomeLocation]);
 
   // Save home location
   const saveHomeLocation = () => {
     if (!origin) {
       console.error("No origin set to save as home");
+      toast({
+        title: "No hay ubicación para guardar",
+        description: "Selecciona primero una ubicación de origen",
+        variant: "destructive"
+      });
       return;
     }
     
-    try {
-      console.log("Saving home location:", origin);
-      
-      // Save in both systems - new favorites system and legacy
-      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(origin));
-      
-      // Save in favorites system
-      saveFavoriteLocation({
-        name: "Mi Casa",
-        coordinates: origin,
-        type: "home",
-        icon: "🏠",
-        id: "home" // explicitly include id here
-      });
-      
+    const success = storeHomeLocation(origin);
+    if (success) {
       setHomeLocation(origin);
       setShowHomeMarker(true);
-      console.log("Home location saved:", origin);
-    } catch (error) {
-      console.error("Error saving home location:", error);
-    }
-  };
-
-  // Use home location as origin
-  const useHomeAsOrigin = () => {
-    if (!homeLocation || !onOriginChange || !map) {
-      console.error("No home location saved or no origin change handler");
-      return;
-    }
-    
-    // Ensure the origin marker updates correctly
-    console.log("Setting home as origin:", homeLocation);
-    onOriginChange(homeLocation);
-    setIsHomeLocation(true);
-    
-    // Zoom to home location
-    zoomToHomeLocation(map, homeLocation);
-  };
-
-  // Update home location coordinates
-  const updateHomeLocation = (newCoordinates: MapCoordinates) => {
-    if (!newCoordinates) {
-      console.error("No coordinates provided to update home location");
-      return;
-    }
-    
-    try {
-      console.log("Updating home location:", newCoordinates);
-      
-      // Update in favorites system
-      editFavoriteLocation("home", {
-        coordinates: newCoordinates
+      toast({
+        title: "Casa guardada",
+        description: "Tu ubicación actual ha sido guardada como tu casa",
       });
-      
-      // Update in legacy system
-      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(newCoordinates));
-      
-      setHomeLocation(newCoordinates);
-      console.log("Home location updated:", newCoordinates);
-    } catch (error) {
-      console.error("Error updating home location:", error);
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la ubicación como tu casa",
+        variant: "destructive"
+      });
     }
   };
 
