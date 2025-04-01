@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -284,8 +285,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       />
       
       <MapSelectionIndicator 
-        visible={!!selectionMode && allowMapSelection} 
-        type={selectionMode} 
+        visible={!!selectionMode && selectionMode !== 'none' && allowMapSelection} 
+        type={selectionMode === 'origin' ? 'origin' : 'destination'} 
       />
 
       {allowMapSelection && (
