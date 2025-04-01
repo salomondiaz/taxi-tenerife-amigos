@@ -47,8 +47,13 @@ export function useGoogleMapDriverMarker({
             position: { lat: startPosition.lat, lng: startPosition.lng },
             map: mapRef.current,
             icon: {
-              url: 'https://maps.google.com/mapfiles/ms/icons/cabs.png',
-              scaledSize: new google.maps.Size(32, 32)
+              path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+              scale: 5,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 2,
+              rotation: driverPosition?.heading || 0
             },
             title: 'Driver',
             animation: google.maps.Animation.DROP
