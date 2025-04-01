@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowLeft, Calendar, Navigation, Clock, MapPin } from "lucide-react";
@@ -29,7 +30,7 @@ type TripHistoryItem = {
     name: string;
     rating: number;
   };
-  price: number;
+  price: number | null;
   distance: number | null;
   rating?: number;
 };
@@ -192,6 +193,12 @@ const TravelHistory: React.FC = () => {
     }
   };
 
+  // Helper function to safely format price
+  const formatPrice = (price: number | null | undefined): string => {
+    if (price === null || price === undefined) return "0.00";
+    return price.toFixed(2);
+  };
+
   return (
     <MainLayout requireAuth>
       <div className="min-h-screen p-6 pb-24">
@@ -275,7 +282,7 @@ const TravelHistory: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <p className="font-bold text-tenerife-blue">{trip.price.toFixed(2)} €</p>
+                      <p className="font-bold text-tenerife-blue">{formatPrice(trip.price)} €</p>
                     </div>
                     
                     {trip.status === "completed" && (
