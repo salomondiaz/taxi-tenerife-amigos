@@ -1,12 +1,13 @@
 
 import React from 'react';
+import { MapSelectionMode } from '../types';
 import { toast } from '@/hooks/use-toast';
 import { createSelectionControls, renderFloatingButton } from '../controls/SelectionControls';
 
 interface MapControlsProps {
   allowMapSelection: boolean;
-  selectionMode: 'origin' | 'destination' | null;
-  onSelectionModeChange: (mode: 'origin' | 'destination' | null) => void;
+  selectionMode: MapSelectionMode;
+  onSelectionModeChange: (mode: MapSelectionMode) => void;
   showDestinationSelection: boolean;
 }
 
@@ -18,10 +19,10 @@ const MapControls = ({
 }: MapControlsProps) => {
   
   // Función para manejar cambios en el modo de selección
-  const handleSelectionModeChange = (newMode: 'origin' | 'destination' | null) => {
+  const handleSelectionModeChange = (newMode: MapSelectionMode) => {
     // Si el nuevo modo es igual al actual, cancelar la selección
     if (newMode === selectionMode) {
-      onSelectionModeChange(null);
+      onSelectionModeChange('none');
       toast({
         title: "Selección cancelada",
         description: "Has cancelado el modo de selección"

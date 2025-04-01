@@ -1,9 +1,10 @@
 
 import { useEffect } from 'react';
+import { MapSelectionMode } from '../types';
 
 interface UseMapCursorProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
-  selectionMode: 'origin' | 'destination' | null;
+  selectionMode: MapSelectionMode;
 }
 
 export function useMapCursor({
@@ -16,7 +17,7 @@ export function useMapCursor({
     if (!currentMap) return;
     
     // Set cursor based on selection mode
-    if (selectionMode) {
+    if (selectionMode && selectionMode !== 'none') {
       currentMap.setOptions({
         draggableCursor: 'crosshair'
       });

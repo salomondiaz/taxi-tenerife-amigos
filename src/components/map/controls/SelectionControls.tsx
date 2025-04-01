@@ -1,10 +1,11 @@
 
 import { MapPin, Navigation } from 'lucide-react';
+import { MapSelectionMode } from '../types';
 import { toast } from '@/hooks/use-toast';
 
 interface SelectionControlsProps {
-  selectionMode: 'origin' | 'destination' | null;
-  setSelectionMode: (mode: 'origin' | 'destination' | null) => void;
+  selectionMode: MapSelectionMode;
+  setSelectionMode: (mode: MapSelectionMode) => void;
 }
 
 interface FloatingButtonControlsProps extends SelectionControlsProps {
@@ -48,7 +49,7 @@ export function createSelectionControls({ selectionMode, setSelectionMode }: Sel
     originButton.style.color = selectionMode === 'origin' ? '#2563EB' : '#4B5563';
     
     originButton.addEventListener('click', () => {
-      const newMode = selectionMode === 'origin' ? null : 'origin';
+      const newMode = selectionMode === 'origin' ? 'none' : 'origin';
       setSelectionMode(newMode);
     });
     
@@ -73,7 +74,7 @@ export function createSelectionControls({ selectionMode, setSelectionMode }: Sel
     destinationButton.style.color = selectionMode === 'destination' ? '#E11D48' : '#4B5563';
     
     destinationButton.addEventListener('click', () => {
-      const newMode = selectionMode === 'destination' ? null : 'destination';
+      const newMode = selectionMode === 'destination' ? 'none' : 'destination';
       setSelectionMode(newMode);
     });
     
@@ -87,7 +88,7 @@ export function renderFloatingButton({ selectionMode, setSelectionMode, showDest
   // Si no está en modo de selección, mostrar botón flotante para seleccionar destino
   const handleClick = () => {
     if (selectionMode === 'destination') {
-      setSelectionMode(null);
+      setSelectionMode('none');
       toast({
         title: "Selección cancelada",
         description: "Has cancelado la selección de destino"

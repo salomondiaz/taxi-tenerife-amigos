@@ -57,9 +57,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         allowMapSelection,
         selectionMode,
         onSelectionModeChange: (mode) => {
-          if (mode === 'origin' || mode === 'destination' || mode === null) {
-            setSelectionMode(mode as any);
-          }
+          setSelectionMode(mode);
         },
         showDestinationSelection: !destination
       });
@@ -294,11 +292,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         <div className="absolute top-2 left-2 z-10">
           <MapSelectionControl 
             selectionMode={selectionMode}
-            setSelectionMode={(mode) => {
-              if (mode === 'origin' || mode === 'destination' || mode === null) {
-                setSelectionMode(mode as any);
-              }
-            }}
+            setSelectionMode={setSelectionMode}
             onUseCurrentLocation={handleUseCurrentLocation}
             onSearchLocation={handleSearchLocation}
           />

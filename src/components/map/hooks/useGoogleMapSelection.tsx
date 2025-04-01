@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapCoordinates } from '../types';
+import { MapCoordinates, MapSelectionMode } from '../types';
 import { useMapCursor } from './useMapCursor';
 import { toast } from '@/hooks/use-toast';
 import MapControls from '../components/MapControls';
@@ -21,7 +21,7 @@ export function useGoogleMapSelection({
   onDestinationChange,
   showDestinationSelection = true
 }: UseGoogleMapSelectionProps) {
-  const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | null>(null);
+  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   
   // Aplicar estilo de cursor basado en el modo de selección
@@ -63,7 +63,7 @@ export function useGoogleMapSelection({
             description: "Ahora haga clic para seleccionar el destino"
           });
         } else {
-          setSelectionMode(null);
+          setSelectionMode('none');
         }
       } 
       else if (selectionMode === 'destination' && onDestinationChange) {
@@ -73,7 +73,7 @@ export function useGoogleMapSelection({
           description: address || "Ubicación seleccionada en el mapa"
         });
         // Desactivar el modo de selección después de seleccionar el destino
-        setSelectionMode(null);
+        setSelectionMode('none');
       }
     });
   }, [selectionMode, onOriginChange, onDestinationChange, showDestinationSelection]);

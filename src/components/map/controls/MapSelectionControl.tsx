@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 
 interface MapSelectionControlProps {
-  selectionMode: 'origin' | 'destination' | null;
-  setSelectionMode: (mode: 'origin' | 'destination' | null) => void;
+  selectionMode: MapSelectionMode;
+  setSelectionMode: (mode: MapSelectionMode) => void;
   onUseCurrentLocation: () => void;
   onSearchLocation?: (query: string, type: 'origin' | 'destination') => void;
 }
