@@ -24,6 +24,33 @@ export type Database = {
         }
         Relationships: []
       }
+      viajes: {
+        Row: {
+          created_at: string
+          destino: string | null
+          estado: string | null
+          id: number
+          origen: string | null
+          usuario: string | null
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          estado?: string | null
+          id?: number
+          origen?: string | null
+          usuario?: string | null
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          estado?: string | null
+          id?: number
+          origen?: string | null
+          usuario?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

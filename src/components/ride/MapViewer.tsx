@@ -27,14 +27,19 @@ const MapViewer: React.FC<MapViewerProps> = ({
 
   // Efecto para verificar si el destino ha sido seleccionado
   useEffect(() => {
-    if (destinationCoords && selectionMode === 'destination') {
-      // Cuando se establece el destino durante el modo de selección de destino,
-      // automáticamente desactivar el modo de selección
+    if (originCoords && selectionMode === 'origin') {
       setSelectionMode(null);
+      console.log("Origin selected, turning off selection mode");
     }
-  }, [destinationCoords, selectionMode]);
+    if (destinationCoords && selectionMode === 'destination') {
+      setSelectionMode(null);
+      console.log("Destination selected, turning off selection mode");
+    }
+  }, [originCoords, destinationCoords, selectionMode]);
 
   const toggleSelectionMode = (mode: 'origin' | 'destination') => {
+    console.log(`Toggling selection mode: current=${selectionMode}, new=${mode === selectionMode ? null : mode}`);
+    
     if (selectionMode === mode) {
       setSelectionMode(null);
     } else {
@@ -58,7 +63,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
               size="sm"
               className="flex items-center gap-1"
             >
-              <MapPin size={16} />
+              <MapPin size={16} className="text-blue-500" />
               <span className="hidden md:inline">Origen</span>
             </Button>
             <Button
@@ -67,7 +72,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
               size="sm"
               className="flex items-center gap-1"
             >
-              <Navigation size={16} />
+              <Navigation size={16} className="text-red-500" />
               <span className="hidden md:inline">Destino</span>
             </Button>
           </div>
@@ -79,20 +84,8 @@ const MapViewer: React.FC<MapViewerProps> = ({
         origin={originCoords}
         destination={destinationCoords}
         routeGeometry={routeGeometry}
-        onOriginChange={(coords) => {
-          handleOriginChange(coords);
-          // Desactivar el modo de selección después de seleccionar
-          if (selectionMode === 'origin') {
-            setSelectionMode(null);
-          }
-        }}
-        onDestinationChange={(coords) => {
-          handleDestinationChange(coords);
-          // Desactivar el modo de selección después de seleccionar
-          if (selectionMode === 'destination') {
-            setSelectionMode(null);
-          }
-        }}
+        onOriginChange={handleOriginChange}
+        onDestinationChange={handleDestinationChange}
         allowMapSelection={true}
         showRoute={true}
       />
