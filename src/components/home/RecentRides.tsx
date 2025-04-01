@@ -1,7 +1,9 @@
 
 import React from "react";
-import { Clock, MapPin, Star } from "lucide-react";
+import { Clock, MapPin, Star, Calendar, Badge } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { format, formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface RecentRidesProps {
   recentRides: any[];
@@ -15,7 +17,8 @@ const RecentRides: React.FC<RecentRidesProps> = ({
   handleRequestRide 
 }) => {
   
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -25,22 +28,44 @@ const RecentRides: React.FC<RecentRidesProps> = ({
     } else if (date.toDateString() === yesterday.toDateString()) {
       return "Ayer";
     } else {
-      return date.toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "short",
-      });
+      return formatDistanceToNow(date, { addSuffix: true, locale: es });
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, "HH:mm", { locale: es });
   };
 
   const formatCurrency = (amount: number) => {
     return amount.toFixed(2) + " €";
+  };
+  
+  const getStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      'pendiente': 'bg-blue-100 text-blue-800',
+      'programado': 'bg-amber-100 text-amber-800',
+      'en_curso': 'bg-purple-100 text-purple-800',
+      'completado': 'bg-green-100 text-green-800',
+      'cancelado': 'bg-red-100 text-red-800',
+    };
+    
+    const labels: Record<string, string> = {
+      'pendiente': 'Pendiente',
+      'programado': 'Programado',
+      'en_curso': 'En curso',
+      'completado': 'Completado',
+      'cancelado': 'Cancelado',
+    };
+    
+    const color = colors[status] || 'bg-gray-100 text-gray-800';
+    const label = labels[status] || status;
+    
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
+        {label}
+      </span>
+    );
   };
 
   return (
@@ -62,33 +87,66 @@ const RecentRides: React.FC<RecentRidesProps> = ({
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="flex items-center">
-                    <span className="text-gray-500 text-sm mr-2">
-                      {formatDate(ride.date)}
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-sm">
+                      {formatDate(ride.created_at)}
                     </span>
                     <span className="text-gray-400 text-sm">
-                      {formatTime(ride.date)}
+                      {formatTime(ride.created_at)}
                     </span>
+                    {getStatusBadge(ride.estado)}
                   </div>
-                  <h3 className="font-medium text-gray-800 mt-1">{ride.destination}</h3>
+                  <h3 className="font-medium text-gray-800 mt-1">{ride.destino}</h3>
+                  
+                  {/* Mostrar hora programada si existe */}
+                  {ride.hora_programada && (
+                    <div className="flex items-center gap-1 mt-1 text-sm text-amber-600">
+                      <Calendar size={14} />
+                      <span>
+                        Programado para: {format(new Date(ride.hora_programada), "d MMM yyyy, HH:mm", { locale: es })}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <span className="font-semibold text-gray-800">
-                  {formatCurrency(ride.price)}
-                </span>
+                
+                {ride.precio && (
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(ride.precio)}
+                  </span>
+                )}
               </div>
               
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center text-gray-500">
                   <Clock size={16} className="mr-1" />
-                  <span>{ride.duration} min</span>
+                  <span>{ride.duracion || "--"} min</span>
                   <span className="mx-2">•</span>
-                  <span>{ride.distance} km</span>
+                  <span>{ride.distancia || "--"} km</span>
                 </div>
                 
-                <div className="flex items-center text-amber-500">
-                  <Star size={16} className="mr-1 fill-amber-500" />
-                  <span>{ride.rating}</span>
+                {ride.rating && (
+                  <div className="flex items-center text-amber-500">
+                    <Star size={16} className="mr-1 fill-amber-500" />
+                    <span>{ride.rating}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-between mt-3">
+                <div className="text-xs text-gray-500">
+                  <strong>De:</strong> {ride.origen}
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    // Función para repetir el viaje
+                    // Implementar lógica que use ride.origen y ride.destino
+                    console.log("Repetir viaje:", ride);
+                  }}
+                >
+                  Repetir
+                </Button>
               </div>
             </div>
           ))}

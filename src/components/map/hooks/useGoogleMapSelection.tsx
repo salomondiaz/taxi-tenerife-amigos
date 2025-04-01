@@ -55,8 +55,16 @@ export function useGoogleMapSelection({
           title: "Origen seleccionado",
           description: address || "Ubicación seleccionada en el mapa"
         });
-        // Desactivar el modo de selección después de seleccionar
-        setSelectionMode(null);
+        // CAMBIO: Cambiar automáticamente al modo de selección de destino en lugar de desactivarlo
+        if (showDestinationSelection) {
+          setSelectionMode('destination');
+          toast({
+            title: "Seleccione destino",
+            description: "Ahora haga clic para seleccionar el destino"
+          });
+        } else {
+          setSelectionMode(null);
+        }
       } 
       else if (selectionMode === 'destination' && onDestinationChange) {
         onDestinationChange(coordinates);
@@ -64,13 +72,13 @@ export function useGoogleMapSelection({
           title: "Destino seleccionado",
           description: address || "Ubicación seleccionada en el mapa"
         });
-        // Desactivar el modo de selección después de seleccionar
+        // Desactivar el modo de selección después de seleccionar el destino
         setSelectionMode(null);
       }
     });
-  }, [selectionMode, onOriginChange, onDestinationChange]);
+  }, [selectionMode, onOriginChange, onDestinationChange, showDestinationSelection]);
 
-  // Gestionar los eventos de clic del mapa
+  // Gestionar los eventos de clic del mapa y deshabilitar doble clic para zoom
   useEffect(() => {
     if (!mapRef.current || !allowMapSelection) return;
 
@@ -84,6 +92,12 @@ export function useGoogleMapSelection({
     if (selectionMode && mapRef.current) {
       console.log(`Adding click listener for ${selectionMode} selection`);
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
+      
+      // NUEVO: Deshabilitar zoom por doble clic cuando estamos en modo selección
+      mapRef.current.setOptions({ disableDoubleClickZoom: true });
+    } else if (mapRef.current) {
+      // NUEVO: Rehabilitar zoom por doble clic cuando no estamos en modo selección
+      mapRef.current.setOptions({ disableDoubleClickZoom: false });
     }
 
     // Limpiar el listener al desmontar o cambiar el modo de selección
@@ -91,6 +105,11 @@ export function useGoogleMapSelection({
       if (clickListenerRef.current) {
         google.maps.event.removeListener(clickListenerRef.current);
         clickListenerRef.current = null;
+      }
+      
+      // Asegurarse de que el zoom por doble clic se restaura al desmontar
+      if (mapRef.current) {
+        mapRef.current.setOptions({ disableDoubleClickZoom: false });
       }
     };
   }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick]);

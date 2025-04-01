@@ -10,7 +10,8 @@ export const useRideSaver = (
   originCoords: MapCoordinates | null,
   destinationCoords: MapCoordinates | null,
   calculateEstimates: () => Promise<void>,
-  estimatedPrice: number
+  estimatedPrice: number,
+  scheduledTime?: string
 ) => {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -38,9 +39,12 @@ export const useRideSaver = (
       const rideData = {
         origen: origin || originCoords.address || `${originCoords.lat},${originCoords.lng}`,
         destino: destination || destinationCoords.address || `${destinationCoords.lat},${destinationCoords.lng}`,
-        estado: 'pendiente',
-        // Agregar más campos según sea necesario
+        estado: scheduledTime ? 'programado' : 'pendiente',
+        // Agregar campo de hora programada si existe
+        ...(scheduledTime && { hora_programada: scheduledTime })
       };
+
+      console.log("Guardando viaje:", rideData);
 
       // Guardar en Supabase
       const { data, error } = await supabase
@@ -55,12 +59,35 @@ export const useRideSaver = (
           description: error.message,
           variant: "destructive",
         });
+        return null;
       } else {
         console.log("Viaje guardado exitosamente:", data);
+        
+        // Actualizar historial en localStorage para retrocompatibilidad
+        try {
+          const history = JSON.parse(localStorage.getItem('ride_history') || '[]');
+          const newRide = {
+            ...data[0],
+            date: new Date(),
+            scheduledTime: scheduledTime ? new Date(scheduledTime) : null
+          };
+          
+          history.unshift(newRide);
+          localStorage.setItem('ride_history', JSON.stringify(history));
+        } catch (localError) {
+          console.error("Error actualizando historial local:", localError);
+        }
+        
         toast({
-          title: "Viaje guardado exitosamente",
-          description: "Tu viaje ha sido guardado con estado 'pendiente'",
+          title: scheduledTime 
+            ? "Viaje programado exitosamente" 
+            : "Viaje guardado exitosamente",
+          description: scheduledTime
+            ? `Tu viaje ha sido programado para ${new Date(scheduledTime).toLocaleString()}`
+            : "Tu viaje ha sido guardado con estado 'pendiente'",
         });
+        
+        return data[0];
       }
     } catch (error) {
       console.error("Error en saveRideToSupabase:", error);
@@ -69,10 +96,11 @@ export const useRideSaver = (
         description: "Ha ocurrido un error al procesar la solicitud",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsSaving(false);
     }
-  }, [origin, destination, originCoords, destinationCoords, estimatedPrice, calculateEstimates, toast, isSaving]);
+  }, [origin, destination, originCoords, destinationCoords, estimatedPrice, calculateEstimates, toast, isSaving, scheduledTime]);
 
   return { saveRideToSupabase, isSaving };
 };

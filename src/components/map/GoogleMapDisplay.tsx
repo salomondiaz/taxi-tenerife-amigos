@@ -6,8 +6,10 @@ import { useGoogleMapInitialization } from './hooks/useGoogleMapInitialization';
 import { useGoogleMapMarkers } from './hooks/useGoogleMapMarkers';
 import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
+import { useGoogleMapDriverMarker } from './hooks/useGoogleMapDriverMarker';
 import MapControls from './components/MapControls';
 import HomeControl from './components/HomeControl';
+import MapSelectionIndicator from './components/MapSelectionIndicator';
 import { reverseGeocode } from './services/GeocodingService';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
@@ -25,7 +27,10 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   showRoute = true,
   allowHomeEditing = false,
   apiKey,
-  useHomeAsDestination
+  useHomeAsDestination,
+  alwaysShowHomeMarker = false,
+  showHomeMarker = false,
+  homeLocation
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -138,7 +143,10 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     allowHomeEditing,
     allowMapSelection,
     onOriginChange,
-    onDestinationChange
+    onDestinationChange,
+    alwaysShowHomeMarker,
+    showHomeMarker,
+    homeLocation
   });
 
   const { 
@@ -152,10 +160,19 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     allowMapSelection,
     onOriginChange,
     onDestinationChange,
-    showDestinationSelection: true
+    showDestinationSelection: !destination
   });
 
-  useGoogleMapRouting({
+  // Driver marker
+  const { driverMarkerRef } = useGoogleMapDriverMarker({
+    mapRef,
+    showDriverPosition,
+    driverPosition,
+    origin: origin
+  });
+
+  // Google Maps routing
+  const { bounds: routeBounds } = useGoogleMapRouting({
     mapRef,
     directionsRendererRef,
     origin,
@@ -163,12 +180,113 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showRoute
   });
 
+  // Ajustar el zoom para mostrar origen y destino cuando ambos estén disponibles
+  useEffect(() => {
+    if (mapReady && mapRef.current) {
+      // Si tenemos bounds de ruta, ajustar a ellos
+      if (routeBounds) {
+        mapRef.current.fitBounds(routeBounds, {
+          padding: { top: 50, right: 50, bottom: 50, left: 50 }
+        });
+        return;
+      }
+
+      // Si tenemos origen y destino pero no bounds de ruta, crear bounds manualmente
+      if (origin && destination) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend({ lat: origin.lat, lng: origin.lng });
+        bounds.extend({ lat: destination.lat, lng: destination.lng });
+        
+        mapRef.current.fitBounds(bounds, {
+          padding: { top: 70, right: 70, bottom: 70, left: 70 }
+        });
+      }
+    }
+  }, [mapReady, origin, destination, routeBounds]);
+
   // Update markers when origin or destination changes
   useEffect(() => {
     if (mapReady && mapRef.current) {
       updateMarkers();
     }
   }, [origin, destination, updateMarkers, mapReady]);
+
+  // Función para manejar búsquedas de ubicación por texto
+  const handleSearchLocation = useCallback((query: string, type: 'origin' | 'destination') => {
+    if (!mapRef.current) return;
+    
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ address: query }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        const position = results[0].geometry.location;
+        const lat = position.lat();
+        const lng = position.lng();
+        
+        reverseGeocode(lat, lng, (address) => {
+          const coordinates = {
+            lat,
+            lng,
+            address: address || results[0].formatted_address
+          };
+          
+          if (type === 'origin' && onOriginChange) {
+            onOriginChange(coordinates);
+            // Centrar mapa en el resultado
+            mapRef.current?.panTo(position);
+            toast({
+              title: "Origen encontrado",
+              description: coordinates.address || "Ubicación encontrada"
+            });
+          } else if (type === 'destination' && onDestinationChange) {
+            onDestinationChange(coordinates);
+            // Centrar mapa en el resultado
+            mapRef.current?.panTo(position);
+            toast({
+              title: "Destino encontrado",
+              description: coordinates.address || "Ubicación encontrada"
+            });
+          }
+        });
+      } else {
+        toast({
+          title: "No se encontró la ubicación",
+          description: "Por favor intenta con otra dirección",
+          variant: "destructive"
+        });
+      }
+    });
+  }, [mapRef, onOriginChange, onDestinationChange]);
+
+  // Mock function for using current location
+  const handleUseCurrentLocation = useCallback(() => {
+    toast({
+      title: "Usando ubicación actual",
+      description: "Obteniendo coordenadas..."
+    });
+    
+    // En un caso real, usaríamos navigator.geolocation.getCurrentPosition
+    // Aquí simulamos coordenadas de la ubicación actual (ejemplo: Santa Cruz de Tenerife)
+    setTimeout(() => {
+      const currentLocation = {
+        lat: 28.4698,
+        lng: -16.2549,
+        address: "Tu ubicación actual"
+      };
+      
+      if (onOriginChange) {
+        onOriginChange(currentLocation);
+        if (mapRef.current) {
+          mapRef.current.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
+          mapRef.current.setZoom(14);
+        }
+        toast({
+          title: "Ubicación actual establecida",
+          description: "Tu ubicación actual se ha establecido como origen"
+        });
+      }
+    }, 1000);
+  }, [mapRef, onOriginChange]);
 
   return (
     <div
@@ -183,6 +301,25 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         ref={mapContainerRef}
         className="w-full h-full"
       />
+      
+      {/* Indicador visual de selección (cruz centrada) */}
+      <MapSelectionIndicator 
+        visible={!!selectionMode && allowMapSelection} 
+        type={selectionMode} 
+      />
+
+      {/* Controles de selección (búsqueda, etc.) */}
+      {allowMapSelection && (
+        <div className="absolute top-2 left-2 z-10">
+          <MapSelectionControl 
+            selectionMode={selectionMode}
+            setSelectionMode={setSelectionMode}
+            onUseCurrentLocation={handleUseCurrentLocation}
+            onSearchLocation={handleSearchLocation}
+          />
+        </div>
+      )}
+      
       {renderFloatingButton && renderFloatingButton()}
     </div>
   );
