@@ -13,6 +13,8 @@ interface MapViewerProps {
   handleDestinationChange: (coords: MapCoordinates) => void;
   saveRideToSupabase?: () => void;
   useHomeAsDestination?: () => void;
+  onMapClick?: (coords: MapCoordinates) => void;
+  alwaysShowHomeMarker?: boolean;
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
@@ -23,33 +25,70 @@ const MapViewer: React.FC<MapViewerProps> = ({
   handleOriginChange,
   handleDestinationChange,
   saveRideToSupabase,
-  useHomeAsDestination
+  useHomeAsDestination,
+  onMapClick,
+  alwaysShowHomeMarker = false
 }) => {
   const [selectionStep, setSelectionStep] = useState<'none' | 'origin' | 'destination'>('origin');
 
   // Reiniciar selección cuando cambia useManualSelection
   useEffect(() => {
     if (useManualSelection) {
-      setSelectionStep('origin');
+      // If we already have origin set, but not destination
+      if (originCoords && !destinationCoords) {
+        setSelectionStep('destination');
+      } 
+      // If we have no origin yet
+      else if (!originCoords) {
+        setSelectionStep('origin');
+      }
+      // If we have both, don't need selection
+      else {
+        setSelectionStep('none');
+      }
     } else {
       setSelectionStep('none');
     }
-  }, [useManualSelection]);
+  }, [useManualSelection, originCoords, destinationCoords]);
+
+  // Handle map clicks
+  const handleMapSelection = (coords: MapCoordinates) => {
+    if (onMapClick) {
+      onMapClick(coords);
+    } else {
+      // Fallback to default behavior if no custom click handler
+      if (selectionStep === 'origin') {
+        handleOriginChange(coords);
+        setSelectionStep('destination');
+        toast({
+          title: "Origen seleccionado",
+          description: "Ahora haz clic para seleccionar el destino"
+        });
+      } else if (selectionStep === 'destination') {
+        handleDestinationChange(coords);
+        setSelectionStep('none');
+        toast({
+          title: "Destino seleccionado",
+          description: "Calculando ruta..."
+        });
+      }
+    }
+  };
 
   // Avanzar al siguiente paso cuando se selecciona un punto
   useEffect(() => {
-    if (originCoords && selectionStep === 'origin') {
+    if (originCoords && selectionStep === 'origin' && !onMapClick) {
       setSelectionStep('destination');
       toast({
         title: "Origen seleccionado",
         description: "Ahora haz clic para seleccionar el destino"
       });
     }
-  }, [originCoords, selectionStep]);
+  }, [originCoords, selectionStep, onMapClick]);
 
   // Cuando se selecciona el destino, avanzar y guardar
   useEffect(() => {
-    if (destinationCoords && selectionStep === 'destination' && originCoords) {
+    if (destinationCoords && selectionStep === 'destination' && originCoords && !onMapClick) {
       setSelectionStep('none');
       toast({
         title: "Destino seleccionado",
@@ -67,7 +106,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
         }, 1000);
       }
     }
-  }, [destinationCoords, selectionStep, originCoords, saveRideToSupabase]);
+  }, [destinationCoords, selectionStep, originCoords, saveRideToSupabase, onMapClick]);
 
   return (
     <div className="relative h-full">
@@ -76,15 +115,16 @@ const MapViewer: React.FC<MapViewerProps> = ({
         origin={originCoords}
         destination={destinationCoords}
         routeGeometry={routeGeometry}
-        onOriginChange={handleOriginChange}
-        onDestinationChange={handleDestinationChange}
+        onOriginChange={handleMapSelection}
+        onDestinationChange={handleMapSelection}
         allowMapSelection={true}
         showRoute={true}
         useHomeAsDestination={useHomeAsDestination}
+        alwaysShowHomeMarker={alwaysShowHomeMarker}
       />
       
       {/* Selection mode message */}
-      {selectionStep !== 'none' && (
+      {selectionStep !== 'none' && !onMapClick && (
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <div className="bg-black/70 text-white py-2 px-4 rounded-full text-sm">
             {selectionStep === 'origin' 

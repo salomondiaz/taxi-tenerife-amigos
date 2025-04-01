@@ -12,6 +12,8 @@ interface UseGoogleMapMarkersProps {
   allowMapSelection?: boolean;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
+  alwaysShowHomeMarker?: boolean;
+  showHomeMarker?: boolean;
 }
 
 export function useGoogleMapMarkers({
@@ -21,7 +23,9 @@ export function useGoogleMapMarkers({
   allowHomeEditing = false,
   allowMapSelection = false,
   onOriginChange,
-  onDestinationChange
+  onDestinationChange,
+  alwaysShowHomeMarker = false,
+  showHomeMarker = false
 }: UseGoogleMapMarkersProps) {
   // Use the location markers hook
   const { 
@@ -38,7 +42,7 @@ export function useGoogleMapMarkers({
     onDestinationChange
   });
 
-  // Use the home marker hook
+  // Use the home marker hook with the alwaysShow option
   const {
     homeMarkerRef,
     homeLocation,
@@ -47,7 +51,9 @@ export function useGoogleMapMarkers({
   } = useHomeMarker({
     mapRef,
     origin,
-    allowHomeEditing
+    allowHomeEditing,
+    alwaysShowHomeMarker,
+    showHomeMarker
   });
 
   // Function to update all markers

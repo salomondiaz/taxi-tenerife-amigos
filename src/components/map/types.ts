@@ -33,6 +33,8 @@ export interface MapProps {
   allowHomeEditing?: boolean;
   apiKey?: string;
   useHomeAsDestination?: () => void;
+  alwaysShowHomeMarker?: boolean;
+  showHomeMarker?: boolean;
 }
 
 // Definición para los tipos de Ride

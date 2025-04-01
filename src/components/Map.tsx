@@ -11,14 +11,16 @@ const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();
 
   // Check if we should show the home marker
-  const showHomeMarker = props.origin?.address?.toLowerCase().includes('mi casa') || 
-                        props.origin?.address?.toLowerCase().includes('home');
+  const showHomeMarker = props.alwaysShowHomeMarker || 
+                         props.origin?.address?.toLowerCase().includes('mi casa') || 
+                         props.origin?.address?.toLowerCase().includes('home');
 
   // Pass all props to GoogleMapDisplay including the API key and home marker flag
   return <GoogleMapDisplay 
     apiKey={GOOGLE_MAPS_API_KEY} 
     allowHomeEditing={showHomeMarker || props.allowHomeEditing}
     {...props} 
+    showHomeMarker={showHomeMarker}
   />;
 };
 

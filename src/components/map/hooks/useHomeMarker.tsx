@@ -8,12 +8,16 @@ interface UseHomeMarkerProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
   origin?: MapCoordinates;
   allowHomeEditing?: boolean;
+  alwaysShowHomeMarker?: boolean;
+  showHomeMarker?: boolean;
 }
 
 export function useHomeMarker({
   mapRef,
   origin,
-  allowHomeEditing = false
+  allowHomeEditing = false,
+  alwaysShowHomeMarker = false,
+  showHomeMarker = false
 }: UseHomeMarkerProps) {
   const homeMarkerRef = useRef<google.maps.Marker | null>(null);
   const homeLocationKey = 'user_home_location';
@@ -34,20 +38,28 @@ export function useHomeMarker({
 
   // Function to update home marker on the map
   const updateHomeMarker = useCallback(() => {
-    if (!mapRef.current || !homeLocation) return;
+    if (!mapRef.current) return;
     
     try {
+      // If we don't have a home location yet, nothing to show
+      if (!homeLocation) return;
+      
       // Check if origin location is the home location
       const isOriginHome = origin && 
         homeLocation && 
         ((Math.abs(origin.lat - homeLocation.lat) < 0.0001 && 
           Math.abs(origin.lng - homeLocation.lng) < 0.0001) ||
-         (origin.address && origin.address.toLowerCase().includes("mi casa")));
+         (origin?.address && origin.address.toLowerCase().includes("mi casa")));
       
-      // Show home marker if we're at home location or if we have allowHomeEditing enabled
-      if (isOriginHome || allowHomeEditing) {
+      // Show home marker if...
+      // 1. We're at home location
+      // 2. We have allowHomeEditing enabled
+      // 3. We have alwaysShowHomeMarker enabled (new condition)
+      // 4. We have showHomeMarker explicitly set to true
+      if (isOriginHome || allowHomeEditing || alwaysShowHomeMarker || showHomeMarker) {
         if (homeMarkerRef.current) {
           homeMarkerRef.current.setPosition({ lat: homeLocation.lat, lng: homeLocation.lng });
+          homeMarkerRef.current.setMap(mapRef.current); // Make sure it's visible
         } else {
           const homeIcon = createMarkerIcon(getHomeMarkerSvg());
           
@@ -55,7 +67,8 @@ export function useHomeMarker({
             position: { lat: homeLocation.lat, lng: homeLocation.lng },
             map: mapRef.current,
             icon: homeIcon,
-            title: 'Mi Casa'
+            title: 'Mi Casa',
+            zIndex: 1000 // Make sure home marker is on top
           });
           
           // Add info window
@@ -67,14 +80,14 @@ export function useHomeMarker({
             infowindow.open(mapRef.current, homeMarkerRef.current);
           });
         }
-      } else if (homeMarkerRef.current) {
+      } else if (homeMarkerRef.current && !alwaysShowHomeMarker && !showHomeMarker) {
         homeMarkerRef.current.setMap(null);
         homeMarkerRef.current = null;
       }
     } catch (error) {
       console.error('Error showing home marker:', error);
     }
-  }, [mapRef, origin, homeLocation, allowHomeEditing]);
+  }, [mapRef, origin, homeLocation, allowHomeEditing, alwaysShowHomeMarker, showHomeMarker]);
 
   // Function to save home location
   const saveHomeLocation = useCallback(() => {
