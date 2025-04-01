@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Map from '@/components/Map';
 import { MapCoordinates } from '@/components/map/types';
-import { Button } from '@/components/ui/button';
-import { MapPin, Navigation } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface MapViewerProps {
@@ -13,6 +11,7 @@ interface MapViewerProps {
   routeGeometry?: any;
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
+  saveRideToSupabase?: () => void;
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
@@ -21,64 +20,51 @@ const MapViewer: React.FC<MapViewerProps> = ({
   destinationCoords,
   routeGeometry,
   handleOriginChange,
-  handleDestinationChange
+  handleDestinationChange,
+  saveRideToSupabase
 }) => {
-  const [selectionMode, setSelectionMode] = useState<'origin' | 'destination' | null>(null);
+  const [selectionStep, setSelectionStep] = useState<'none' | 'origin' | 'destination'>('origin');
 
-  // Efecto para verificar si el destino ha sido seleccionado
+  // Reiniciar selección cuando cambia useManualSelection
   useEffect(() => {
-    if (originCoords && selectionMode === 'origin') {
-      setSelectionMode(null);
-      console.log("Origin selected, turning off selection mode");
-    }
-    if (destinationCoords && selectionMode === 'destination') {
-      setSelectionMode(null);
-      console.log("Destination selected, turning off selection mode");
-    }
-  }, [originCoords, destinationCoords, selectionMode]);
-
-  const toggleSelectionMode = (mode: 'origin' | 'destination') => {
-    console.log(`Toggling selection mode: current=${selectionMode}, new=${mode === selectionMode ? null : mode}`);
-    
-    if (selectionMode === mode) {
-      setSelectionMode(null);
+    if (useManualSelection) {
+      setSelectionStep('origin');
     } else {
-      setSelectionMode(mode);
+      setSelectionStep('none');
+    }
+  }, [useManualSelection]);
+
+  // Avanzar al siguiente paso cuando se selecciona un punto
+  useEffect(() => {
+    if (originCoords && selectionStep === 'origin') {
+      setSelectionStep('destination');
       toast({
-        title: `Selección de ${mode === 'origin' ? 'origen' : 'destino'} activada`,
-        description: `Haz clic en el mapa para seleccionar el punto de ${mode === 'origin' ? 'origen' : 'destino'}`
+        title: "Origen seleccionado",
+        description: "Ahora haz clic para seleccionar el destino"
       });
     }
-  };
+  }, [originCoords, selectionStep]);
+
+  // Cuando se selecciona el destino, avanzar y guardar
+  useEffect(() => {
+    if (destinationCoords && selectionStep === 'destination' && originCoords) {
+      setSelectionStep('none');
+      toast({
+        title: "Destino seleccionado",
+        description: "Calculando ruta..."
+      });
+      
+      // Si existe la función para guardar en Supabase, llamarla automáticamente
+      if (saveRideToSupabase) {
+        setTimeout(() => {
+          saveRideToSupabase();
+        }, 1000);
+      }
+    }
+  }, [destinationCoords, selectionStep, originCoords, saveRideToSupabase]);
 
   return (
     <div className="relative h-full">
-      {/* Selection controls for mobile */}
-      {useManualSelection && (
-        <div className="absolute top-3 left-0 right-0 flex justify-center z-10 mx-4">
-          <div className="bg-white rounded-lg shadow-lg flex p-1 gap-1">
-            <Button
-              onClick={() => toggleSelectionMode('origin')}
-              variant={selectionMode === 'origin' ? 'default' : 'outline'}
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <MapPin size={16} className="text-blue-500" />
-              <span className="hidden md:inline">Origen</span>
-            </Button>
-            <Button
-              onClick={() => toggleSelectionMode('destination')}
-              variant={selectionMode === 'destination' ? 'default' : 'outline'}
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Navigation size={16} className="text-red-500" />
-              <span className="hidden md:inline">Destino</span>
-            </Button>
-          </div>
-        </div>
-      )}
-      
       {/* Main map component */}
       <Map
         origin={originCoords}
@@ -91,10 +77,10 @@ const MapViewer: React.FC<MapViewerProps> = ({
       />
       
       {/* Selection mode message */}
-      {selectionMode && (
+      {selectionStep !== 'none' && (
         <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
           <div className="bg-black/70 text-white py-2 px-4 rounded-full text-sm">
-            {selectionMode === 'origin' 
+            {selectionStep === 'origin' 
               ? 'Haz clic para seleccionar el punto de origen' 
               : 'Haz clic para seleccionar el punto de destino'}
           </div>

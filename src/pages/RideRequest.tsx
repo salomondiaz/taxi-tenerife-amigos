@@ -12,7 +12,7 @@ const RideRequest = () => {
   React.useEffect(() => {
     toast({
       title: "¿A dónde quieres ir?",
-      description: "Selecciona un origen y un destino en el mapa o usa la barra de búsqueda",
+      description: "Haz clic en el mapa para seleccionar origen, luego otro clic para seleccionar destino.",
     });
   }, []);
   

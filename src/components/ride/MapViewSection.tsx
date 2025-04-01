@@ -10,6 +10,7 @@ interface MapViewSectionProps {
   routeGeometry: any;
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
+  saveRideToSupabase?: () => void;
 }
 
 const MapViewSection: React.FC<MapViewSectionProps> = ({
@@ -18,7 +19,8 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
   destinationCoords,
   routeGeometry,
   handleOriginChange,
-  handleDestinationChange
+  handleDestinationChange,
+  saveRideToSupabase
 }) => {
   return (
     <div className="h-[400px] md:h-[500px] lg:h-[600px] rounded-xl overflow-hidden shadow-lg">
@@ -29,6 +31,7 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         routeGeometry={routeGeometry}
         handleOriginChange={handleOriginChange}
         handleDestinationChange={handleDestinationChange}
+        saveRideToSupabase={saveRideToSupabase}
       />
     </div>
   );

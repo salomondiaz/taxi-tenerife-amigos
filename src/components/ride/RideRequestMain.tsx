@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRideRequestFlow } from "@/hooks/useRideRequestFlow";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import LocationInputSection from "./LocationInputSection";
 import MapViewSection from "./MapViewSection";
 import EstimateSection from "./EstimateSection";
@@ -30,6 +31,7 @@ const RideRequestMain: React.FC = () => {
 
   const [useManualSelection, setUseManualSelection] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Home address management
   const HOME_ADDRESS_KEY = 'home_address';
@@ -44,6 +46,66 @@ const RideRequestMain: React.FC = () => {
       destination
     });
   }, [originCoords, destinationCoords, origin, destination]);
+
+  // Guardar viaje en Supabase
+  const saveRideToSupabase = useCallback(async () => {
+    if (!originCoords || !destinationCoords) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, selecciona origen y destino en el mapa",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isSaving) return; // Evitar guardado múltiple
+    setIsSaving(true);
+
+    try {
+      // Calcular estimaciones primero
+      if (estimatedPrice === 0) {
+        await calculateEstimates();
+      }
+
+      // Preparar datos para guardar
+      const rideData = {
+        origen: origin || originCoords.address || `${originCoords.lat},${originCoords.lng}`,
+        destino: destination || destinationCoords.address || `${destinationCoords.lat},${destinationCoords.lng}`,
+        estado: 'pendiente',
+        // Agregar más campos según sea necesario
+      };
+
+      // Guardar en Supabase
+      const { data, error } = await supabase
+        .from('viajes')
+        .insert(rideData)
+        .select();
+
+      if (error) {
+        console.error("Error al guardar viaje:", error);
+        toast({
+          title: "Error al guardar viaje",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log("Viaje guardado exitosamente:", data);
+        toast({
+          title: "Viaje guardado exitosamente",
+          description: "Tu viaje ha sido guardado con estado 'pendiente'",
+        });
+      }
+    } catch (error) {
+      console.error("Error en saveRideToSupabase:", error);
+      toast({
+        title: "Error al procesar la solicitud",
+        description: "Ha ocurrido un error al procesar la solicitud",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [origin, destination, originCoords, destinationCoords, estimatedPrice, calculateEstimates, toast, isSaving]);
 
   const saveHomeAddress = () => {
     if (origin) {
@@ -170,7 +232,7 @@ const RideRequestMain: React.FC = () => {
             selectedPaymentMethod={selectedPaymentMethod}
             setSelectedPaymentMethod={setSelectedPaymentMethod}
             handleRideRequest={handleRideRequest}
-            visible={estimatedPrice > 0}
+            visible={originCoords !== null && destinationCoords !== null}
           />
         </div>
         
@@ -183,6 +245,7 @@ const RideRequestMain: React.FC = () => {
             routeGeometry={routeGeometry}
             handleOriginChange={handleOriginChange}
             handleDestinationChange={handleDestinationChange}
+            saveRideToSupabase={saveRideToSupabase}
           />
         </div>
       </div>
