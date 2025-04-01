@@ -10,7 +10,7 @@ interface MapViewSectionProps {
   routeGeometry?: any;
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
-  saveRideToSupabase: () => Promise<void>;
+  saveRideToSupabase: () => Promise<any>; // Changed from Promise<void> to Promise<any>
   useHomeAsDestination?: () => void;
   allowHomeEditing?: boolean;
 }
