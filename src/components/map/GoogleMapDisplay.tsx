@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { MapProps } from './types';
 import { toast } from '@/hooks/use-toast';
@@ -38,11 +37,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
-  // Handle map initialization
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     
-    // Setup directions renderer
     directionsRendererRef.current = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
       polylineOptions: {
@@ -54,9 +51,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     
     directionsRendererRef.current.setMap(map);
     
-    // Add selection controls to the map if map selection is allowed
     if (allowMapSelection && map) {
-      // Add selection controls to the map
       const controlDiv = document.createElement('div');
       const mapControlsObj = MapControls({
         allowMapSelection,
@@ -69,7 +64,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       map.controls[google.maps.ControlPosition.TOP_CENTER].push(controlDiv);
     }
     
-    // Add home button if home editing is allowed
     if (allowHomeEditing) {
       const homeButtonDiv = document.createElement('div');
       const homeControlObj = HomeControl({
@@ -80,7 +74,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(homeButtonDiv);
     }
 
-    // Add "Travel to Home" button if the function is provided
     if (useHomeAsDestination) {
       const travelHomeButtonDiv = document.createElement('div');
       travelHomeButtonDiv.className = 'map-control-container';
@@ -99,7 +92,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       button.style.backgroundColor = 'transparent';
       button.title = 'Ir a casa';
       
-      // Home icon SVG
       button.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -121,7 +113,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     setMapReady(true);
   }, [allowHomeEditing, allowMapSelection, useHomeAsDestination]);
 
-  // Use our map initialization hook
   useGoogleMapInitialization({
     mapContainerRef,
     origin,
@@ -130,7 +121,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     onMapReady: handleMapReady
   });
 
-  // Use custom hooks for map functionality
   const { 
     originMarkerRef,
     destinationMarkerRef,
@@ -164,7 +154,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showDestinationSelection: !destination
   });
 
-  // Driver marker
   const { driverMarkerRef } = useGoogleMapDriverMarker({
     mapRef,
     showDriverPosition,
@@ -172,7 +161,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     origin: origin
   });
 
-  // Google Maps routing
   const { bounds: routeBounds } = useGoogleMapRouting({
     mapRef,
     directionsRendererRef,
@@ -181,10 +169,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showRoute
   });
 
-  // Ajustar el zoom para mostrar origen y destino cuando ambos estén disponibles
   useEffect(() => {
     if (mapReady && mapRef.current) {
-      // Si tenemos bounds de ruta, ajustar a ellos
       if (routeBounds) {
         mapRef.current.fitBounds(routeBounds, {
           top: 50, right: 50, bottom: 50, left: 50
@@ -192,7 +178,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         return;
       }
 
-      // Si tenemos origen y destino pero no bounds de ruta, crear bounds manualmente
       if (origin && destination) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend({ lat: origin.lat, lng: origin.lng });
@@ -205,14 +190,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   }, [mapReady, origin, destination, routeBounds]);
 
-  // Update markers when origin or destination changes
   useEffect(() => {
     if (mapReady && mapRef.current) {
       updateMarkers();
     }
   }, [origin, destination, updateMarkers, mapReady]);
 
-  // Función para manejar búsquedas de ubicación por texto
   const handleSearchLocation = useCallback((query: string, type: 'origin' | 'destination') => {
     if (!mapRef.current) return;
     
@@ -233,7 +216,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           
           if (type === 'origin' && onOriginChange) {
             onOriginChange(coordinates);
-            // Centrar mapa en el resultado
             mapRef.current?.panTo(position);
             toast({
               title: "Origen encontrado",
@@ -241,7 +223,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             });
           } else if (type === 'destination' && onDestinationChange) {
             onDestinationChange(coordinates);
-            // Centrar mapa en el resultado
             mapRef.current?.panTo(position);
             toast({
               title: "Destino encontrado",
@@ -259,15 +240,12 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     });
   }, [mapRef, onOriginChange, onDestinationChange]);
 
-  // Mock function for using current location
   const handleUseCurrentLocation = useCallback(() => {
     toast({
       title: "Usando ubicación actual",
       description: "Obteniendo coordenadas..."
     });
     
-    // En un caso real, usaríamos navigator.geolocation.getCurrentPosition
-    // Aquí simulamos coordenadas de la ubicación actual (ejemplo: Santa Cruz de Tenerife)
     setTimeout(() => {
       const currentLocation = {
         lat: 28.4698,
@@ -303,18 +281,16 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         className="w-full h-full"
       />
       
-      {/* Indicador visual de selección (cruz centrada) */}
       <MapSelectionIndicator 
         visible={!!selectionMode && allowMapSelection} 
         type={selectionMode} 
       />
 
-      {/* Controles de selección (búsqueda, etc.) */}
       {allowMapSelection && (
         <div className="absolute top-2 left-2 z-10">
           <MapSelectionControl 
             selectionMode={selectionMode}
-            setSelectionMode={setSelectionMode}
+            setSelectionMode={(mode) => setSelectionMode(mode)}
             onUseCurrentLocation={handleUseCurrentLocation}
             onSearchLocation={handleSearchLocation}
           />

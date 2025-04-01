@@ -1,10 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { MapCoordinates } from "@/components/map/types";
+import { MapCoordinates, API_KEY_STORAGE_KEY } from "@/components/map/types";
 import { MapPin, Navigation, Home, LocateIcon, Search, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import EnhancedLocationSelector from "./EnhancedLocationSelector";
 
 interface LocationInputSectionProps {
   origin: string;
@@ -37,10 +38,8 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
   handleUseHomeAsDestination,
   scheduledTime
 }) => {
-  // Obtener la API key de Google Maps
   const googleMapsApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
 
-  // Format scheduled time for display
   const formatScheduledTime = () => {
     if (!scheduledTime) return null;
     
@@ -66,7 +65,6 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
         </ol>
       </div>
       
-      {/* Direcciones seleccionadas */}
       {(origin || destination) && (
         <div className="mt-4 space-y-2">
           {origin && (
@@ -85,7 +83,6 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
         </div>
       )}
       
-      {/* Show scheduled time if available */}
       {scheduledTime && (
         <div className="mt-4 flex items-center gap-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
           <Clock className="text-amber-600" size={18} />
@@ -96,7 +93,6 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
         </div>
       )}
       
-      {/* Botones de acciones adicionales */}
       <div className="mt-4 flex flex-wrap gap-2">
         <button 
           onClick={handleUseCurrentLocation}
@@ -137,7 +133,6 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
         </button>
       </div>
       
-      {/* Opcional: Mantener el selector original para usuarios que prefieran usarlo */}
       <details className="mt-6">
         <summary className="cursor-pointer text-sm text-gray-500">Opciones avanzadas</summary>
         <div className="mt-4">

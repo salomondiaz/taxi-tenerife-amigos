@@ -1,9 +1,12 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Clock, DollarSign, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { PaymentMethodSelector } from "./PaymentMethodSelector";
+import PaymentMethodSelector from "./PaymentMethodSelector";
+import EstimateDisplay from "./EstimateDisplay";
+import PriceEstimate from "./PriceEstimate";
 
 interface EstimateSectionProps {
   estimatedDistance: number;

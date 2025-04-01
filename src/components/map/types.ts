@@ -58,4 +58,5 @@ export interface Ride {
   driver?: any;
   createdAt: string;
   paymentMethodId: string;
+  scheduledTime?: string;
 }
