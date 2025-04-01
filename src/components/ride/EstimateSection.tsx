@@ -29,17 +29,23 @@ const EstimateSection: React.FC<EstimateSectionProps> = ({
 }) => {
   if (!visible) return null;
   
+  // Make sure values are numbers and not null
+  const safeDistance = estimatedDistance || 0;
+  const safeTime = estimatedTime || 0;
+  const safePrice = estimatedPrice || 0;
+  const safeArrivalTime = arrivalTime || "--:--";
+  
   return (
     <div className="space-y-4">
       <EstimateDisplay
-        estimatedDistance={estimatedDistance}
-        estimatedTime={estimatedTime}
+        estimatedDistance={safeDistance}
+        estimatedTime={safeTime}
         trafficLevel={trafficLevel}
-        arrivalTime={arrivalTime}
+        arrivalTime={safeArrivalTime}
       />
       
       <PriceEstimate 
-        estimatedPrice={estimatedPrice} 
+        estimatedPrice={safePrice} 
       />
       
       <PaymentMethodSelector

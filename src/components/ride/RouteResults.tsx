@@ -51,6 +51,17 @@ const RouteResults: React.FC<RouteResultsProps> = ({
     return null;
   }
   
+  // Safe formatting with null checks
+  const formatPrice = (price: number | null) => {
+    if (price === null || price === undefined) return "0.00";
+    return price.toFixed(2);
+  };
+  
+  const formatDistance = (distance: number | null) => {
+    if (distance === null || distance === undefined) return "0.0";
+    return distance.toFixed(1);
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4">Resultados de la ruta</h2>
@@ -59,19 +70,19 @@ const RouteResults: React.FC<RouteResultsProps> = ({
         <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
           <Car className="h-6 w-6 text-blue-500 mb-2" />
           <p className="text-sm text-gray-500">Distancia</p>
-          <p className="text-xl font-bold">{estimatedDistance.toFixed(1)} km</p>
+          <p className="text-xl font-bold">{formatDistance(estimatedDistance)} km</p>
         </div>
         
         <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
           <Clock className="h-6 w-6 text-blue-500 mb-2" />
           <p className="text-sm text-gray-500">Tiempo estimado</p>
-          <p className="text-xl font-bold">{estimatedTime} min</p>
+          <p className="text-xl font-bold">{estimatedTime || 0} min</p>
         </div>
         
         <div className="flex flex-col items-center justify-center p-4 bg-blue-50 rounded-lg">
           <div className="text-xl font-bold text-blue-600 mb-2">€</div>
           <p className="text-sm text-gray-500">Precio estimado</p>
-          <p className="text-xl font-bold">{estimatedPrice.toFixed(2)} €</p>
+          <p className="text-xl font-bold">{formatPrice(estimatedPrice)} €</p>
         </div>
       </div>
       
@@ -79,7 +90,7 @@ const RouteResults: React.FC<RouteResultsProps> = ({
       
       <div className="border-t border-gray-100 pt-4 mt-4">
         <PaymentSelector 
-          price={estimatedPrice}
+          price={estimatedPrice || 0}
           onPaymentMethodSelected={handlePaymentMethodSelected}
         />
       </div>

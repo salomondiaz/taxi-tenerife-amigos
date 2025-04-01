@@ -17,6 +17,8 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
 }) => {
   // Función para formatear la distancia
   const formatDistance = (distance: number): string => {
+    if (distance === null || distance === undefined) return "0 km";
+    
     if (distance < 1) {
       return `${Math.round(distance * 1000)} m`;
     }
@@ -25,6 +27,8 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
 
   // Función para formatear el tiempo
   const formatTime = (minutes: number): string => {
+    if (minutes === null || minutes === undefined) return "0 min";
+    
     if (minutes < 60) {
       return `${Math.round(minutes)} min`;
     }
@@ -74,7 +78,7 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
             <Clock className="h-5 w-5 mr-2 mt-0.5 text-gray-400" />
             <div>
               <p className="font-medium">Hora de llegada</p>
-              <p className="text-gray-500">{arrivalTime}</p>
+              <p className="text-gray-500">{arrivalTime || "--:--"}</p>
             </div>
           </div>
           <div className="text-right">

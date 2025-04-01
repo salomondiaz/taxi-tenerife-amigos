@@ -55,9 +55,13 @@ const MapViewer: React.FC<MapViewerProps> = ({
       });
       
       // Si existe la función para guardar en Supabase, llamarla automáticamente
-      if (saveRideToSupabase) {
+      // pero solo si tenemos todos los datos necesarios
+      if (saveRideToSupabase && originCoords && destinationCoords) {
+        // Añadir temporizador para permitir que otras operaciones terminen primero
         setTimeout(() => {
-          saveRideToSupabase();
+          if (originCoords && destinationCoords) { // Verificar nuevamente por seguridad
+            saveRideToSupabase();
+          }
         }, 1000);
       }
     }
