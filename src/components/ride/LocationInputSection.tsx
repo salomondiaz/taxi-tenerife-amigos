@@ -1,6 +1,6 @@
 
 import React from "react";
-import { EnhancedLocationSelector } from "@/components/ride/EnhancedLocationSelector";
+import EnhancedLocationSelector from "@/components/ride/EnhancedLocationSelector";
 import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 import { MapCoordinates } from "@/components/map/types";
 

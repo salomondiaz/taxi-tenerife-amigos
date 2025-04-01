@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Wallet, CashIcon } from "lucide-react";
+import { CreditCard, Wallet } from "lucide-react";
 import { PaymentInfo } from "@/components/payment/PaymentInfo";
 
 interface PaymentMethodSelectorProps {
@@ -10,6 +10,7 @@ interface PaymentMethodSelectorProps {
   onRequestRide: () => void;
 }
 
+// Create a custom CashIcon component since it's not available in lucide-react
 const CashIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <rect width="18" height="12" x="3" y="6" rx="2" />
