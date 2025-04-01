@@ -1,8 +1,8 @@
 
 import React from "react";
-import EnhancedLocationSelector from "./EnhancedLocationSelector";
+import { EnhancedLocationSelector } from "@/components/ride/EnhancedLocationSelector";
+import { API_KEY_STORAGE_KEY } from "@/components/map/types";
 import { MapCoordinates } from "@/components/map/types";
-import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
 
 interface LocationInputSectionProps {
   origin: string;
@@ -31,6 +31,9 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
   isLoading,
   calculateEstimates
 }) => {
+  // Obtener la API key de Google Maps
+  const googleMapsApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
+
   return (
     <EnhancedLocationSelector
       origin={origin}
@@ -42,7 +45,7 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
       handleUseCurrentLocation={handleUseCurrentLocation}
       useHomeAddress={useHomeAddress}
       saveHomeAddress={saveHomeAddress}
-      googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+      googleMapsApiKey={googleMapsApiKey}
       calculateEstimates={calculateEstimates}
       isCalculating={isLoading}
     />

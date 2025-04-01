@@ -1,12 +1,12 @@
 
-import React from 'react';
-import { Car, Clock, MapPin, Calendar } from 'lucide-react';
+import React from "react";
+import { Clock, Navigation, AlertTriangle } from "lucide-react";
 
 interface EstimateDisplayProps {
-  estimatedDistance: number | null;
-  estimatedTime: number | null;
+  estimatedDistance: number;
+  estimatedTime: number;
   trafficLevel: 'low' | 'moderate' | 'heavy' | null;
-  arrivalTime: string | null;
+  arrivalTime: string;
 }
 
 const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
@@ -15,68 +15,101 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
   trafficLevel,
   arrivalTime
 }) => {
-  // Get traffic level text and color
-  const getTrafficInfo = () => {
-    if (!trafficLevel) return { text: 'No disponible', color: 'text-gray-500' };
-    
+  // Función para formatear la distancia
+  const formatDistance = (distance: number): string => {
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)} m`;
+    }
+    return `${distance.toFixed(1)} km`;
+  };
+
+  // Función para formatear el tiempo
+  const formatTime = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${Math.round(minutes)} min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    return `${hours} h ${remainingMinutes > 0 ? `${remainingMinutes} min` : ''}`;
+  };
+
+  // Determinar el color del tráfico
+  const getTrafficColor = (): string => {
     switch (trafficLevel) {
-      case 'low':
-        return { text: 'Bajo', color: 'text-green-500' };
-      case 'moderate':
-        return { text: 'Moderado', color: 'text-yellow-500' };
-      case 'heavy':
-        return { text: 'Alto', color: 'text-red-500' };
+      case "low":
+        return "text-green-500";
+      case "moderate":
+        return "text-yellow-500";
+      case "heavy":
+        return "text-red-500";
       default:
-        return { text: 'No disponible', color: 'text-gray-500' };
+        return "text-gray-500";
     }
   };
-  
-  const trafficInfo = getTrafficInfo();
+
+  // Determinar mensaje de tráfico
+  const getTrafficMessage = (): string => {
+    switch (trafficLevel) {
+      case "low":
+        return "Tráfico ligero";
+      case "moderate":
+        return "Tráfico moderado";
+      case "heavy":
+        return "Tráfico intenso";
+      default:
+        return "Tráfico desconocido";
+    }
+  };
+
+  const trafficColor = getTrafficColor();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <h3 className="text-lg font-semibold mb-3">Detalles del trayecto</h3>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-lg font-semibold mb-4">Detalles del viaje</h2>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-100 rounded-full">
-            <Car size={18} className="text-blue-600" />
+      <div className="space-y-4">
+        {/* Tiempo de llegada */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start">
+            <Clock className="h-5 w-5 mr-2 mt-0.5 text-gray-400" />
+            <div>
+              <p className="font-medium">Hora de llegada</p>
+              <p className="text-gray-500">{arrivalTime}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Distancia</p>
-            <p className="font-medium">{estimatedDistance ? `${estimatedDistance.toFixed(1)} km` : 'N/A'}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-green-100 rounded-full">
-            <Clock size={18} className="text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Tiempo estimado</p>
-            <p className="font-medium">{estimatedTime ? `${estimatedTime} min` : 'N/A'}</p>
+          <div className="text-right">
+            <p className="font-medium">{formatTime(estimatedTime)}</p>
+            <p className="text-sm text-gray-500">de viaje</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-orange-100 rounded-full">
-            <MapPin size={18} className="text-orange-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Nivel de tráfico</p>
-            <p className={`font-medium ${trafficInfo.color}`}>{trafficInfo.text}</p>
+        {/* Distancia */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-start">
+            <Navigation className="h-5 w-5 mr-2 mt-0.5 text-gray-400" />
+            <div>
+              <p className="font-medium">Distancia</p>
+              <p className="text-gray-500">{formatDistance(estimatedDistance)}</p>
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-purple-100 rounded-full">
-            <Calendar size={18} className="text-purple-600" />
+        {/* Tráfico */}
+        {trafficLevel && (
+          <div className="flex items-start mt-2">
+            <AlertTriangle className={`h-5 w-5 mr-2 mt-0.5 ${trafficColor}`} />
+            <div>
+              <p className={`font-medium ${trafficColor}`}>{getTrafficMessage()}</p>
+              <p className="text-gray-500 text-sm">
+                {trafficLevel === "heavy" 
+                  ? "Es posible que haya retrasos debido al tráfico intenso" 
+                  : trafficLevel === "moderate" 
+                    ? "Puede haber retrasos moderados" 
+                    : "Se espera una buena circulación"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Llegada estimada</p>
-            <p className="font-medium">{arrivalTime ? `${arrivalTime}` : 'N/A'}</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

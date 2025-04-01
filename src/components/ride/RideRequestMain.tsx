@@ -37,7 +37,7 @@ const RideRequestMain: React.FC = () => {
 
   // Log coordinates for debugging
   useEffect(() => {
-    console.log("Current coordinates in RideRequestMain:", { 
+    console.log("Coordenadas actuales en RideRequestMain:", { 
       originCoords, 
       destinationCoords,
       origin,
@@ -99,7 +99,7 @@ const RideRequestMain: React.FC = () => {
           return;
         }
       } catch (error) {
-        console.error("Error parsing home location:", error);
+        console.error("Error al procesar ubicación de casa:", error);
       }
     }
     

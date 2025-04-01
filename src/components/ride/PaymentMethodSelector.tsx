@@ -1,93 +1,69 @@
 
-import React, { useState, useEffect } from 'react';
-import { CreditCard, Wallet, CircleDollarSign } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { CreditCard, Wallet, CashIcon } from "lucide-react";
+import { PaymentInfo } from "@/components/payment/PaymentInfo";
 
 interface PaymentMethodSelectorProps {
   selectedMethod: string | null;
-  onSelectMethod: (methodId: string) => void;
+  onSelectMethod: (method: string) => void;
   onRequestRide: () => void;
 }
+
+const CashIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect width="18" height="12" x="3" y="6" rx="2" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M7 15h.01M17 15h.01M7 9h.01M17 9h.01" />
+  </svg>
+);
 
 const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   onSelectMethod,
   onRequestRide
 }) => {
-  const { paymentMethods } = usePaymentMethods();
-  
-  // Set default payment method on first render
-  useEffect(() => {
-    if (!selectedMethod && paymentMethods.length > 0) {
-      const defaultMethod = paymentMethods.find(m => m.default) || paymentMethods[0];
-      onSelectMethod(defaultMethod.id);
-    }
-  }, [paymentMethods, selectedMethod, onSelectMethod]);
-  
-  const getMethodIcon = (type: string) => {
-    switch (type) {
-      case 'card':
-        return <CreditCard className="h-5 w-5 text-blue-500" />;
-      case 'cash':
-        return <CircleDollarSign className="h-5 w-5 text-green-500" />;
-      default:
-        return <Wallet className="h-5 w-5 text-purple-500" />;
-    }
-  };
-  
-  const getMethodName = (method: any) => {
-    if (method.type === 'card') {
-      return `${method.name}`;
-    }
-    return method.name;
-  };
-  
+  const paymentMethods = [
+    { id: "cash", name: "Efectivo", icon: CashIcon },
+    { id: "card", name: "Tarjeta", icon: CreditCard },
+    { id: "wallet", name: "Monedero", icon: Wallet },
+  ];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <h3 className="text-lg font-semibold mb-3">Método de pago</h3>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-lg font-semibold mb-4">Método de pago</h2>
       
-      <div className="space-y-3 mb-4">
-        {paymentMethods.map((method) => (
-          <button
-            key={method.id}
-            onClick={() => onSelectMethod(method.id)}
-            className={`flex items-center w-full p-3 rounded-lg border ${
-              selectedMethod === method.id 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mr-3">
-              {getMethodIcon(method.type)}
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-medium">{getMethodName(method)}</p>
-              {method.type === 'cash' && (
-                <p className="text-xs text-gray-500">Pagar al conductor en efectivo</p>
-              )}
-            </div>
-            <div className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center">
-              {selectedMethod === method.id && (
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              )}
-            </div>
-          </button>
-        ))}
+      <div className="grid grid-cols-3 gap-2 mb-6">
+        {paymentMethods.map((method) => {
+          const Icon = method.icon;
+          return (
+            <Button
+              key={method.id}
+              type="button"
+              onClick={() => onSelectMethod(method.id)}
+              variant={selectedMethod === method.id ? "default" : "outline"}
+              className={`flex flex-col items-center justify-center py-4 h-auto ${
+                selectedMethod === method.id ? "bg-tenerife-blue hover:bg-tenerife-blue/90" : ""
+              }`}
+            >
+              <Icon className="h-6 w-6 mb-1" />
+              <span className="text-sm">{method.name}</span>
+            </Button>
+          );
+        })}
       </div>
       
-      <Button 
-        className="w-full" 
+      <Button
+        className="w-full bg-tenerife-blue hover:bg-tenerife-blue/90"
         size="lg"
         onClick={onRequestRide}
         disabled={!selectedMethod}
       >
-        Solicitar viaje
+        Solicitar taxi
       </Button>
       
-      <p className="text-xs text-center mt-2 text-gray-500">
-        Al solicitar un viaje aceptas nuestros términos y condiciones
-      </p>
+      {/* Mostrar información sobre el pago en efectivo si se selecciona efectivo */}
+      {selectedMethod === "cash" && <PaymentInfo />}
     </div>
   );
 };
