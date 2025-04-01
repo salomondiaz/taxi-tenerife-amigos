@@ -34,7 +34,7 @@ export function useGoogleMapDriverMarker({
           driverMarkerRef.current.setPosition({ lat: startPosition.lat, lng: startPosition.lng });
           
           // Update rotation if heading is available
-          if (driverPosition?.heading !== undefined && google.maps.Symbol) {
+          if (driverPosition?.heading !== undefined) {
             const icon = driverMarkerRef.current.getIcon();
             if (typeof icon !== 'string' && icon && 'rotation' in icon) {
               icon.rotation = driverPosition.heading;
