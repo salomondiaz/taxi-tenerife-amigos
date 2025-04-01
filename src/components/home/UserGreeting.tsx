@@ -1,9 +1,11 @@
 
 import React from "react";
-import { User } from "@/integrations/supabase/types";
 
 interface UserGreetingProps {
-  user: User | null;
+  user: {
+    name?: string;
+    profilePicture?: string;
+  } | null;
 }
 
 const UserGreeting: React.FC<UserGreetingProps> = ({ user }) => {

@@ -2,12 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { useRideRequestFlow } from "@/hooks/useRideRequestFlow";
 import { useToast } from "@/hooks/use-toast";
-import EnhancedLocationSelector from "./EnhancedLocationSelector";
-import MapViewer from "./MapViewer";
-import EstimateDisplay from "./EstimateDisplay";
-import PriceEstimate from "./PriceEstimate";
-import PaymentMethodSelector from "./PaymentMethodSelector";
-import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
+import LocationInputSection from "./LocationInputSection";
+import MapViewSection from "./MapViewSection";
+import EstimateSection from "./EstimateSection";
 
 const RideRequestMain: React.FC = () => {
   const {
@@ -31,7 +28,7 @@ const RideRequestMain: React.FC = () => {
     arrivalTime
   } = useRideRequestFlow();
 
-  const [useManualSelection, setUseManualSelection] = useState(true); // Default to true to enable map selection
+  const [useManualSelection, setUseManualSelection] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
 
   // Home address management
@@ -55,7 +52,6 @@ const RideRequestMain: React.FC = () => {
       // Verificar si tenemos coordenadas en homeLocation (para compatibilidad)
       const homeLocationJSON = localStorage.getItem(HOME_LOCATION_KEY);
       if (!homeLocationJSON) {
-        // Si no hay coordenadas guardadas, mostrar mensaje informativo
         toast({
           title: "Dirección guardada",
           description: "Para guardar la ubicación exacta, usa la opción 'Guardar como Mi Casa' en el mapa",
@@ -151,56 +147,43 @@ const RideRequestMain: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column - Location Inputs and Estimates */}
         <div className="lg:col-span-5 space-y-4">
-          <EnhancedLocationSelector
+          <LocationInputSection 
             origin={origin}
             setOrigin={setOrigin}
             destination={destination}
             setDestination={setDestination}
-            onOriginCoordinatesChange={handleOriginChange}
-            onDestinationCoordinatesChange={handleDestinationChange}
+            handleOriginChange={handleOriginChange}
+            handleDestinationChange={handleDestinationChange}
             handleUseCurrentLocation={handleUseCurrentLocation}
             useHomeAddress={useHomeAddress}
             saveHomeAddress={saveHomeAddress}
-            googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+            isLoading={isLoading}
             calculateEstimates={calculateEstimates}
-            isCalculating={isLoading}
           />
           
-          {/* Estimates are only shown after calculation */}
-          {estimatedPrice > 0 && (
-            <div className="space-y-4">
-              <EstimateDisplay
-                estimatedDistance={estimatedDistance}
-                estimatedTime={estimatedTime}
-                trafficLevel={trafficLevel}
-                arrivalTime={arrivalTime}
-              />
-              
-              <PriceEstimate 
-                estimatedPrice={estimatedPrice} 
-              />
-              
-              <PaymentMethodSelector
-                selectedMethod={selectedPaymentMethod}
-                onSelectMethod={setSelectedPaymentMethod}
-                onRequestRide={handleRideRequest}
-              />
-            </div>
-          )}
+          <EstimateSection 
+            estimatedDistance={estimatedDistance}
+            estimatedTime={estimatedTime}
+            trafficLevel={trafficLevel}
+            arrivalTime={arrivalTime}
+            estimatedPrice={estimatedPrice}
+            selectedPaymentMethod={selectedPaymentMethod}
+            setSelectedPaymentMethod={setSelectedPaymentMethod}
+            handleRideRequest={handleRideRequest}
+            visible={estimatedPrice > 0}
+          />
         </div>
         
         {/* Right Column - Map View */}
         <div className="lg:col-span-7">
-          <div className="h-[400px] md:h-[500px] lg:h-[600px] rounded-xl overflow-hidden shadow-lg">
-            <MapViewer
-              useManualSelection={useManualSelection}
-              originCoords={originCoords}
-              destinationCoords={destinationCoords}
-              routeGeometry={routeGeometry}
-              handleOriginChange={handleOriginChange}
-              handleDestinationChange={handleDestinationChange}
-            />
-          </div>
+          <MapViewSection 
+            useManualSelection={useManualSelection}
+            originCoords={originCoords}
+            destinationCoords={destinationCoords}
+            routeGeometry={routeGeometry}
+            handleOriginChange={handleOriginChange}
+            handleDestinationChange={handleDestinationChange}
+          />
         </div>
       </div>
     </div>
