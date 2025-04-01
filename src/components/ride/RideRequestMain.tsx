@@ -47,6 +47,36 @@ const RideRequestMain: React.FC = () => {
     estimatedPrice || 0
   );
 
+  // Function to use home as destination
+  const handleUseHomeAsDestination = () => {
+    const homeLocation = localStorage.getItem('home_location');
+    
+    if (homeLocation) {
+      try {
+        const parsed = JSON.parse(homeLocation);
+        handleDestinationChange(parsed);
+        setDestination(parsed.address || "Mi Casa");
+        toast({
+          title: "Casa seleccionada como destino",
+          description: "Tu ubicación de casa ha sido establecida como destino."
+        });
+      } catch (error) {
+        console.error("Error parsing home location:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo establecer tu casa como destino. Por favor guarda primero tu ubicación de casa.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Casa no encontrada",
+        description: "No tienes una ubicación de casa guardada. Guarda tu casa primero.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Log coordinates for debugging
   useEffect(() => {
     console.log("Coordenadas actuales en RideRequestMain:", { 
@@ -87,6 +117,7 @@ const RideRequestMain: React.FC = () => {
             saveHomeAddress={() => saveHomeAddress(origin)}
             isLoading={isLoading}
             calculateEstimates={calculateEstimates}
+            handleUseHomeAsDestination={handleUseHomeAsDestination}
           />
           
           <EstimateSection 
@@ -112,6 +143,7 @@ const RideRequestMain: React.FC = () => {
             handleOriginChange={handleOriginChange}
             handleDestinationChange={handleDestinationChange}
             saveRideToSupabase={saveRideToSupabase}
+            useHomeAsDestination={handleUseHomeAsDestination}
           />
         </div>
       </div>

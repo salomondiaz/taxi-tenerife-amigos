@@ -12,6 +12,7 @@ interface MapViewerProps {
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
   saveRideToSupabase?: () => void;
+  useHomeAsDestination?: () => void;
 }
 
 const MapViewer: React.FC<MapViewerProps> = ({
@@ -21,7 +22,8 @@ const MapViewer: React.FC<MapViewerProps> = ({
   routeGeometry,
   handleOriginChange,
   handleDestinationChange,
-  saveRideToSupabase
+  saveRideToSupabase,
+  useHomeAsDestination
 }) => {
   const [selectionStep, setSelectionStep] = useState<'none' | 'origin' | 'destination'>('origin');
 
@@ -78,6 +80,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
         onDestinationChange={handleDestinationChange}
         allowMapSelection={true}
         showRoute={true}
+        useHomeAsDestination={useHomeAsDestination}
       />
       
       {/* Selection mode message */}

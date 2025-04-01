@@ -16,6 +16,7 @@ interface LocationInputSectionProps {
   saveHomeAddress: () => void;
   isLoading: boolean;
   calculateEstimates: () => void;
+  handleUseHomeAsDestination?: () => void;
 }
 
 const LocationInputSection: React.FC<LocationInputSectionProps> = ({
@@ -29,7 +30,8 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
   useHomeAddress,
   saveHomeAddress,
   isLoading,
-  calculateEstimates
+  calculateEstimates,
+  handleUseHomeAsDestination
 }) => {
   // Obtener la API key de Google Maps
   const googleMapsApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
@@ -79,8 +81,17 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
           onClick={useHomeAddress}
           className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
         >
-          Usar mi casa
+          Usar mi casa como origen
         </button>
+        
+        {handleUseHomeAsDestination && (
+          <button 
+            onClick={handleUseHomeAsDestination}
+            className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
+          >
+            Ir a casa
+          </button>
+        )}
         
         <button 
           onClick={saveHomeAddress}
