@@ -35,7 +35,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
 }) => {
   const [selectionStep, setSelectionStep] = useState<'none' | 'origin' | 'destination'>('origin');
 
-  // Reiniciar selección cuando cambia useManualSelection
+  // Reset selection when useManualSelection changes
   useEffect(() => {
     if (useManualSelection) {
       // If we already have origin set, but not destination
@@ -79,7 +79,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
     }
   };
 
-  // Avanzar al siguiente paso cuando se selecciona un punto
+  // Advance to the next step when a point is selected
   useEffect(() => {
     if (originCoords && selectionStep === 'origin' && !onMapClick) {
       setSelectionStep('destination');
@@ -90,7 +90,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
     }
   }, [originCoords, selectionStep, onMapClick]);
 
-  // Cuando se selecciona el destino, avanzar y guardar
+  // When destination is selected, advance and save
   useEffect(() => {
     if (destinationCoords && selectionStep === 'destination' && originCoords && !onMapClick) {
       setSelectionStep('none');
@@ -99,12 +99,12 @@ const MapViewer: React.FC<MapViewerProps> = ({
         description: "Calculando ruta..."
       });
       
-      // Si existe la función para guardar en Supabase, llamarla automáticamente
-      // pero solo si tenemos todos los datos necesarios
+      // If there's a function to save to Supabase, call it automatically
+      // but only if we have all the necessary data
       if (saveRideToSupabase && originCoords && destinationCoords) {
-        // Añadir temporizador para permitir que otras operaciones terminen primero
+        // Add a timer to allow other operations to finish first
         setTimeout(() => {
-          if (originCoords && destinationCoords) { // Verificar nuevamente por seguridad
+          if (originCoords && destinationCoords) { // Check again for safety
             saveRideToSupabase();
           }
         }, 1000);

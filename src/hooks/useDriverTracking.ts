@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { MapCoordinates, MapDriverPosition } from '@/components/map/types';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface UseDriverTrackingProps {
   rideId?: string;
@@ -33,31 +34,40 @@ export function useDriverTracking({ rideId }: UseDriverTrackingProps) {
     // Fetch initial driver data
     const fetchDriverData = async () => {
       try {
-        // Example: In a real app, you'd get this from your API/Supabase
-        const { data, error } = await supabase
-          .from('rides')
-          .select('status, driver_id, driver_location, pickup_status')
-          .eq('id', rideId)
-          .single();
-          
-        if (error) throw error;
+        // In this demonstration version, we're using simulated data instead of actual DB calls
+        // since the required tables/columns don't exist in the DB yet
         
-        if (data && data.driver_id) {
-          setDriverStatus({
-            isAssigned: true,
-            isPickingUp: data.status === 'accepted',
-            hasPickedUp: data.pickup_status === 'picked_up',
-            isCompleted: data.status === 'completed',
+        // Simulate data fetch delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Simulate driver data for demo purposes
+        const demoData = {
+          id: rideId,
+          status: 'accepted',
+          driver_id: 'driver-123',
+          driver_location: {
+            lat: 28.4698,
+            lng: -16.2549,
+            heading: 45,
+          },
+          pickup_status: 'en_route'
+        };
+        
+        // Set driver status based on simulated data
+        setDriverStatus({
+          isAssigned: true,
+          isPickingUp: demoData.status === 'accepted',
+          hasPickedUp: demoData.pickup_status === 'picked_up',
+          isCompleted: demoData.status === 'completed',
+        });
+        
+        if (demoData.driver_location) {
+          setDriverPosition({
+            lat: demoData.driver_location.lat,
+            lng: demoData.driver_location.lng,
+            heading: demoData.driver_location.heading,
+            timestamp: new Date().getTime()
           });
-          
-          if (data.driver_location) {
-            setDriverPosition({
-              lat: data.driver_location.lat,
-              lng: data.driver_location.lng,
-              heading: data.driver_location.heading,
-              timestamp: new Date().getTime()
-            });
-          }
         }
       } catch (err) {
         console.error('Error fetching driver data:', err);
@@ -69,40 +79,45 @@ export function useDriverTracking({ rideId }: UseDriverTrackingProps) {
     
     fetchDriverData();
     
-    // Subscribe to real-time updates for driver location
+    // Set up periodic position updates to simulate driver movement
+    const simulateDriverMovement = () => {
+      if (driverPosition) {
+        // Small random movement to simulate driving
+        const latChange = (Math.random() - 0.5) * 0.001;
+        const lngChange = (Math.random() - 0.5) * 0.001;
+        const newHeading = Math.round(Math.random() * 360);
+        
+        setDriverPosition(prev => {
+          if (!prev) return null;
+          
+          return {
+            lat: prev.lat + latChange,
+            lng: prev.lng + lngChange,
+            heading: newHeading,
+            timestamp: new Date().getTime()
+          };
+        });
+      }
+    };
+    
+    // Subscribe to simulated updates every 3 seconds
+    const movementInterval = setInterval(simulateDriverMovement, 3000);
+    
+    // In a real app, you'd use Supabase's real-time subscription like this:
+    /*
     const channel = supabase
       .channel(`ride_updates:${rideId}`)
       .on('broadcast', { event: 'driver_update' }, (payload) => {
-        try {
-          const { location, status, pickup_status } = payload.payload;
-          
-          if (location) {
-            setDriverPosition({
-              lat: location.lat,
-              lng: location.lng,
-              heading: location.heading,
-              timestamp: new Date().getTime()
-            });
-          }
-          
-          if (status || pickup_status) {
-            setDriverStatus({
-              isAssigned: true,
-              isPickingUp: status === 'accepted',
-              hasPickedUp: pickup_status === 'picked_up',
-              isCompleted: status === 'completed',
-            });
-          }
-        } catch (err) {
-          console.error('Error processing driver update:', err);
-        }
+        // Process driver updates here
       })
       .subscribe();
+    */
       
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(movementInterval);
+      // If using Supabase channel: supabase.removeChannel(channel);
     };
-  }, [rideId]);
+  }, [rideId, driverPosition]);
   
   return { driverPosition, driverStatus, error, isLoading };
 }

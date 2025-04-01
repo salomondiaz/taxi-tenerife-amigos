@@ -33,6 +33,12 @@ export function useRouteVisualization({
       setRouteError(null);
       
       try {
+        // Ensure Google Maps is available
+        if (typeof google === 'undefined' || !google.maps) {
+          console.warn('Google Maps API not loaded yet');
+          return;
+        }
+        
         // Create DirectionsService instance
         const directionsService = new google.maps.DirectionsService();
         
@@ -57,7 +63,7 @@ export function useRouteVisualization({
           
           // Extract route geometry for rendering
           setRouteGeometry(result.routes[0].overview_polyline);
-        } else if (!hasPickedUp && originCoords) {
+        } else if (!hasPickedUp && originCoords && driverPosition) {
           // Calculate route from driver to pickup location
           const result = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
             directionsService.route(
