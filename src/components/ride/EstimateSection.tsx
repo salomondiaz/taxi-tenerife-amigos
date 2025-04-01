@@ -7,7 +7,7 @@ import PaymentMethodSelector from "./PaymentMethodSelector";
 interface EstimateSectionProps {
   estimatedDistance: number;
   estimatedTime: number;
-  trafficLevel: string;
+  trafficLevel: 'low' | 'moderate' | 'heavy' | null;
   arrivalTime: string;
   estimatedPrice: number;
   selectedPaymentMethod: string | null;
