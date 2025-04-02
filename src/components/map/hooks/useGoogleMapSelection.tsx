@@ -1,11 +1,9 @@
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
+import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
 import { toast } from '@/hooks/use-toast';
-import MapControls from '../components/MapControls';
-import { reverseGeocode } from '../services/GeocodingService';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { geocodeAddress } from '../services/GeocodingService';
 
 interface UseGoogleMapSelectionProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
@@ -15,6 +13,7 @@ interface UseGoogleMapSelectionProps {
   showDestinationSelection?: boolean;
   useHomeAsDestination?: () => void;
   homeLocation?: MapCoordinates | null;
+  showSelectMarkers?: boolean;
 }
 
 export function useGoogleMapSelection({
@@ -24,186 +23,202 @@ export function useGoogleMapSelection({
   onDestinationChange,
   showDestinationSelection = true,
   useHomeAsDestination,
-  homeLocation
+  homeLocation,
+  showSelectMarkers = false
 }: UseGoogleMapSelectionProps) {
-  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>('origin');
+  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(allowMapSelection ? 'origin' : 'none');
   const [showHomeDialog, setShowHomeDialog] = useState(false);
-  const [selectedPoint, setSelectedPoint] = useState<{lat: number, lng: number} | null>(null);
-  const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
-  const lastSelectionTime = useRef<number>(0);
+  const { loadHomeLocation } = useHomeLocationStorage();
+  const clickTimeoutRef = useRef<number | null>(null);
   
-  // Función para manejar los clics en el mapa
-  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    // Evitar clics múltiples demasiado rápidos (debounce)
-    const now = Date.now();
-    if (now - lastSelectionTime.current < 500) {
-      console.log("Ignorando clic rápido");
-      return;
-    }
-    lastSelectionTime.current = now;
-    
-    // Si no estamos en modo de selección, mostrar diálogo de casa si corresponde
-    if (!selectionMode || selectionMode === 'none') {
-      // Si hay una ubicación de casa y tenemos una función para usarla
-      if (homeLocation && useHomeAsDestination) {
-        const lat = e.latLng?.lat() || 0;
-        const lng = e.latLng?.lng() || 0;
-        setSelectedPoint({lat, lng});
-        setShowHomeDialog(true);
-      }
-      return;
-    }
-    
-    const lat = e.latLng?.lat() || 0;
-    const lng = e.latLng?.lng() || 0;
-    
-    console.log(`Mapa clicado en modo ${selectionMode} en:`, lat, lng);
-    
-    // Obtener la dirección para las coordenadas seleccionadas
-    reverseGeocode(lat, lng, (address) => {
-      const coordinates = {
-        lat,
-        lng,
-        address: address || `Ubicación (${lat.toFixed(6)}, ${lng.toFixed(6)})`
-      };
-      
-      console.log(`Dirección encontrada: ${address}`);
-      
-      if (selectionMode === 'origin' && onOriginChange) {
-        onOriginChange(coordinates);
-        toast({
-          title: "Origen seleccionado",
-          description: address || "Ubicación seleccionada en el mapa"
-        });
-        
-        // Cambiar automáticamente al modo de selección de destino si está disponible
-        if (showDestinationSelection) {
-          // Pequeño retraso para evitar clics accidentales
-          setTimeout(() => {
-            setSelectionMode('destination');
-            toast({
-              title: "Seleccione destino",
-              description: "Ahora haga clic para seleccionar el destino"
-            });
-          }, 500);
-        } else {
-          setSelectionMode(null);
-        }
-      } 
-      else if (selectionMode === 'destination' && onDestinationChange) {
-        onDestinationChange(coordinates);
-        toast({
-          title: "Destino seleccionado",
-          description: address || "Ubicación seleccionada en el mapa"
-        });
-        // Desactivar el modo de selección después de seleccionar el destino
-        setSelectionMode(null);
-      }
-    });
-  }, [selectionMode, onOriginChange, onDestinationChange, showDestinationSelection, homeLocation, useHomeAsDestination]);
-
-  // Gestionar los eventos de clic del mapa y deshabilitar doble clic para zoom
+  // Si cambia allowMapSelection, actualizar el modo de selección
   useEffect(() => {
-    if (!mapRef.current || !allowMapSelection) return;
-
-    console.log("Configurando listener de selección en modo:", selectionMode);
-
-    // Eliminar el listener anterior si existe
-    if (clickListenerRef.current) {
-      console.log("Eliminando listener anterior");
-      google.maps.event.removeListener(clickListenerRef.current);
-      clickListenerRef.current = null;
+    if (allowMapSelection) {
+      setSelectionMode('origin');
+      console.log("Adding click listener for origin selection");
+    } else {
+      setSelectionMode('none');
     }
+  }, [allowMapSelection]);
 
-    // Añadir un nuevo listener de clic si estamos en modo selección o si podemos seleccionar casa
-    if ((selectionMode && selectionMode !== 'none') || (homeLocation && useHomeAsDestination)) {
-      console.log(`Añadiendo listener de clic para selección de ${selectionMode || 'viaje a casa'}`);
-      clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
-      
-      // Deshabilitar zoom por doble clic cuando estamos en modo selección
-      mapRef.current.setOptions({ disableDoubleClickZoom: true });
-    } else if (mapRef.current) {
-      // Rehabilitar zoom por doble clic cuando no estamos en modo selección
-      mapRef.current.setOptions({ disableDoubleClickZoom: false });
-    }
+  // Función para manejar clics en el mapa
+  const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (!mapRef.current || selectionMode === 'none') return;
 
-    // Limpiar el listener al desmontar o cambiar el modo de selección
-    return () => {
-      if (clickListenerRef.current) {
-        console.log("Limpiando listener al desmontar");
-        google.maps.event.removeListener(clickListenerRef.current);
-        clickListenerRef.current = null;
-      }
-      
-      // Asegurarse de que el zoom por doble clic se restaura al desmontar
-      if (mapRef.current) {
-        mapRef.current.setOptions({ disableDoubleClickZoom: false });
-      }
-    };
-  }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick, homeLocation, useHomeAsDestination]);
-
-  // Controles de selección desde botones en el mapa
-  const mapControls = MapControls({
-    allowMapSelection,
-    selectionMode,
-    onSelectionModeChange: setSelectionMode,
-    showDestinationSelection: true
-  });
-
-  // Dialogo para preguntar si quiere viajar desde el punto seleccionado hasta su casa
-  const HomeDialog = () => {
-    const handleConfirm = useCallback(() => {
-      if (!selectedPoint) return;
-      
-      // Obtener la dirección para el punto seleccionado
-      reverseGeocode(selectedPoint.lat, selectedPoint.lng, (address) => {
-        if (onOriginChange) {
-          onOriginChange({
-            lat: selectedPoint.lat,
-            lng: selectedPoint.lng,
-            address: address || `Ubicación (${selectedPoint.lat.toFixed(6)}, ${selectedPoint.lng.toFixed(6)})`
-          });
+    // Obtener coordenadas del clic
+    const lat = e.latLng!.lat();
+    const lng = e.latLng!.lng();
+    
+    // Geocodificación inversa para obtener la dirección
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        const coords: MapCoordinates = {
+          lat,
+          lng,
+          address: results[0].formatted_address
+        };
+        
+        if (selectionMode === 'origin') {
+          // Actualizar origen
+          if (onOriginChange) {
+            onOriginChange(coords);
+          }
           
+          // Mostrar notificación
           toast({
             title: "Origen seleccionado",
-            description: address || "Ubicación seleccionada como origen"
+            description: "Ahora selecciona el punto de destino"
           });
+          
+          // Si se permite seleccionar destino, cambiar al siguiente modo
+          if (showDestinationSelection) {
+            setSelectionMode('destination');
+          } else {
+            setSelectionMode('none');
+          }
+        } else if (selectionMode === 'destination') {
+          // Actualizar destino
+          if (onDestinationChange) {
+            onDestinationChange(coords);
+          }
+          
+          // Mostrar notificación
+          toast({
+            title: "Destino seleccionado",
+            description: "Calculando ruta..."
+          });
+          
+          // Volver al modo sin selección
+          setSelectionMode('none');
         }
-        
-        // Usar la casa como destino
-        if (useHomeAsDestination) {
-          useHomeAsDestination();
-        }
-        
-        setShowHomeDialog(false);
-        setSelectedPoint(null);
-      });
-    }, [selectedPoint, useHomeAsDestination]);
+      } else {
+        console.error("Error geocodificando clic en mapa:", status);
+        toast({
+          title: "Error de geocodificación",
+          description: "No se pudo obtener la dirección para este punto",
+          variant: "destructive"
+        });
+      }
+    });
+  }, [mapRef, selectionMode, onOriginChange, onDestinationChange, showDestinationSelection]);
+
+  // Crear controles de selección para el mapa
+  const createSelectionControls = useCallback(() => {
+    if (!mapRef.current || !allowMapSelection) return null;
+    
+    const controls = document.createElement('div');
+    controls.className = 'map-selection-controls';
+    controls.style.cssText = 'position:absolute;top:10px;left:10px;background:white;padding:10px;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:1;';
+    
+    const originButton = document.createElement('button');
+    originButton.textContent = 'Seleccionar Origen';
+    originButton.className = `px-3 py-1 rounded ${selectionMode === 'origin' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`;
+    originButton.addEventListener('click', () => {
+      setSelectionMode(prev => prev === 'origin' ? 'none' : 'origin');
+    });
+    
+    const destinationButton = document.createElement('button');
+    destinationButton.textContent = 'Seleccionar Destino';
+    destinationButton.className = `px-3 py-1 rounded mt-2 ${selectionMode === 'destination' ? 'bg-red-500 text-white' : 'bg-gray-100'}`;
+    destinationButton.addEventListener('click', () => {
+      setSelectionMode(prev => prev === 'destination' ? 'none' : 'destination');
+    });
+    
+    controls.appendChild(originButton);
+    controls.appendChild(document.createElement('br'));
+    controls.appendChild(destinationButton);
+    
+    // Si hay una ubicación de casa guardada y función para usarla, añadir botón
+    if (homeLocation && useHomeAsDestination) {
+      controls.appendChild(document.createElement('hr'));
+      
+      const homeButton = document.createElement('button');
+      homeButton.textContent = 'Ir a Casa';
+      homeButton.className = 'px-3 py-1 rounded mt-2 bg-green-100 w-full';
+      homeButton.addEventListener('click', useHomeAsDestination);
+      
+      controls.appendChild(homeButton);
+    }
+    
+    return controls;
+  }, [mapRef, allowMapSelection, selectionMode, homeLocation, useHomeAsDestination]);
+
+  // Botón flotante para mostrar los controles de selección
+  const renderFloatingButton = useCallback(() => {
+    if (!mapRef.current || !allowMapSelection) return null;
+    
+    const button = document.createElement('button');
+    button.textContent = '📍 Seleccionar';
+    button.className = 'map-selection-button';
+    button.style.cssText = 'position:absolute;bottom:80px;right:10px;background:white;padding:8px 12px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:1;display:flex;align-items:center;border:none;cursor:pointer;';
+    button.addEventListener('click', () => {
+      setShowHomeDialog(true);
+    });
+    
+    return button;
+  }, [mapRef, allowMapSelection]);
+
+  // Diálogo para mostrar opciones de casa
+  const HomeDialog = useCallback(() => {
+    if (!showHomeDialog) return null;
     
     return (
-      <Dialog open={showHomeDialog} onOpenChange={setShowHomeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Deseas viajar desde aquí hasta tu casa?</DialogTitle>
-            <DialogDescription>
-              El origen será el punto que acabas de seleccionar y el destino será tu casa.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowHomeDialog(false)}>Cancelar</Button>
-            <Button onClick={handleConfirm}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+        <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+          <h3 className="text-lg font-medium mb-4">Opciones de ubicación</h3>
+          
+          <div className="space-y-3">
+            <button 
+              className="w-full bg-blue-500 text-white rounded py-2 flex items-center justify-center"
+              onClick={() => {
+                setSelectionMode('origin');
+                setShowHomeDialog(false);
+              }}
+            >
+              <span className="mr-2">📍</span> Seleccionar origen
+            </button>
+            
+            <button 
+              className="w-full bg-red-500 text-white rounded py-2 flex items-center justify-center"
+              onClick={() => {
+                setSelectionMode('destination');
+                setShowHomeDialog(false);
+              }}
+            >
+              <span className="mr-2">🏁</span> Seleccionar destino
+            </button>
+            
+            {homeLocation && useHomeAsDestination && (
+              <button 
+                className="w-full bg-green-500 text-white rounded py-2 flex items-center justify-center"
+                onClick={() => {
+                  useHomeAsDestination();
+                  setShowHomeDialog(false);
+                }}
+              >
+                <span className="mr-2">🏠</span> Ir a casa
+              </button>
+            )}
+            
+            <button 
+              className="w-full bg-gray-200 rounded py-2"
+              onClick={() => setShowHomeDialog(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
     );
-  };
+  }, [showHomeDialog, setSelectionMode, homeLocation, useHomeAsDestination]);
 
-  return { 
-    selectionMode, 
-    setSelectionMode, 
+  return {
+    selectionMode,
+    setSelectionMode,
     handleMapClick,
-    createSelectionControls: mapControls.createSelectionControls,
-    renderFloatingButton: mapControls.renderFloatingButton,
+    createSelectionControls,
+    renderFloatingButton,
     HomeDialog,
     showHomeDialog
   };

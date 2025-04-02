@@ -14,7 +14,9 @@ interface UseGoogleMapInitializationProps {
 }
 
 const TENERIFE_CENTER = { lat: 28.2916, lng: -16.6291 };
-const DEFAULT_ZOOM = 11;
+const DEFAULT_ZOOM = 13;
+const MIN_ZOOM = 10;
+const MAX_ZOOM = 17;
 
 export function useGoogleMapInitialization({
   mapContainerRef,
@@ -66,6 +68,8 @@ export function useGoogleMapInitialization({
         fullscreenControl: false,
         streetViewControl: false,
         zoomControl: true,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
         zoomControlOptions: {
           position: google.maps.ControlPosition.RIGHT_TOP
         },
@@ -83,21 +87,6 @@ export function useGoogleMapInitialization({
       mapRef.current = map;
       mapInitializedRef.current = true;
       setMapLoading(false);
-      
-      // Añadir un listener para limitar el zoom
-      const minZoom = 9;
-      const maxZoom = 18;
-      
-      if (zoomChangedListenerRef.current) {
-        google.maps.event.removeListener(zoomChangedListenerRef.current);
-      }
-      
-      zoomChangedListenerRef.current = map.addListener('zoom_changed', () => {
-        const currentZoom = map.getZoom();
-        if (currentZoom && (currentZoom < minZoom || currentZoom > maxZoom)) {
-          map.setZoom(Math.min(Math.max(currentZoom, minZoom), maxZoom));
-        }
-      });
       
       // Notificar que el mapa está listo
       if (onMapReady) {

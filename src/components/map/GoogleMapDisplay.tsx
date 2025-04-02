@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { MapProps, MapCoordinates, MapSelectionMode } from './types';
 import { useGoogleMapInitialization } from './hooks/useGoogleMapInitialization';
@@ -24,7 +25,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   showHomeMarker = false,
   alwaysShowHomeMarker = false,
   allowHomeEditing = false,
-  homeLocation: initialHomeLocation
+  homeLocation: initialHomeLocation,
+  showSelectMarkers = false
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
@@ -74,7 +76,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     onDestinationChange,
     showDestinationSelection: true,
     useHomeAsDestination,
-    homeLocation
+    homeLocation,
+    showSelectMarkers
   });
 
   const { 
@@ -100,6 +103,63 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     destination,
     showRoute
   });
+
+  // Añadimos un efecto para configurar el listener de clics en el mapa
+  useEffect(() => {
+    if (mapReady && mapRef.current && allowMapSelection) {
+      const map = mapRef.current;
+      
+      // Función que maneja el clic en el mapa
+      const handleClick = (e: google.maps.MapMouseEvent) => {
+        if (selectionMode === 'none') return;
+        
+        const lat = e.latLng!.lat();
+        const lng = e.latLng!.lng();
+        
+        console.log(`Map clicked at: ${lat}, ${lng} in mode: ${selectionMode}`);
+        
+        // Usar geocodificación inversa para obtener la dirección
+        reverseGeocode(lat, lng, (address) => {
+          const coords: MapCoordinates = {
+            lat,
+            lng,
+            address: address || `Ubicación (${lat.toFixed(6)}, ${lng.toFixed(6)})`
+          };
+          
+          if (selectionMode === 'origin' && onOriginChange) {
+            onOriginChange(coords);
+            toast({
+              title: "Origen seleccionado",
+              description: coords.address
+            });
+            
+            // Cambiar automáticamente al modo de selección de destino
+            if (allowMapSelection) {
+              setSelectionMode('destination');
+            }
+          } 
+          else if (selectionMode === 'destination' && onDestinationChange) {
+            onDestinationChange(coords);
+            toast({
+              title: "Destino seleccionado",
+              description: coords.address
+            });
+            
+            // Volver al modo sin selección
+            setSelectionMode('none');
+          }
+        });
+      };
+      
+      // Añadir el listener de clics al mapa
+      map.addListener('click', handleClick);
+      
+      // Limpiar el listener cuando se desmonta el componente
+      return () => {
+        google.maps.event.clearListeners(map, 'click');
+      };
+    }
+  }, [mapReady, mapRef, selectionMode, onOriginChange, onDestinationChange, allowMapSelection, setSelectionMode]);
 
   useEffect(() => {
     if (mapReady) {
@@ -198,6 +258,16 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
               />
             </>
           )}
+        </div>
+      )}
+      
+      {showSelectMarkers && selectionMode !== 'none' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <MapPin 
+            size={48} 
+            className={`${selectionMode === 'origin' ? 'text-blue-500' : 'text-red-500'} animate-bounce shadow-lg`} 
+            strokeWidth={1.5}
+          />
         </div>
       )}
       

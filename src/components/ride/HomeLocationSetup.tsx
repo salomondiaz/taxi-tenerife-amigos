@@ -12,6 +12,7 @@ import { useHomeLocationSetup } from "@/hooks/useHomeLocationSetup";
 import { useGeocodingService } from "@/hooks/useGeocodingService";
 import { Input } from "@/components/ui/input";
 import { geocodeAddress } from "@/components/map/services/GeocodingService";
+import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 
 interface HomeLocationSetupProps {
   setOrigin: (value: string) => void;
@@ -19,6 +20,7 @@ interface HomeLocationSetupProps {
 
 const HomeLocationSetup: React.FC<HomeLocationSetupProps> = ({ setOrigin }) => {
   const { isLoading, setIsLoading, geocodeLocations } = useGeocodingService();
+  const { saveHomeLocation } = useHomeLocationStorage();
   
   const {
     originCoords,
@@ -61,6 +63,29 @@ const HomeLocationSetup: React.FC<HomeLocationSetupProps> = ({ setOrigin }) => {
       }
       setIsLoading(false);
     });
+  };
+
+  // Función mejorada para guardar la ubicación de casa
+  const saveHomeLocationWithStorage = () => {
+    if (!originCoords) {
+      toast({
+        title: "No hay ubicación seleccionada",
+        description: "Por favor, selecciona una ubicación en el mapa primero",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Primero intentamos guardar usando el hook de favoritos
+    const success = handleSaveHomeLocation();
+    
+    // También guardamos en localStorage para acceso rápido
+    if (saveHomeLocation(originCoords)) {
+      toast({
+        title: "Casa guardada",
+        description: "Tu ubicación ha sido guardada como Casa correctamente"
+      });
+    }
   };
 
   return (
@@ -134,6 +159,7 @@ const HomeLocationSetup: React.FC<HomeLocationSetupProps> = ({ setOrigin }) => {
             onOriginChange={handleOriginChange}
             allowMapSelection={true}
             allowHomeEditing={true}
+            showSelectMarkers={true}
           />
         </div>
         
@@ -145,7 +171,7 @@ const HomeLocationSetup: React.FC<HomeLocationSetupProps> = ({ setOrigin }) => {
             Cancelar
           </Button>
           <Button 
-            onClick={handleSaveHomeLocation}
+            onClick={saveHomeLocationWithStorage}
             className="bg-tenerife-blue hover:bg-tenerife-blue/90"
             disabled={!originCoords}
           >

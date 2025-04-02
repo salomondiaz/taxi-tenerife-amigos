@@ -1,80 +1,47 @@
-// API key storage key
-export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
 
-// Coordinates with optional address for map points
 export interface MapCoordinates {
   lat: number;
   lng: number;
   address?: string;
 }
 
-// Map selection mode
-export type MapSelectionMode = 'origin' | 'destination' | 'none';
-
-// Driver position with heading/rotation
 export interface MapDriverPosition {
   lat: number;
   lng: number;
   heading?: number;
-  name?: string;
-  timestamp?: number;
-  vehicle?: {
-    make: string;
-    model: string;
-    color: string;
-    plate: string;
-  };
 }
 
-// Main map component props
+export type MapSelectionMode = 'none' | 'origin' | 'destination';
+
+export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
+
+export type FavoriteLocationType = 'home' | 'work' | 'favorite' | 'recent';
+
+export interface FavoriteLocation {
+  id: string;
+  name: string;
+  coordinates: MapCoordinates;
+  type: FavoriteLocationType;
+  icon: string;
+}
+
 export interface MapProps {
+  className?: string;
   apiKey?: string;
   origin?: MapCoordinates;
   destination?: MapCoordinates;
-  routeGeometry?: any;  // GeoJSON route geometry
-  homeLocation?: MapCoordinates;
-  showDriverPosition?: boolean;
-  driverPosition?: MapDriverPosition;
+  routeGeometry?: any;  // Para rutas de Mapbox
   interactive?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-  showRoute?: boolean;
-  allowMapSelection?: boolean;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
+  showRoute?: boolean;
+  allowMapSelection?: boolean;
   useHomeAsDestination?: () => void;
   showHomeMarker?: boolean;
   alwaysShowHomeMarker?: boolean;
   allowHomeEditing?: boolean;
+  homeLocation?: MapCoordinates;
+  showDriverPosition?: boolean;
+  driverPosition?: MapDriverPosition;
+  showSelectMarkers?: boolean;
 }
-
-// Map route type
-export interface MapRoute {
-  geometry: any;  // GeoJSON LineString geometry
-  distance: number;  // in kilometers
-  duration: number;  // in minutes
-}
-
-// Ride type for history and tracking
-export interface Ride {
-  id: string;
-  origin: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
-  destination?: {
-    address: string;
-    lat: number;
-    lng: number;
-  };
-  status: "pending" | "accepted" | "ongoing" | "completed" | "cancelled";
-  requestTime: Date;
-  price?: number;
-  distance?: number;
-  createdAt: string;
-  paymentMethodId: string;
-}
-
-// Traffic level types - standardized across all components
-export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high';
