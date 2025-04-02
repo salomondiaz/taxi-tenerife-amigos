@@ -8,11 +8,11 @@ import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface UseGoogleMapSelectionProps {
-  mapRef: React.MutableRefObject<google.maps.Map | null>;
+  mapRef: React.MutableRefObject<google.maps.Map | null> | google.maps.Map | null;
   allowMapSelection: boolean;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
-  showDestinationSelection: boolean;
+  showDestinationSelection?: boolean;
   useHomeAsDestination?: () => void;
   homeLocation?: MapCoordinates | null;
   showSelectMarkers?: boolean;
@@ -23,7 +23,7 @@ export function useGoogleMapSelection({
   allowMapSelection,
   onOriginChange,
   onDestinationChange,
-  showDestinationSelection,
+  showDestinationSelection = true,
   useHomeAsDestination,
   homeLocation,
   showSelectMarkers = false
@@ -77,9 +77,11 @@ export function useGoogleMapSelection({
 
   // Setup map click listener
   useEffect(() => {
-    if (!mapRef.current || !allowMapSelection) return;
+    // Check if mapRef is a ref object or a direct map instance
+    const map = mapRef && 'current' in mapRef ? mapRef.current : mapRef;
     
-    const map = mapRef.current;
+    if (!map || !allowMapSelection) return;
+    
     const listener = map.addListener('click', handleMapClick);
     
     return () => {

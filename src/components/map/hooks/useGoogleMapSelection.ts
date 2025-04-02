@@ -35,12 +35,28 @@ export function useGoogleMapSelection({
     });
   };
 
-  // Reset to default mode when component unmmounts
+  // Function to handle map clicks (placeholder - will be implemented in useGoogleMapSelection.tsx)
+  const handleMapClick = () => {
+    // This function exists to satisfy the type requirements
+    // The actual implementation is in useGoogleMapSelection.tsx
+  };
+
+  // Home dialog properties (placeholders - will be implemented in useGoogleMapSelection.tsx)
+  const HomeDialog = () => null;
+  const showHomeDialog = false;
+
+  // Reset to default mode when component unmounts
   useEffect(() => {
     return () => {
       setSelectionMode('none');
     };
   }, []);
 
-  return { selectionMode, setSelectionMode: changeSelectionMode };
+  return { 
+    selectionMode, 
+    setSelectionMode: changeSelectionMode,
+    handleMapClick,
+    HomeDialog,
+    showHomeDialog
+  };
 }

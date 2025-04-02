@@ -23,7 +23,17 @@ export function useGoogleMapRouting({
       // If no route should be shown, clear the directions renderer
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setMap(null);
-        directionsRendererRef.current.setDirections({ routes: [] });
+        // Create a proper DirectionsResult object to clear the renderer
+        const emptyDirectionsResult: google.maps.DirectionsResult = {
+          routes: [],
+          geocoded_waypoints: [],
+          request: {
+            origin: { lat: 0, lng: 0 },
+            destination: { lat: 0, lng: 0 },
+            travelMode: google.maps.TravelMode.DRIVING
+          }
+        };
+        directionsRendererRef.current.setDirections(emptyDirectionsResult);
         directionsRendererRef.current.setMap(mapRef.current);
       }
       return;

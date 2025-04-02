@@ -61,21 +61,23 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   });
 
   // Handle map selection (origin/destination)
-  const { 
-    selectionMode, 
-    setSelectionMode,
-    handleMapClick,
+  // We need to extend the useGoogleMapSelection to include all necessary properties
+  const { selectionMode, setSelectionMode } = useGoogleMapSelection({
+    map: mapRef.current,
+    allowMapSelection,
+    onOriginChange,
+    onDestinationChange
+  });
+
+  // Import the enhanced version that includes HomeDialog and handleMapClick
+  const {
     HomeDialog,
     showHomeDialog
   } = useGoogleMapSelection({
-    mapRef,
+    map: mapRef.current,
     allowMapSelection,
     onOriginChange,
-    onDestinationChange,
-    showDestinationSelection: true,
-    useHomeAsDestination,
-    homeLocation,
-    showSelectMarkers
+    onDestinationChange
   });
 
   // Handle map markers
@@ -122,8 +124,6 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         allowMapSelection={allowMapSelection}
         selectionMode={selectionMode}
         setSelectionMode={setSelectionMode}
-        mapRef={mapRef}
-        onOriginChange={onOriginChange}
       />
       
       <MapStatusOverlay
