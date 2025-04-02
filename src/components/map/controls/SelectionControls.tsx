@@ -1,60 +1,70 @@
 
 import React from 'react';
+import { MapPin, Navigation } from 'lucide-react';
 import { MapSelectionMode } from '../types';
 
-interface CreateSelectionControlsProps {
+interface SelectionControlsProps {
   selectionMode: MapSelectionMode;
   setSelectionMode: (mode: MapSelectionMode) => void;
+  showDestinationSelection?: boolean;
 }
 
-// Create selection controls UI component
-export const createSelectionControls = ({ selectionMode, setSelectionMode }: CreateSelectionControlsProps) => {
+export const createSelectionControls = ({
+  selectionMode,
+  setSelectionMode,
+  showDestinationSelection = true
+}: SelectionControlsProps) => {
+  const handleOriginSelection = () => {
+    setSelectionMode(selectionMode === 'origin' ? null : 'origin');
+  };
+
+  const handleDestinationSelection = () => {
+    setSelectionMode(selectionMode === 'destination' ? null : 'destination');
+  };
+
   return () => (
-    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-md p-3 flex flex-col space-y-2">
-      <button
-        className={`px-3 py-1 text-sm rounded-md flex items-center transition ${
-          selectionMode === 'origin' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800 hover:bg-gray-100'
-        }`}
-        onClick={() => setSelectionMode(selectionMode === 'origin' ? 'none' : 'origin')}
+    <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+      <button 
+        className={`flex items-center justify-center p-2 rounded-full shadow-lg ${
+          selectionMode === 'origin' ? 'bg-blue-500 text-white' : 'bg-white text-blue-500'
+        } hover:bg-blue-600 hover:text-white transition-colors`}
+        onClick={handleOriginSelection}
+        title="Seleccionar origen en el mapa"
       >
-        <span className="material-icons-outlined text-sm mr-1">place</span>
-        {selectionMode === 'origin' ? 'Cancelar selección' : 'Seleccionar Origen'}
+        <MapPin size={24} />
       </button>
       
-      <button
-        className={`px-3 py-1 text-sm rounded-md flex items-center transition ${
-          selectionMode === 'destination' ? 'bg-red-500 text-white' : 'bg-white text-gray-800 hover:bg-gray-100'
-        }`}
-        onClick={() => setSelectionMode(selectionMode === 'destination' ? 'none' : 'destination')}
-      >
-        <span className="material-icons-outlined text-sm mr-1">flag</span>
-        {selectionMode === 'destination' ? 'Cancelar selección' : 'Seleccionar Destino'}
-      </button>
+      {showDestinationSelection && (
+        <button 
+          className={`flex items-center justify-center p-2 rounded-full shadow-lg ${
+            selectionMode === 'destination' ? 'bg-red-500 text-white' : 'bg-white text-red-500'
+          } hover:bg-red-600 hover:text-white transition-colors`}
+          onClick={handleDestinationSelection}
+          title="Seleccionar destino en el mapa"
+        >
+          <Navigation size={24} />
+        </button>
+      )}
     </div>
   );
 };
 
-// Create a floating action button for selection
-export const renderFloatingButton = ({ 
-  selectionMode, 
+export const renderFloatingButton = ({
+  selectionMode,
   setSelectionMode,
-  showDestinationSelection = true 
-}: { 
-  selectionMode: MapSelectionMode;
-  setSelectionMode: (mode: MapSelectionMode) => void;
-  showDestinationSelection?: boolean;
-}) => {
-  // If already in selection mode, we don't show the floating button
-  if (selectionMode !== 'none') return null;
+  showDestinationSelection = true
+}: SelectionControlsProps) => {
+  // If we already have a selection mode active, don't show the floating button
+  if (selectionMode) return null;
   
   return (
     <div className="absolute bottom-20 right-4 z-10">
-      <button
-        className="w-12 h-12 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-blue-600 transition"
+      <button 
+        className="flex items-center justify-center p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
         onClick={() => setSelectionMode('origin')}
         title="Seleccionar puntos en el mapa"
       >
-        <span className="material-icons">add_location</span>
+        <MapPin size={24} />
       </button>
     </div>
   );

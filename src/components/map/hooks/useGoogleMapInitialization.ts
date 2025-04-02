@@ -27,6 +27,7 @@ export function useGoogleMapInitialization({
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState<string | null>(null);
   const mapInitializedRef = useRef(false);
+  const zoomChangedListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const initializeMap = useCallback(async () => {
     if (!mapContainerRef.current || mapInitializedRef.current) return;
@@ -83,6 +84,21 @@ export function useGoogleMapInitialization({
       mapInitializedRef.current = true;
       setMapLoading(false);
       
+      // Añadir un listener para limitar el zoom
+      const minZoom = 9;
+      const maxZoom = 18;
+      
+      if (zoomChangedListenerRef.current) {
+        google.maps.event.removeListener(zoomChangedListenerRef.current);
+      }
+      
+      zoomChangedListenerRef.current = map.addListener('zoom_changed', () => {
+        const currentZoom = map.getZoom();
+        if (currentZoom && (currentZoom < minZoom || currentZoom > maxZoom)) {
+          map.setZoom(Math.min(Math.max(currentZoom, minZoom), maxZoom));
+        }
+      });
+      
       // Notificar que el mapa está listo
       if (onMapReady) {
         onMapReady(map);
@@ -99,6 +115,9 @@ export function useGoogleMapInitialization({
     initializeMap();
     
     return () => {
+      if (zoomChangedListenerRef.current && mapRef.current) {
+        google.maps.event.removeListener(zoomChangedListenerRef.current);
+      }
       mapInitializedRef.current = false;
     };
   }, [initializeMap]);

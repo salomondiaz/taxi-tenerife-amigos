@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { toast } from '@/hooks/use-toast';
 import MapControls from '../components/MapControls';
@@ -26,7 +26,7 @@ export function useGoogleMapSelection({
   useHomeAsDestination,
   homeLocation
 }: UseGoogleMapSelectionProps) {
-  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(null);
+  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>('origin');
   const [showHomeDialog, setShowHomeDialog] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<{lat: number, lng: number} | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
@@ -36,7 +36,7 @@ export function useGoogleMapSelection({
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     // Evitar clics múltiples demasiado rápidos (debounce)
     const now = Date.now();
-    if (now - lastSelectionTime.current < 1000) {
+    if (now - lastSelectionTime.current < 500) {
       console.log("Ignorando clic rápido");
       return;
     }
@@ -107,15 +107,18 @@ export function useGoogleMapSelection({
   useEffect(() => {
     if (!mapRef.current || !allowMapSelection) return;
 
+    console.log("Configurando listener de selección en modo:", selectionMode);
+
     // Eliminar el listener anterior si existe
     if (clickListenerRef.current) {
+      console.log("Eliminando listener anterior");
       google.maps.event.removeListener(clickListenerRef.current);
       clickListenerRef.current = null;
     }
 
     // Añadir un nuevo listener de clic si estamos en modo selección o si podemos seleccionar casa
     if ((selectionMode || homeLocation) && mapRef.current) {
-      console.log(`Adding click listener for ${selectionMode || 'home travel'} selection`);
+      console.log(`Añadiendo listener de clic para selección de ${selectionMode || 'viaje a casa'}`);
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
       
       // Deshabilitar zoom por doble clic cuando estamos en modo selección
@@ -128,6 +131,7 @@ export function useGoogleMapSelection({
     // Limpiar el listener al desmontar o cambiar el modo de selección
     return () => {
       if (clickListenerRef.current) {
+        console.log("Limpiando listener al desmontar");
         google.maps.event.removeListener(clickListenerRef.current);
         clickListenerRef.current = null;
       }

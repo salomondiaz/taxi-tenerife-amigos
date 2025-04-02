@@ -6,6 +6,7 @@ import { useGoogleMapMarkers } from './hooks/useGoogleMapMarkers';
 import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
 import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
+import { MapPin, X, Home } from 'lucide-react';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   apiKey,
@@ -133,6 +134,33 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       {/* Dialog for asking if user wants to travel from current point to home */}
       <HomeDialog />
       
+      {/* Current Selection Mode Indicator */}
+      {allowMapSelection && selectionMode && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-md z-10 flex items-center gap-2">
+          {selectionMode === 'origin' ? (
+            <>
+              <MapPin className="text-blue-500" size={18} />
+              <span className="text-sm font-medium">Selecciona el origen</span>
+              <X 
+                className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700" 
+                size={16} 
+                onClick={() => setSelectionMode(null)}
+              />
+            </>
+          ) : (
+            <>
+              <MapPin className="text-red-500" size={18} />
+              <span className="text-sm font-medium">Selecciona el destino</span>
+              <X 
+                className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700" 
+                size={16}
+                onClick={() => setSelectionMode(null)}
+              />
+            </>
+          )}
+        </div>
+      )}
+      
       {/* Home location controls */}
       {allowHomeEditing && (
         <div className="absolute top-20 right-4 z-10 bg-white p-3 rounded-lg shadow-md">
@@ -140,7 +168,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             onClick={handleSaveHomeLocation}
             className="flex items-center px-3 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
           >
-            <span className="material-icons text-sm mr-1">home</span>
+            <Home className="mr-2" size={16} />
             Guardar como Casa
           </button>
         </div>
