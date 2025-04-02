@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { MapCoordinates } from '../types';
 
 interface UseGoogleMapRoutingProps {
@@ -15,62 +15,40 @@ export function useGoogleMapRouting({
   directionsRendererRef,
   origin,
   destination,
-  showRoute = true
+  showRoute = false
 }: UseGoogleMapRoutingProps) {
-  const [bounds, setBounds] = useState<google.maps.LatLngBounds | null>(null);
-  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
-
+  // Calculate and display route when origin and destination are available
   useEffect(() => {
-    if (!mapRef.current || !origin || !destination || !showRoute) {
-      // Clear route if any condition is not met but renderer exists
+    if (!mapRef.current || !directionsRendererRef.current || !showRoute || !origin || !destination) {
+      // If no route should be shown, clear the directions renderer
       if (directionsRendererRef.current) {
-        directionsRendererRef.current.setDirections({ routes: [] } as google.maps.DirectionsResult);
+        directionsRendererRef.current.setMap(null);
+        directionsRendererRef.current.setDirections({ routes: [] });
+        directionsRendererRef.current.setMap(mapRef.current);
       }
       return;
     }
-
-    // Initialize directions service if not already done
-    if (!directionsServiceRef.current) {
-      directionsServiceRef.current = new google.maps.DirectionsService();
-    }
-
-    const originLatLng = new google.maps.LatLng(origin.lat, origin.lng);
-    const destinationLatLng = new google.maps.LatLng(destination.lat, destination.lng);
-
-    // Calculate route
-    directionsServiceRef.current.route(
+    
+    const directionsService = new google.maps.DirectionsService();
+    
+    directionsService.route(
       {
-        origin: originLatLng,
-        destination: destinationLatLng,
-        travelMode: google.maps.TravelMode.DRIVING,
-        optimizeWaypoints: true,
-        provideRouteAlternatives: false
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+        travelMode: google.maps.TravelMode.DRIVING
       },
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
-          if (directionsRendererRef.current) {
-            directionsRendererRef.current.setDirections(result);
-            
-            // Store route bounds for later use
-            if (result.routes.length > 0 && result.routes[0].bounds) {
-              setBounds(result.routes[0].bounds);
-            }
+          directionsRendererRef.current?.setDirections(result);
+          
+          // Fit map to route bounds
+          if (mapRef.current && result.routes[0]?.bounds) {
+            mapRef.current.fitBounds(result.routes[0].bounds);
           }
         } else {
-          console.error(`Error calculating route: ${status}`);
-          // Clear route if there was an error
-          if (directionsRendererRef.current) {
-            directionsRendererRef.current.setDirections({ routes: [] } as google.maps.DirectionsResult);
-          }
-          // Create bounds from origin and destination anyway for fallback
-          const newBounds = new google.maps.LatLngBounds();
-          newBounds.extend(originLatLng);
-          newBounds.extend(destinationLatLng);
-          setBounds(newBounds);
+          console.error("Error calculating route:", status);
         }
       }
     );
-  }, [mapRef.current, directionsRendererRef.current, origin, destination, showRoute]);
-
-  return { bounds };
+  }, [mapRef, directionsRendererRef, origin, destination, showRoute]);
 }
