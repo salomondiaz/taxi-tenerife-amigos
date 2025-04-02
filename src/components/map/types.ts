@@ -1,4 +1,3 @@
-
 // API key storage key
 export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
 
@@ -77,5 +76,5 @@ export interface Ride {
   paymentMethodId: string;
 }
 
-// Traffic level types
-export type TrafficLevel = 'low' | 'moderate' | 'heavy' | 'high' | 'very_high';
+// Traffic level types - standardized across all components
+export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high';

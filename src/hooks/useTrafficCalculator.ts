@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { format, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { TrafficLevel } from '@/components/map/types';
 
 export const useTrafficCalculator = () => {
-  const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'high' | 'very_high' | null>(null);
+  const [trafficLevel, setTrafficLevel] = useState<TrafficLevel | null>(null);
   const [arrivalTime, setArrivalTime] = useState<string | null>(null);
   
   // Calculate traffic level based on time of day and distance/time ratio
@@ -24,7 +25,7 @@ export const useTrafficCalculator = () => {
     const isLikelyHighway = speed > 1.0; // Assuming highway if speed > 60 km/h
     
     // Determine traffic level based on speed and time of day
-    let calculatedTrafficLevel: 'low' | 'moderate' | 'high' | 'very_high';
+    let calculatedTrafficLevel: TrafficLevel;
     
     if (isLikelyHighway) {
       if (speed > 1.5) calculatedTrafficLevel = 'low';

@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Clock, AlertTriangle, Car } from 'lucide-react';
 import TrafficInfo from './TrafficInfo';
 import PaymentSelector from './PaymentSelector';
+import { TrafficLevel } from '@/components/map/types';
 
 interface RouteResultsProps {
   estimatedPrice: number;
   estimatedTime: number;
   estimatedDistance: number;
-  trafficLevel: 'low' | 'moderate' | 'heavy' | null;
+  trafficLevel: TrafficLevel | null;
   arrivalTime: string | null;
   isLoading: boolean;
   handleRequestRide: (paymentMethodId: string) => void;

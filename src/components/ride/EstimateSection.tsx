@@ -7,11 +7,12 @@ import { es } from "date-fns/locale";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import EstimateDisplay from "./EstimateDisplay";
 import PriceEstimate from "./PriceEstimate";
+import { TrafficLevel } from "@/components/map/types";
 
 interface EstimateSectionProps {
   estimatedDistance: number;
   estimatedTime: number;
-  trafficLevel: "low" | "moderate" | "heavy";
+  trafficLevel: TrafficLevel;
   arrivalTime: string;
   estimatedPrice: number;
   selectedPaymentMethod: string | null;

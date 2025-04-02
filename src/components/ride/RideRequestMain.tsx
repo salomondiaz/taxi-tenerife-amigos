@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapCoordinates } from "@/components/map/types";
+import { MapCoordinates, TrafficLevel } from "@/components/map/types";
 
 const RideRequestMain: React.FC = () => {
   // Move useToast to the top level before using it
@@ -204,7 +204,7 @@ const RideRequestMain: React.FC = () => {
           <EstimateSection 
             estimatedDistance={estimatedDistance}
             estimatedTime={estimatedTime}
-            trafficLevel={trafficLevel as 'low' | 'moderate' | 'heavy'}
+            trafficLevel={trafficLevel as TrafficLevel}
             arrivalTime={arrivalTime}
             estimatedPrice={estimatedPrice}
             selectedPaymentMethod={selectedPaymentMethod}
@@ -227,7 +227,7 @@ const RideRequestMain: React.FC = () => {
             saveRideToSupabase={saveRideToSupabase}
             useHomeAsDestination={handleUseHomeAsDestination}
             allowHomeEditing={setHomeLocation}
-            trafficLevel={trafficLevel as 'low' | 'moderate' | 'heavy'}
+            trafficLevel={trafficLevel as TrafficLevel}
             estimatedTime={estimatedTime}
             estimatedDistance={estimatedDistance}
             estimatedPrice={estimatedPrice}

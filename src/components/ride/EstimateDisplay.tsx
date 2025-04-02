@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Clock, Navigation, AlertTriangle } from "lucide-react";
+import { TrafficLevel } from "@/components/map/types";
 
 interface EstimateDisplayProps {
   estimatedDistance: number;
   estimatedTime: number;
-  trafficLevel: 'low' | 'moderate' | 'heavy' | null;
+  trafficLevel: TrafficLevel | null;
   arrivalTime: string;
 }
 
@@ -44,7 +45,8 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
         return "text-green-500";
       case "moderate":
         return "text-yellow-500";
-      case "heavy":
+      case "high":
+      case "very_high":
         return "text-red-500";
       default:
         return "text-gray-500";
@@ -58,7 +60,8 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
         return "Tráfico ligero";
       case "moderate":
         return "Tráfico moderado";
-      case "heavy":
+      case "high":
+      case "very_high":
         return "Tráfico intenso";
       default:
         return "Tráfico desconocido";

@@ -1,9 +1,10 @@
 
 import React from "react";
 import { AlertCircle, Check, AlertTriangle } from "lucide-react";
+import { TrafficLevel } from "@/components/map/types";
 
 interface TrafficInfoProps {
-  trafficLevel: 'low' | 'moderate' | 'heavy' | null;
+  trafficLevel: TrafficLevel | null;
   arrivalTime: string | null;
 }
 
@@ -43,7 +44,8 @@ const TrafficInfo: React.FC<TrafficInfoProps> = ({ trafficLevel, arrivalTime }) 
       );
       break;
     
-    case 'heavy':
+    case 'high':
+    case 'very_high':
       content = (
         <div className="flex items-center bg-red-50 text-red-700 p-3 rounded-lg border border-red-200">
           <AlertCircle className="mr-3 text-red-600 flex-shrink-0" size={24} />
@@ -66,3 +68,4 @@ const TrafficInfo: React.FC<TrafficInfoProps> = ({ trafficLevel, arrivalTime }) 
 };
 
 export default TrafficInfo;
+
