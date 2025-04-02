@@ -9,6 +9,7 @@ import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
 import MapStatusOverlay from './components/MapStatusOverlay';
 import MapSelectionControls from './components/MapSelectionControls';
 import HomeButtonControls from './components/HomeButtonControls';
+import HomeDialog from './components/HomeDialog';
 import { toast } from '@/hooks/use-toast';
 
 const GoogleMapDisplay: React.FC<MapProps> = (props) => {
@@ -66,8 +67,7 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   const { 
     selectionMode, 
     setSelectionMode, 
-    handleMapClick, 
-    HomeDialog, 
+    handleMapClick,
     showHomeDialog,
     setShowHomeDialog
   } = useGoogleMapSelection({
@@ -145,7 +145,12 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         handleSaveHomeLocation={handleSaveHomeLocation}
       />
       
-      <HomeDialog />
+      <HomeDialog
+        showHomeDialog={showHomeDialog}
+        setShowHomeDialog={setShowHomeDialog}
+        homeLocation={homeLocation}
+        useHomeAsDestination={useHomeAsDestination}
+      />
     </div>
   );
 };

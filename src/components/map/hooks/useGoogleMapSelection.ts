@@ -3,9 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
 import { reverseGeocode } from '../services/GeocodingService';
 import { toast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface UseGoogleMapSelectionProps {
   map: google.maps.Map | null;
@@ -98,48 +95,10 @@ export function useGoogleMapSelection({
     };
   }, [map, allowMapSelection, handleMapClick, selectionMode]);
 
-  // Home Dialog component
-  const HomeDialog = () => {
-    if (!homeLocation) return null;
-    
-    return (
-      <Dialog open={showHomeDialog} onOpenChange={setShowHomeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Usar tu casa como destino</DialogTitle>
-            <DialogDescription>
-              ¿Quieres usar tu dirección guardada como destino?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex items-center gap-2 mb-4">
-            <Home className="text-green-500" size={20} />
-            <span className="font-medium">{homeLocation.address || 'Mi Casa'}</span>
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowHomeDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => {
-              if (useHomeAsDestination) {
-                useHomeAsDestination();
-                setShowHomeDialog(false);
-              }
-            }}>
-              Usar como destino
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
   return { 
     selectionMode, 
     setSelectionMode: changeSelectionMode,
     handleMapClick,
-    HomeDialog,
     showHomeDialog,
     setShowHomeDialog
   };

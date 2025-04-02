@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapCoordinates } from '../types';
 import { toast } from '@/hooks/use-toast';
@@ -33,7 +32,6 @@ export function useGoogleMapMarkers({
   const homeMarkerRef = useRef<google.maps.Marker | null>(null);
   const [markersCreated, setMarkersCreated] = useState(false);
 
-  // Función para crear SVG para marcadores personalizados
   const createMarkerSVG = useCallback((color: string, icon: 'pin' | 'home' | 'destination') => {
     const pinSVG = `
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -66,13 +64,11 @@ export function useGoogleMapMarkers({
     };
   }, []);
 
-  // Función para crear marcadores
   const createMarkers = useCallback(() => {
     if (!mapRef.current) return;
     
     console.log("Creando marcadores...");
     
-    // Crear marcador de origen si no existe
     if (!originMarkerRef.current) {
       originMarkerRef.current = new google.maps.Marker({
         map: mapRef.current,
@@ -82,7 +78,6 @@ export function useGoogleMapMarkers({
         zIndex: 1
       });
       
-      // Si es arrastrable, configurar eventos de arrastre
       if (allowMapSelection && onOriginChange) {
         originMarkerRef.current.addListener('dragend', () => {
           const position = originMarkerRef.current?.getPosition();
@@ -90,7 +85,6 @@ export function useGoogleMapMarkers({
             const lat = position.lat();
             const lng = position.lng();
             
-            // Usar geocodificación inversa para obtener la dirección
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
@@ -108,7 +102,6 @@ export function useGoogleMapMarkers({
       }
     }
     
-    // Crear marcador de destino si no existe
     if (!destinationMarkerRef.current) {
       destinationMarkerRef.current = new google.maps.Marker({
         map: mapRef.current,
@@ -118,7 +111,6 @@ export function useGoogleMapMarkers({
         zIndex: 1
       });
       
-      // Si es arrastrable, configurar eventos de arrastre
       if (allowMapSelection && onDestinationChange) {
         destinationMarkerRef.current.addListener('dragend', () => {
           const position = destinationMarkerRef.current?.getPosition();
@@ -126,7 +118,6 @@ export function useGoogleMapMarkers({
             const lat = position.lat();
             const lng = position.lng();
             
-            // Usar geocodificación inversa para obtener la dirección
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
@@ -144,7 +135,6 @@ export function useGoogleMapMarkers({
       }
     }
     
-    // Crear marcador de casa si no existe
     if (!homeMarkerRef.current) {
       homeMarkerRef.current = new google.maps.Marker({
         map: mapRef.current,
@@ -154,7 +144,6 @@ export function useGoogleMapMarkers({
         zIndex: 2
       });
       
-      // Si es editable, configurar eventos de arrastre y clic
       if (allowHomeEditing) {
         homeMarkerRef.current.addListener('dragend', () => {
           const position = homeMarkerRef.current?.getPosition();
@@ -162,7 +151,6 @@ export function useGoogleMapMarkers({
             const lat = position.lat();
             const lng = position.lng();
             
-            // Usar geocodificación inversa para obtener la dirección
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: { lat, lng } }, (results, status) => {
               if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
@@ -194,24 +182,20 @@ export function useGoogleMapMarkers({
     setMarkersCreated(true);
   }, [mapRef, allowMapSelection, allowHomeEditing, onOriginChange, onDestinationChange, createMarkerSVG]);
 
-  // Actualizar posición y visibilidad de los marcadores
   const updateMarkers = useCallback(() => {
     if (!mapRef.current) return;
     
     console.log("Actualizando marcadores con:", { origin, destination, homeLocation });
     
-    // Si los marcadores no se han creado aún, crearlos
     if (!markersCreated) {
       createMarkers();
     }
     
-    // Actualizar marcador de origen
     if (originMarkerRef.current) {
       if (origin) {
         originMarkerRef.current.setPosition({ lat: origin.lat, lng: origin.lng });
         originMarkerRef.current.setVisible(true);
         
-        // Añadir popup si no está en modo selección
         if (!allowMapSelection) {
           const infoWindow = new google.maps.InfoWindow({
             content: `<div style="color: #1a73e8; font-weight: bold;">Origen: ${origin.address || 'Punto de partida'}</div>`
@@ -226,13 +210,11 @@ export function useGoogleMapMarkers({
       }
     }
     
-    // Actualizar marcador de destino
     if (destinationMarkerRef.current) {
       if (destination) {
         destinationMarkerRef.current.setPosition({ lat: destination.lat, lng: destination.lng });
         destinationMarkerRef.current.setVisible(true);
         
-        // Añadir popup si no está en modo selección
         if (!allowMapSelection) {
           const infoWindow = new google.maps.InfoWindow({
             content: `<div style="color: #d81b60; font-weight: bold;">Destino: ${destination.address || 'Punto de llegada'}</div>`
@@ -247,7 +229,6 @@ export function useGoogleMapMarkers({
       }
     }
     
-    // Actualizar marcador de casa
     if (homeMarkerRef.current && homeLocation) {
       const shouldShowHomeMarker = alwaysShowHomeMarker || showHomeMarker || allowHomeEditing;
       
@@ -264,12 +245,10 @@ export function useGoogleMapMarkers({
         homeMarkerRef.current.setVisible(true);
         homeMarkerRef.current.setDraggable(allowHomeEditing);
         
-        // Añadir popup
         const infoWindow = new google.maps.InfoWindow({
           content: `<div style="color: #4caf50; font-weight: bold;">Mi Casa: ${homeLocation.address || 'Ubicación guardada'}</div>`
         });
         
-        // Limpiar listeners anteriores
         google.maps.event.clearListeners(homeMarkerRef.current, 'click');
         
         homeMarkerRef.current.addListener('click', () => {
@@ -279,35 +258,25 @@ export function useGoogleMapMarkers({
         homeMarkerRef.current.setVisible(false);
       }
     } else if (homeLocation && !homeMarkerRef.current && mapRef.current) {
-      // Si no existe el marcador pero sí la ubicación, crearlo
       createMarkers();
-      // Llamar de nuevo a updateMarkers para actualizar el marcador recién creado
       setTimeout(() => updateMarkers(), 10);
     }
     
-    // Ajustar el zoom y centrado del mapa si hay origen y destino
     if (origin && destination && mapRef.current) {
       const bounds = new google.maps.LatLngBounds();
       bounds.extend({ lat: origin.lat, lng: origin.lng });
       bounds.extend({ lat: destination.lat, lng: destination.lng });
-      mapRef.current.fitBounds(bounds, 50); // 50 píxeles de padding
-    } 
-    // O sólo origen
-    else if (origin && mapRef.current) {
+      mapRef.current.fitBounds(bounds, 50);
+    } else if (origin && mapRef.current) {
       mapRef.current.setCenter({ lat: origin.lat, lng: origin.lng });
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
-    } 
-    // O sólo destino
-    else if (destination && mapRef.current) {
+    } else if (destination && mapRef.current) {
       mapRef.current.setCenter({ lat: destination.lat, lng: destination.lng });
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
-    }
-    // O sólo casa
-    else if (homeLocation && (showHomeMarker || alwaysShowHomeMarker) && mapRef.current) {
+    } else if (homeLocation && (showHomeMarker || alwaysShowHomeMarker) && mapRef.current) {
       mapRef.current.setCenter({ lat: homeLocation.lat, lng: homeLocation.lng });
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
     }
-    
   }, [
     mapRef,
     origin,
@@ -321,7 +290,6 @@ export function useGoogleMapMarkers({
     createMarkers
   ]);
 
-  // Eliminar marcadores al desmontar
   useEffect(() => {
     return () => {
       if (originMarkerRef.current) {
@@ -341,7 +309,6 @@ export function useGoogleMapMarkers({
     };
   }, []);
 
-  // Función para guardar la ubicación de casa
   const saveHomeLocation = useCallback(() => {
     if (!origin) {
       toast({
@@ -360,26 +327,20 @@ export function useGoogleMapMarkers({
     return true;
   }, [origin]);
 
-  // Inicializar marcadores cuando el mapa está listo
   useEffect(() => {
     if (mapRef.current && !markersCreated) {
       createMarkers();
     }
   }, [mapRef.current, markersCreated, createMarkers]);
 
-  // Actualizar marcadores cuando cambian las coordenadas
   useEffect(() => {
     if (mapRef.current) {
       updateMarkers();
     }
   }, [mapRef.current, origin, destination, homeLocation, updateMarkers]);
 
-  // Exportar funciones y estado
   return {
     updateMarkers,
     saveHomeLocation
   };
 }
-
-// Importar toast faltante
-import { toast } from '@/hooks/use-toast';
