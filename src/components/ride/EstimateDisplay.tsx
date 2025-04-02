@@ -108,7 +108,7 @@ const EstimateDisplay: React.FC<EstimateDisplayProps> = ({
             <div>
               <p className={`font-medium ${trafficColor}`}>{getTrafficMessage()}</p>
               <p className="text-gray-500 text-sm">
-                {trafficLevel === "heavy" 
+                {trafficLevel === "high" || trafficLevel === "very_high"
                   ? "Es posible que haya retrasos debido al tráfico intenso" 
                   : trafficLevel === "moderate" 
                     ? "Puede haber retrasos moderados" 
