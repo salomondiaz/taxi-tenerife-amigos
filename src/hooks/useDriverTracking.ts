@@ -65,8 +65,7 @@ export function useDriverTracking({ rideId }: UseDriverTrackingProps) {
           setDriverPosition({
             lat: demoData.driver_location.lat,
             lng: demoData.driver_location.lng,
-            heading: demoData.driver_location.heading,
-            timestamp: new Date().getTime()
+            heading: demoData.driver_location.heading
           });
         }
       } catch (err) {
@@ -87,14 +86,13 @@ export function useDriverTracking({ rideId }: UseDriverTrackingProps) {
         const lngChange = (Math.random() - 0.5) * 0.001;
         const newHeading = Math.round(Math.random() * 360);
         
-        setDriverPosition(prev => {
-          if (!prev) return null;
+        setDriverPosition(prevPosition => {
+          if (!prevPosition) return null;
           
           return {
-            lat: prev.lat + latChange,
-            lng: prev.lng + lngChange,
-            heading: newHeading,
-            timestamp: new Date().getTime()
+            lat: prevPosition.lat + latChange,
+            lng: prevPosition.lng + lngChange,
+            heading: newHeading
           };
         });
       }

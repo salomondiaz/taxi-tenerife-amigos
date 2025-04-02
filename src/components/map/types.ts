@@ -10,7 +10,7 @@ export interface MapCoordinates {
 }
 
 // Map selection mode
-export type MapSelectionMode = 'origin' | 'destination' | null;
+export type MapSelectionMode = 'origin' | 'destination' | 'none';
 
 // Driver position with heading/rotation
 export interface MapDriverPosition {
@@ -18,6 +18,7 @@ export interface MapDriverPosition {
   lng: number;
   heading?: number;
   name?: string;
+  timestamp?: number;
   vehicle?: {
     make: string;
     model: string;
@@ -75,3 +76,6 @@ export interface Ride {
   createdAt: string;
   paymentMethodId: string;
 }
+
+// Traffic level types
+export type TrafficLevel = 'low' | 'moderate' | 'heavy' | 'high' | 'very_high';

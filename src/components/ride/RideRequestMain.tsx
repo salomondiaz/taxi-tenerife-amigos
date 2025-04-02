@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { MapCoordinates } from "@/components/map/types";
 
 const RideRequestMain: React.FC = () => {
   // Move useToast to the top level before using it
@@ -48,7 +49,12 @@ const RideRequestMain: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
 
   // Custom hooks
-  const { saveHomeAddress, useHomeAddress } = useHomeLocationStorage();
+  const { 
+    saveHomeLocation,
+    updateHomeLocation,
+    loadHomeLocation
+  } = useHomeLocationStorage();
+  
   const { saveRideToSupabase } = useRideSaver(
     origin, 
     destination, 
@@ -59,27 +65,59 @@ const RideRequestMain: React.FC = () => {
     scheduledTime
   );
 
+  // Helper functions for home location
+  const saveHomeAddress = () => {
+    if (originCoords) {
+      saveHomeLocation(originCoords);
+      toast({
+        title: "Casa guardada",
+        description: "Tu ubicación ha sido guardada como tu casa."
+      });
+      return true;
+    } else {
+      toast({
+        title: "Error",
+        description: "Necesitas seleccionar una ubicación primero.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+  
+  const useHomeAddress = (
+    setOriginFunc: (address: string) => void, 
+    handleOriginChangeFunc: (coordinates: MapCoordinates) => void
+  ) => {
+    const home = loadHomeLocation();
+    if (home) {
+      setOriginFunc(home.address || "Mi Casa");
+      handleOriginChangeFunc(home);
+      toast({
+        title: "Casa seleccionada como origen",
+        description: "Tu ubicación de casa ha sido establecida como punto de origen."
+      });
+      return true;
+    } else {
+      toast({
+        title: "No hay casa guardada",
+        description: "Primero debes guardar una ubicación como casa.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   // Function to use home as destination
   const handleUseHomeAsDestination = () => {
-    const homeLocation = localStorage.getItem('user_home_location');
+    const homeLocation = loadHomeLocation();
     
     if (homeLocation) {
-      try {
-        const parsed = JSON.parse(homeLocation);
-        handleDestinationChange(parsed);
-        setDestination(parsed.address || "Mi Casa");
-        toast({
-          title: "Casa seleccionada como destino",
-          description: "Tu ubicación de casa ha sido establecida como destino."
-        });
-      } catch (error) {
-        console.error("Error parsing home location:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo establecer tu casa como destino. Por favor guarda primero tu ubicación de casa.",
-          variant: "destructive"
-        });
-      }
+      handleDestinationChange(homeLocation);
+      setDestination(homeLocation.address || "Mi Casa");
+      toast({
+        title: "Casa seleccionada como destino",
+        description: "Tu ubicación de casa ha sido establecida como destino."
+      });
     } else {
       toast({
         title: "Casa no encontrada",
@@ -156,7 +194,7 @@ const RideRequestMain: React.FC = () => {
             handleDestinationChange={handleDestinationChange}
             handleUseCurrentLocation={handleUseCurrentLocation}
             useHomeAddress={() => useHomeAddress(setOrigin, handleOriginChange)}
-            saveHomeAddress={() => saveHomeAddress(origin)}
+            saveHomeAddress={saveHomeAddress}
             isLoading={isLoading}
             calculateEstimates={calculateEstimates}
             handleUseHomeAsDestination={handleUseHomeAsDestination}
@@ -166,7 +204,7 @@ const RideRequestMain: React.FC = () => {
           <EstimateSection 
             estimatedDistance={estimatedDistance}
             estimatedTime={estimatedTime}
-            trafficLevel={trafficLevel}
+            trafficLevel={trafficLevel as 'low' | 'moderate' | 'heavy'}
             arrivalTime={arrivalTime}
             estimatedPrice={estimatedPrice}
             selectedPaymentMethod={selectedPaymentMethod}
@@ -189,7 +227,7 @@ const RideRequestMain: React.FC = () => {
             saveRideToSupabase={saveRideToSupabase}
             useHomeAsDestination={handleUseHomeAsDestination}
             allowHomeEditing={setHomeLocation}
-            trafficLevel={trafficLevel}
+            trafficLevel={trafficLevel as 'low' | 'moderate' | 'heavy'}
             estimatedTime={estimatedTime}
             estimatedDistance={estimatedDistance}
             estimatedPrice={estimatedPrice}

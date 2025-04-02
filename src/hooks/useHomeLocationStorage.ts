@@ -55,10 +55,36 @@ export const useHomeLocationStorage = () => {
     }
   }, []);
 
+  // Update home location (alias for saveHomeLocation)
+  const updateHomeLocation = useCallback((location: MapCoordinates) => {
+    return saveHomeLocation(location);
+  }, [saveHomeLocation]);
+
+  // Helper to use home location as origin
+  const useHomeAddress = useCallback((setOrigin: (address: string) => void, handleOriginChange: (coordinates: MapCoordinates) => void) => {
+    const home = loadHomeLocation();
+    if (home) {
+      setOrigin(home.address || "Mi Casa");
+      handleOriginChange(home);
+      return true;
+    }
+    return false;
+  }, [loadHomeLocation]);
+
+  // Helper to save current address as home
+  const saveHomeAddress = useCallback((address: string) => {
+    // This is just a placeholder that depends on having coordinates
+    console.log("Attempting to save address as home:", address);
+    return false;
+  }, []);
+
   return {
     hasHomeLocation,
     saveHomeLocation,
     loadHomeLocation,
-    clearHomeLocation
+    clearHomeLocation,
+    updateHomeLocation,
+    useHomeAddress,
+    saveHomeAddress
   };
 };
