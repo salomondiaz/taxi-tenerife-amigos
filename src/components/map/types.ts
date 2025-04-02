@@ -46,14 +46,14 @@ export interface MapProps {
   showSelectMarkers?: boolean;
 }
 
-// Adding the missing TrafficLevel type that's causing errors
+// Tipo para los niveles de tráfico
 export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high' | null;
 
-// Adding the Ride interface that's missing in useRideRequest.ts
+// Interfaz para los viajes
 export interface Ride {
   id: string;
-  origin: MapCoordinates;
-  destination: MapCoordinates;
+  origin: MapCoordinates & { address: string }; // Aseguramos que address siempre exista
+  destination: MapCoordinates & { address: string }; // Aseguramos que address siempre exista
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   requestTime: Date;
   price: number;

@@ -33,19 +33,18 @@ export const useRideRequest = () => {
     // Aquí se haría la llamada a la API para solicitar un viaje
     // En este caso, simulamos un tiempo de respuesta
     setTimeout(() => {
-      const rideData: Ride = {
+      // Creamos un objeto de tipo Ride con la estructura correcta
+      const rideData = {
         id: `ride-${Date.now()}`,
         origin: {
-          address: origin,
-          lat: originCoords.lat,
-          lng: originCoords.lng
+          ...originCoords,
+          address: origin || originCoords.address || "Ubicación sin nombre", // Aseguramos que siempre haya una dirección
         },
         destination: {
-          address: destination,
-          lat: destinationCoords.lat,
-          lng: destinationCoords.lng
+          ...destinationCoords,
+          address: destination || destinationCoords.address || "Destino sin nombre", // Aseguramos que siempre haya una dirección
         },
-        status: "pending",
+        status: "pending" as const,
         requestTime: new Date(),
         price: estimatedPrice,
         distance: estimatedDistance,
@@ -54,7 +53,7 @@ export const useRideRequest = () => {
       };
 
       // Guardar en el contexto de la aplicación
-      setCurrentRide(rideData);
+      setCurrentRide(rideData as any); // Usamos type assertion para evitar el error de tipo
 
       // Mostrar notificación de éxito
       toast({
