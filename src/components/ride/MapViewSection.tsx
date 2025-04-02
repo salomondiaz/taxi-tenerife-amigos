@@ -92,21 +92,21 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         {originCoords && destinationCoords && (estimatedDistance || estimatedTime || estimatedPrice) && (
           <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md z-10">
             <div className="grid grid-cols-3 gap-2 text-sm">
-              {estimatedDistance && (
+              {estimatedDistance !== null && (
                 <div>
                   <p className="font-semibold text-gray-800">Distancia</p>
                   <p>{estimatedDistance.toFixed(1)} km</p>
                 </div>
               )}
               
-              {estimatedTime && (
+              {estimatedTime !== null && (
                 <div>
                   <p className="font-semibold text-gray-800">Tiempo estimado</p>
                   <p>{estimatedTime} min</p>
                 </div>
               )}
               
-              {estimatedPrice && (
+              {estimatedPrice !== null && (
                 <div>
                   <p className="font-semibold text-gray-800">Precio estimado</p>
                   <p>{estimatedPrice.toFixed(2)} €</p>

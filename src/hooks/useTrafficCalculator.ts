@@ -1,98 +1,69 @@
 
-import { useState } from "react";
-import { MapCoordinates } from "@/components/map/types";
-import { toast } from "./use-toast";
+import { useState, useEffect } from 'react';
+import { format, addMinutes } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export const useTrafficCalculator = () => {
-  const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'heavy' | null>(null);
+  const [trafficLevel, setTrafficLevel] = useState<'low' | 'moderate' | 'high' | 'very_high' | null>(null);
   const [arrivalTime, setArrivalTime] = useState<string | null>(null);
-
-  // Calculate estimated arrival time
-  const calculateArrivalTime = (estimatedTimeMinutes: number) => {
+  
+  // Calculate traffic level based on time of day and distance/time ratio
+  const updateTrafficInfo = (distance: number, durationMinutes: number) => {
+    // Get current time
+    const currentHour = new Date().getHours();
+    
+    // Base speed calculation (km per minute)
+    const speed = distance / durationMinutes;
+    
+    // Determine if it's rush hour (7-9 AM or 5-7 PM)
+    const isRushHour = (currentHour >= 7 && currentHour <= 9) || (currentHour >= 17 && currentHour <= 19);
+    
+    // Calculate expected speed based on road type
+    // For urban roads: ~30-50 km/h → 0.5-0.83 km per minute
+    // For highways: ~80-120 km/h → 1.33-2 km per minute
+    const isLikelyHighway = speed > 1.0; // Assuming highway if speed > 60 km/h
+    
+    // Determine traffic level based on speed and time of day
+    let calculatedTrafficLevel: 'low' | 'moderate' | 'high' | 'very_high';
+    
+    if (isLikelyHighway) {
+      if (speed > 1.5) calculatedTrafficLevel = 'low';
+      else if (speed > 1.2) calculatedTrafficLevel = isRushHour ? 'moderate' : 'low';
+      else if (speed > 0.8) calculatedTrafficLevel = isRushHour ? 'high' : 'moderate';
+      else calculatedTrafficLevel = isRushHour ? 'very_high' : 'high';
+    } else {
+      // Urban roads
+      if (speed > 0.7) calculatedTrafficLevel = 'low'; 
+      else if (speed > 0.5) calculatedTrafficLevel = isRushHour ? 'moderate' : 'low';
+      else if (speed > 0.3) calculatedTrafficLevel = isRushHour ? 'high' : 'moderate';
+      else calculatedTrafficLevel = isRushHour ? 'very_high' : 'high';
+    }
+    
+    // Set traffic level state
+    setTrafficLevel(calculatedTrafficLevel);
+    
+    // Calculate arrival time based on current time + duration
     const now = new Date();
-    now.setMinutes(now.getMinutes() + estimatedTimeMinutes);
+    const arrival = addMinutes(now, durationMinutes);
     
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
+    // Format arrival time
+    const formattedArrival = format(arrival, "HH:mm", { locale: es });
+    setArrivalTime(formattedArrival);
     
-    return `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
-  };
-
-  // Simulate traffic level based on distance and time
-  const calculateTrafficLevel = (distance: number, time: number): 'low' | 'moderate' | 'heavy' => {
-    // If the values seem unreasonable for Tenerife (>100km), default to moderate
-    if (distance > 100 || time > 180) {
-      console.warn("Distance or time outside reasonable range for Tenerife", { distance, time });
-      return 'moderate';
-    }
-    
-    // Average speed in km/h
-    const avgSpeed = distance / (time / 60);
-    console.log("Calculated average speed:", avgSpeed, "km/h");
-    
-    if (avgSpeed > 40) return 'low';
-    if (avgSpeed > 25) return 'moderate';
-    return 'heavy';
-  };
-
-  // Update traffic information
-  const updateTrafficInfo = (distance: number, time: number) => {
-    console.log("Calculating traffic for distance:", distance, "km and time:", time, "min");
-    
-    // Verify reasonable values for Tenerife
-    if (distance > 100 || distance <= 0 || time <= 0) {
-      console.error("Invalid distance or time values for traffic calculation", { distance, time });
-      toast({
-        title: "Error de cálculo",
-        description: "No se pudo calcular la información de tráfico con los valores proporcionados",
-        variant: "destructive"
-      });
-      return null;
-    }
-    
-    const traffic = calculateTrafficLevel(distance, time);
-    setTrafficLevel(traffic);
-    
-    // Adjust estimated time based on traffic
-    let adjustedTime = time;
-    if (traffic === 'moderate') {
-      adjustedTime = Math.ceil(adjustedTime * 1.2); // 20% more time
-    } else if (traffic === 'heavy') {
-      adjustedTime = Math.ceil(adjustedTime * 1.5); // 50% more time
-    }
-    
-    const arrival = calculateArrivalTime(adjustedTime);
-    setArrivalTime(arrival);
-    
-    // Mostrar notificación sobre el estado del tráfico
-    let trafficMessage = '';
-    let variant: 'default' | 'destructive' | undefined = 'default';
-    
-    switch (traffic) {
-      case 'low':
-        trafficMessage = 'Tráfico fluido. Buen momento para viajar.';
-        break;
-      case 'moderate':
-        trafficMessage = 'Tráfico moderado. Posible demora de 20%.';
-        variant = undefined;
-        break;
-      case 'heavy':
-        trafficMessage = 'Tráfico intenso. Tiempo estimado aumentado en 50%.';
-        variant = 'destructive';
-        break;
-    }
-    
-    console.log("Traffic level:", traffic, "Adjusted time:", adjustedTime, "Arrival time:", arrival);
-    
-    toast({
-      title: `Hora estimada de llegada: ${arrival}`,
-      description: trafficMessage,
-      variant: variant
+    console.log('Traffic info updated:', {
+      distance,
+      durationMinutes,
+      speed: speed.toFixed(2),
+      trafficLevel: calculatedTrafficLevel,
+      arrivalTime: formattedArrival
     });
     
-    return { trafficLevel: traffic, adjustedTime, arrivalTime: arrival };
+    return {
+      trafficLevel: calculatedTrafficLevel,
+      arrivalTime: formattedArrival
+    };
   };
-
+  
   return {
     trafficLevel,
     arrivalTime,

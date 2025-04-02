@@ -1,44 +1,61 @@
 
+// API key storage key
 export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
 
-export type MapCoordinates = {
+// Coordinates with optional address for map points
+export interface MapCoordinates {
   lat: number;
   lng: number;
   address?: string;
-};
+}
 
-export type MapDriverPosition = {
+// Map selection mode
+export type MapSelectionMode = 'origin' | 'destination' | null;
+
+// Driver position with heading/rotation
+export interface MapDriverPosition {
   lat: number;
   lng: number;
   heading?: number;
-  speed?: number;
-  timestamp?: number;
-};
-
-export type MapSelectionMode = 'none' | 'origin' | 'destination' | 'edit-home';
-
-export interface MapProps {
-  origin?: MapCoordinates;
-  destination?: MapCoordinates;
-  routeGeometry?: any;
-  className?: string;
-  style?: React.CSSProperties;
-  interactive?: boolean;
-  showDriverPosition?: boolean;
-  driverPosition?: MapDriverPosition;
-  onOriginChange?: (coordinates: MapCoordinates) => void;
-  onDestinationChange?: (coordinates: MapCoordinates) => void;
-  allowMapSelection?: boolean;
-  showRoute?: boolean;
-  allowHomeEditing?: boolean;
-  apiKey?: string;
-  useHomeAsDestination?: () => void;
-  alwaysShowHomeMarker?: boolean;
-  showHomeMarker?: boolean;
-  homeLocation?: MapCoordinates | null;
+  name?: string;
+  vehicle?: {
+    make: string;
+    model: string;
+    color: string;
+    plate: string;
+  };
 }
 
-// Definición para los tipos de Ride
+// Main map component props
+export interface MapProps {
+  apiKey?: string;
+  origin?: MapCoordinates;
+  destination?: MapCoordinates;
+  routeGeometry?: any;  // GeoJSON route geometry
+  homeLocation?: MapCoordinates;
+  showDriverPosition?: boolean;
+  driverPosition?: MapDriverPosition;
+  interactive?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  showRoute?: boolean;
+  allowMapSelection?: boolean;
+  onOriginChange?: (coordinates: MapCoordinates) => void;
+  onDestinationChange?: (coordinates: MapCoordinates) => void;
+  useHomeAsDestination?: () => void;
+  showHomeMarker?: boolean;
+  alwaysShowHomeMarker?: boolean;
+  allowHomeEditing?: boolean;
+}
+
+// Map route type
+export interface MapRoute {
+  geometry: any;  // GeoJSON LineString geometry
+  distance: number;  // in kilometers
+  duration: number;  // in minutes
+}
+
+// Ride type for history and tracking
 export interface Ride {
   id: string;
   origin: {
@@ -46,7 +63,7 @@ export interface Ride {
     lat: number;
     lng: number;
   };
-  destination: {
+  destination?: {
     address: string;
     lat: number;
     lng: number;
@@ -55,8 +72,6 @@ export interface Ride {
   requestTime: Date;
   price?: number;
   distance?: number;
-  driver?: any;
   createdAt: string;
   paymentMethodId: string;
-  scheduledTime?: string;
 }

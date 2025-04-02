@@ -1,7 +1,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapCoordinates, MapSelectionMode } from '../types';
-import { useMapCursor } from './useMapCursor';
 import { toast } from '@/hooks/use-toast';
 import MapControls from '../components/MapControls';
 import { reverseGeocode } from '../services/GeocodingService';
@@ -32,28 +31,25 @@ export function useGoogleMapSelection({
   const [selectedPoint, setSelectedPoint] = useState<{lat: number, lng: number} | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   
-  // Aplicar estilo de cursor basado en el modo de selección
-  useMapCursor({
-    mapRef,
-    selectionMode
-  });
-
   // Función para manejar los clics en el mapa
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (!selectionMode) return;
+    if (!selectionMode) {
+      // Si ya hay un origen seleccionado y no estamos en modo de selección específico,
+      // y tenemos una ubicación de casa, preguntar si quiere viajar a casa
+      if (homeLocation && useHomeAsDestination) {
+        const lat = e.latLng?.lat() || 0;
+        const lng = e.latLng?.lng() || 0;
+        setSelectedPoint({lat, lng});
+        setShowHomeDialog(true);
+        return;
+      }
+      return;
+    }
     
     const lat = e.latLng?.lat() || 0;
     const lng = e.latLng?.lng() || 0;
     
     console.log(`Map clicked in ${selectionMode} mode at:`, lat, lng);
-    
-    // Si ya hay un origen seleccionado y no estamos en modo de selección específico,
-    // y tenemos una ubicación de casa, preguntar si quiere viajar a casa
-    if (selectionMode === 'none' && homeLocation && useHomeAsDestination) {
-      setSelectedPoint({lat, lng});
-      setShowHomeDialog(true);
-      return;
-    }
     
     // Obtener la dirección para las coordenadas seleccionadas
     reverseGeocode(lat, lng, (address) => {
@@ -105,9 +101,9 @@ export function useGoogleMapSelection({
       clickListenerRef.current = null;
     }
 
-    // Añadir un nuevo listener de clic si estamos en modo selección
-    if (selectionMode && mapRef.current) {
-      console.log(`Adding click listener for ${selectionMode} selection`);
+    // Añadir un nuevo listener de clic si estamos en modo selección o si podemos seleccionar casa
+    if ((selectionMode || homeLocation) && mapRef.current) {
+      console.log(`Adding click listener for ${selectionMode || 'home travel'} selection`);
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
       
       // Deshabilitar zoom por doble clic cuando estamos en modo selección
@@ -129,14 +125,14 @@ export function useGoogleMapSelection({
         mapRef.current.setOptions({ disableDoubleClickZoom: false });
       }
     };
-  }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick]);
+  }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick, homeLocation]);
 
   // Controles de selección desde botones en el mapa
   const mapControls = MapControls({
     allowMapSelection,
     selectionMode,
     onSelectionModeChange: setSelectionMode,
-    showDestinationSelection
+    showDestinationSelection: true
   });
 
   // Dialogo para preguntar si quiere viajar desde el punto seleccionado hasta su casa
@@ -151,6 +147,11 @@ export function useGoogleMapSelection({
             lat: selectedPoint.lat,
             lng: selectedPoint.lng,
             address
+          });
+          
+          toast({
+            title: "Origen seleccionado",
+            description: address || "Ubicación seleccionada como origen"
           });
         }
         

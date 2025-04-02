@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import LocationInputSection from "./LocationInputSection";
 import MapViewSection from "./MapViewSection";
 import EstimateSection from "./EstimateSection";
-import { useHomeAddressManager } from "@/hooks/useHomeAddressManager";
+import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 import { useRideSaver } from "@/hooks/useRideSaver";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
@@ -48,7 +48,7 @@ const RideRequestMain: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
 
   // Custom hooks
-  const { saveHomeAddress, useHomeAddress } = useHomeAddressManager();
+  const { saveHomeAddress, useHomeAddress } = useHomeLocationStorage();
   const { saveRideToSupabase } = useRideSaver(
     origin, 
     destination, 
@@ -189,6 +189,11 @@ const RideRequestMain: React.FC = () => {
             saveRideToSupabase={saveRideToSupabase}
             useHomeAsDestination={handleUseHomeAsDestination}
             allowHomeEditing={setHomeLocation}
+            trafficLevel={trafficLevel}
+            estimatedTime={estimatedTime}
+            estimatedDistance={estimatedDistance}
+            estimatedPrice={estimatedPrice}
+            scheduledTime={scheduledTime}
           />
         </div>
       </div>
