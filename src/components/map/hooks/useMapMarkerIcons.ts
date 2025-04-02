@@ -1,49 +1,36 @@
 
-// Utility functions to generate map marker icons
+// Helper functions for creating SVG marker icons for Google Maps
 
-/**
- * Generates an SVG marker for the origin point
- */
-export const getOriginMarkerSvg = (): string => {
+export const getOriginMarkerSvg = () => {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
-      <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z" fill="#1E88E5" stroke="#ffffff" stroke-width="1"/>
-      <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#1E88E5"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+      <circle cx="12" cy="10" r="3"></circle>
     </svg>
   `;
 };
 
-/**
- * Generates an SVG marker for the destination point
- */
-export const getDestinationMarkerSvg = (): string => {
+export const getDestinationMarkerSvg = () => {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
-      <path d="M12 22s-8-4.5-8-11.8a8 8 0 0 1 16 0c0 7.3-8 11.8-8 11.8z" fill="#E53935" stroke="#ffffff" stroke-width="1"/>
-      <circle cx="12" cy="10" r="3" fill="#ffffff" stroke="#E53935"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#d81b60" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
     </svg>
   `;
 };
 
-/**
- * Generates an SVG marker for the home location
- */
-export const getHomeMarkerSvg = (): string => {
+export const getHomeMarkerSvg = () => {
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="#4CAF50" stroke="#ffffff" stroke-width="1"/>
-      <polyline points="9 22 9 12 15 12 15 22" fill="#ffffff" stroke="#4CAF50"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#4caf50" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
     </svg>
   `;
 };
 
-/**
- * Creates a Google Maps icon object for the given SVG
- */
-export const createMarkerIcon = (svgContent: string): google.maps.Icon => {
+export const createMarkerIcon = (svg: string) => {
   return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svgContent),
-    scaledSize: new google.maps.Size(40, 40),
-    anchor: new google.maps.Point(20, 40)
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(32, 32),
+    anchor: new google.maps.Point(16, 16)
   };
 };

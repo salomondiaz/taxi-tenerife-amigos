@@ -11,8 +11,6 @@ interface MapSelectionControlsProps {
   setSelectionMode: (mode: MapSelectionMode) => void;
   onUseCurrentLocation?: () => void;
   onSearchLocation?: (query: string, type: 'origin' | 'destination') => void;
-  mapRef?: React.MutableRefObject<google.maps.Map | null>;
-  onOriginChange?: (coordinates: MapCoordinates) => void;
 }
 
 const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
@@ -21,8 +19,6 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
   setSelectionMode,
   onUseCurrentLocation,
   onSearchLocation,
-  mapRef,
-  onOriginChange
 }) => {
   if (!allowMapSelection) return null;
   
@@ -34,14 +30,10 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
           (position) => {
             const { latitude, longitude } = position.coords;
             reverseGeocode(latitude, longitude, (address) => {
-              const coords = {
-                lat: latitude,
-                lng: longitude,
-                address: address || `Mi ubicación (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`
-              };
-              if (onOriginChange) {
-                onOriginChange(coords);
-              }
+              toast({
+                title: "Ubicación actual",
+                description: address || `(${latitude.toFixed(6)}, ${longitude.toFixed(6)})`
+              });
             });
           },
           (error) => {

@@ -35,6 +35,7 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   const homeLocationFromStorage = loadHomeLocation();
   
   const homeLocation = initialHomeLocation || homeLocationFromStorage;
+  console.log("Home location in GoogleMapDisplay:", homeLocation);
 
   // Initialize map
   const mapRef = useGoogleMapInitialization({
@@ -61,23 +62,19 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   });
 
   // Handle map selection (origin/destination)
-  // We need to extend the useGoogleMapSelection to include all necessary properties
-  const { selectionMode, setSelectionMode } = useGoogleMapSelection({
-    map: mapRef.current,
-    allowMapSelection,
-    onOriginChange,
-    onDestinationChange
-  });
-
-  // Import the enhanced version that includes HomeDialog and handleMapClick
-  const {
-    HomeDialog,
-    showHomeDialog
+  const { 
+    selectionMode, 
+    setSelectionMode, 
+    handleMapClick, 
+    HomeDialog, 
+    showHomeDialog 
   } = useGoogleMapSelection({
     map: mapRef.current,
     allowMapSelection,
     onOriginChange,
-    onDestinationChange
+    onDestinationChange,
+    homeLocation,
+    useHomeAsDestination
   });
 
   // Handle map markers
@@ -111,8 +108,17 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     if (origin) {
       saveHomeLocation();
       storageUpdateHome(origin);
+      toast({
+        title: "Casa guardada",
+        description: "Tu ubicación de casa ha sido guardada"
+      });
       return true;
     }
+    toast({
+      title: "No hay origen seleccionado",
+      description: "Por favor selecciona primero una ubicación",
+      variant: "destructive"
+    });
     return false;
   };
 

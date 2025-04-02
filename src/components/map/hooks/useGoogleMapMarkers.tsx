@@ -198,7 +198,7 @@ export function useGoogleMapMarkers({
   const updateMarkers = useCallback(() => {
     if (!mapRef.current) return;
     
-    console.log("Actualizando marcadores con:", { origin, destination });
+    console.log("Actualizando marcadores con:", { origin, destination, homeLocation });
     
     // Si los marcadores no se han creado aún, crearlos
     if (!markersCreated) {
@@ -251,14 +251,26 @@ export function useGoogleMapMarkers({
     if (homeMarkerRef.current && homeLocation) {
       const shouldShowHomeMarker = alwaysShowHomeMarker || showHomeMarker || allowHomeEditing;
       
+      console.log("Mostrando marcador de casa:", { 
+        shouldShowHomeMarker, 
+        alwaysShowHomeMarker, 
+        showHomeMarker, 
+        allowHomeEditing, 
+        homeLocation 
+      });
+      
       if (shouldShowHomeMarker) {
         homeMarkerRef.current.setPosition({ lat: homeLocation.lat, lng: homeLocation.lng });
         homeMarkerRef.current.setVisible(true);
+        homeMarkerRef.current.setDraggable(allowHomeEditing);
         
         // Añadir popup
         const infoWindow = new google.maps.InfoWindow({
           content: `<div style="color: #4caf50; font-weight: bold;">Mi Casa: ${homeLocation.address || 'Ubicación guardada'}</div>`
         });
+        
+        // Limpiar listeners anteriores
+        google.maps.event.clearListeners(homeMarkerRef.current, 'click');
         
         homeMarkerRef.current.addListener('click', () => {
           infoWindow.open(mapRef.current, homeMarkerRef.current);
@@ -266,6 +278,11 @@ export function useGoogleMapMarkers({
       } else {
         homeMarkerRef.current.setVisible(false);
       }
+    } else if (homeLocation && !homeMarkerRef.current && mapRef.current) {
+      // Si no existe el marcador pero sí la ubicación, crearlo
+      createMarkers();
+      // Llamar de nuevo a updateMarkers para actualizar el marcador recién creado
+      setTimeout(() => updateMarkers(), 10);
     }
     
     // Ajustar el zoom y centrado del mapa si hay origen y destino
@@ -286,7 +303,7 @@ export function useGoogleMapMarkers({
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
     }
     // O sólo casa
-    else if (homeLocation && showHomeMarker && mapRef.current) {
+    else if (homeLocation && (showHomeMarker || alwaysShowHomeMarker) && mapRef.current) {
       mapRef.current.setCenter({ lat: homeLocation.lat, lng: homeLocation.lng });
       if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
     }
@@ -335,6 +352,11 @@ export function useGoogleMapMarkers({
       return false;
     }
     
+    toast({
+      title: "Casa guardada",
+      description: "La ubicación actual se ha guardado como tu casa"
+    });
+    
     return true;
   }, [origin]);
 
@@ -358,3 +380,6 @@ export function useGoogleMapMarkers({
     saveHomeLocation
   };
 }
+
+// Importar toast faltante
+import { toast } from '@/hooks/use-toast';
