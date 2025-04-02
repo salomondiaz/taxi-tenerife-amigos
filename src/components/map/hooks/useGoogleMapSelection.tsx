@@ -30,9 +30,18 @@ export function useGoogleMapSelection({
   const [showHomeDialog, setShowHomeDialog] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<{lat: number, lng: number} | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
+  const lastSelectionTime = useRef<number>(0);
   
   // Función para manejar los clics en el mapa
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    // Evitar clics múltiples demasiado rápidos (debounce)
+    const now = Date.now();
+    if (now - lastSelectionTime.current < 1000) {
+      console.log("Ignorando clic rápido");
+      return;
+    }
+    lastSelectionTime.current = now;
+    
     if (!selectionMode) {
       // Si ya hay un origen seleccionado y no estamos en modo de selección específico,
       // y tenemos una ubicación de casa, preguntar si quiere viajar a casa
@@ -70,11 +79,14 @@ export function useGoogleMapSelection({
         
         // Cambiar automáticamente al modo de selección de destino si está disponible
         if (showDestinationSelection) {
-          setSelectionMode('destination');
-          toast({
-            title: "Seleccione destino",
-            description: "Ahora haga clic para seleccionar el destino"
-          });
+          // Pequeño retraso para evitar clics accidentales
+          setTimeout(() => {
+            setSelectionMode('destination');
+            toast({
+              title: "Seleccione destino",
+              description: "Ahora haga clic para seleccionar el destino"
+            });
+          }, 500);
         } else {
           setSelectionMode(null);
         }

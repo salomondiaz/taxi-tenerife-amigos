@@ -71,6 +71,13 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
     }
   };
 
+  // Comprobar si debemos mostrar la información previa del viaje
+  const shouldShowTripInfo = originCoords && 
+                            destinationCoords && 
+                            (estimatedDistance !== null || 
+                             estimatedTime !== null || 
+                             estimatedPrice !== null);
+
   return (
     <div className="rounded-xl overflow-hidden shadow-lg bg-white" style={{ height: "500px" }}>
       <div className="relative h-full">
@@ -89,7 +96,7 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         />
         
         {/* Información previa del viaje (overlay) */}
-        {originCoords && destinationCoords && (estimatedDistance || estimatedTime || estimatedPrice) && (
+        {shouldShowTripInfo && (
           <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md z-10">
             <div className="grid grid-cols-3 gap-2 text-sm">
               {estimatedDistance !== null && (
@@ -117,13 +124,13 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
             {trafficLevel && trafficLevel !== 'low' && (
               <div className={`mt-2 px-2 py-1 rounded text-xs ${
                 trafficLevel === 'moderate' ? 'bg-yellow-100 text-yellow-800' : 
-                trafficLevel === 'high' ? 'bg-orange-100 text-orange-800' : 
-                'bg-red-100 text-red-800'
+                trafficLevel === 'high' || trafficLevel === 'very_high' ? 'bg-red-100 text-red-800' : 
+                'bg-green-100 text-green-800'
               }`}>
                 <p>
                   {trafficLevel === 'moderate' ? '⚠️ Tráfico moderado en la ruta' :
-                   trafficLevel === 'high' ? '⚠️ Tráfico denso en la ruta' : 
-                   '⚠️ Tráfico muy denso en la ruta'}
+                   trafficLevel === 'high' || trafficLevel === 'very_high' ? '⚠️ Tráfico denso en la ruta' : 
+                   '✓ Tráfico fluido en la ruta'}
                 </p>
               </div>
             )}
