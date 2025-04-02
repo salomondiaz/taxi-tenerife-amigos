@@ -9,6 +9,7 @@ import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
 import MapStatusOverlay from './components/MapStatusOverlay';
 import MapSelectionControls from './components/MapSelectionControls';
 import HomeButtonControls from './components/HomeButtonControls';
+import { toast } from '@/hooks/use-toast';
 
 const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   const {
@@ -67,7 +68,8 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     setSelectionMode, 
     handleMapClick, 
     HomeDialog, 
-    showHomeDialog 
+    showHomeDialog,
+    setShowHomeDialog
   } = useGoogleMapSelection({
     map: mapRef.current,
     allowMapSelection,
