@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface UseMapSelectionProps {
+interface UseGoogleMapSelectionProps {
   map: google.maps.Map | null;
   allowMapSelection: boolean;
   defaultSelectionMode?: MapSelectionMode;
@@ -25,7 +25,7 @@ export function useGoogleMapSelection({
   onDestinationChange,
   homeLocation,
   useHomeAsDestination
-}: UseMapSelectionProps) {
+}: UseGoogleMapSelectionProps) {
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(defaultSelectionMode);
   const [showHomeDialog, setShowHomeDialog] = useState(false);
 
@@ -82,7 +82,7 @@ export function useGoogleMapSelection({
         changeSelectionMode('none');
       }
     });
-  }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, map]);
+  }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, map, changeSelectionMode]);
 
   // Setup map click listener
   useEffect(() => {

@@ -43,7 +43,17 @@ export function useGoogleMapRouting({
       );
     } else {
       // Clear the route if we don't have both origin and destination
-      directionsRendererRef.current.setDirections({ routes: [] } as google.maps.DirectionsResult);
+      // Create a proper empty DirectionsResult object
+      const emptyDirectionsResult: google.maps.DirectionsResult = {
+        routes: [],
+        geocoded_waypoints: [],
+        request: {
+          origin: { lat: 0, lng: 0 },
+          destination: { lat: 0, lng: 0 },
+          travelMode: google.maps.TravelMode.DRIVING
+        }
+      };
+      directionsRendererRef.current.setDirections(emptyDirectionsResult);
     }
   }, [mapRef, directionsRendererRef, origin, destination, showRoute]);
 }
