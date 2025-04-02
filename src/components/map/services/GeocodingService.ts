@@ -48,3 +48,27 @@ export const forwardGeocode = (
     callback(null);
   }
 };
+
+// Added the missing function that HomeLocationSetup.tsx is trying to use
+export const geocodeAddress = (address: string, callback: (coordinates: { lat: number; lng: number; address: string } | null) => void) => {
+  try {
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        const location = results[0].geometry.location;
+        callback({
+          lat: location.lat(),
+          lng: location.lng(),
+          address: results[0].formatted_address
+        });
+      } else {
+        console.error("Geocoder failed:", status);
+        callback(null);
+      }
+    });
+  } catch (error) {
+    console.error("Error in geocodeAddress:", error);
+    callback(null);
+  }
+};
