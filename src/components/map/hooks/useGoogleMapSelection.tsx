@@ -42,15 +42,14 @@ export function useGoogleMapSelection({
     }
     lastSelectionTime.current = now;
     
-    if (!selectionMode) {
-      // Si ya hay un origen seleccionado y no estamos en modo de selección específico,
-      // y tenemos una ubicación de casa, preguntar si quiere viajar a casa
+    // Si no estamos en modo de selección, mostrar diálogo de casa si corresponde
+    if (!selectionMode || selectionMode === 'none') {
+      // Si hay una ubicación de casa y tenemos una función para usarla
       if (homeLocation && useHomeAsDestination) {
         const lat = e.latLng?.lat() || 0;
         const lng = e.latLng?.lng() || 0;
         setSelectedPoint({lat, lng});
         setShowHomeDialog(true);
-        return;
       }
       return;
     }
@@ -58,17 +57,17 @@ export function useGoogleMapSelection({
     const lat = e.latLng?.lat() || 0;
     const lng = e.latLng?.lng() || 0;
     
-    console.log(`Map clicked in ${selectionMode} mode at:`, lat, lng);
+    console.log(`Mapa clicado en modo ${selectionMode} en:`, lat, lng);
     
     // Obtener la dirección para las coordenadas seleccionadas
     reverseGeocode(lat, lng, (address) => {
       const coordinates = {
         lat,
         lng,
-        address
+        address: address || `Ubicación (${lat.toFixed(6)}, ${lng.toFixed(6)})`
       };
       
-      console.log(`Address found: ${address}`);
+      console.log(`Dirección encontrada: ${address}`);
       
       if (selectionMode === 'origin' && onOriginChange) {
         onOriginChange(coordinates);
@@ -117,7 +116,7 @@ export function useGoogleMapSelection({
     }
 
     // Añadir un nuevo listener de clic si estamos en modo selección o si podemos seleccionar casa
-    if ((selectionMode || homeLocation) && mapRef.current) {
+    if ((selectionMode && selectionMode !== 'none') || (homeLocation && useHomeAsDestination)) {
       console.log(`Añadiendo listener de clic para selección de ${selectionMode || 'viaje a casa'}`);
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
       
@@ -141,7 +140,7 @@ export function useGoogleMapSelection({
         mapRef.current.setOptions({ disableDoubleClickZoom: false });
       }
     };
-  }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick, homeLocation]);
+  }, [mapRef.current, selectionMode, allowMapSelection, handleMapClick, homeLocation, useHomeAsDestination]);
 
   // Controles de selección desde botones en el mapa
   const mapControls = MapControls({
@@ -162,7 +161,7 @@ export function useGoogleMapSelection({
           onOriginChange({
             lat: selectedPoint.lat,
             lng: selectedPoint.lng,
-            address
+            address: address || `Ubicación (${selectedPoint.lat.toFixed(6)}, ${selectedPoint.lng.toFixed(6)})`
           });
           
           toast({

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { MapProps, MapCoordinates, MapSelectionMode } from './types';
 import { useGoogleMapInitialization } from './hooks/useGoogleMapInitialization';
@@ -7,6 +6,9 @@ import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
 import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
 import { MapPin, X, Home } from 'lucide-react';
+import MapSelectionControl from './controls/MapSelectionControl';
+import { reverseGeocode, geocodeAddress } from './services/GeocodingService';
+import { toast } from '@/hooks/use-toast';
 
 const GoogleMapDisplay: React.FC<MapProps> = ({
   apiKey,
@@ -30,10 +32,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const { saveHomeLocation: storageUpdateHome, loadHomeLocation } = useHomeLocationStorage();
   const homeLocationFromStorage = loadHomeLocation();
   
-  // Use provided home location or fall back to stored one
   const homeLocation = initialHomeLocation || homeLocationFromStorage;
 
-  // Initialize map and prepare to receive markers
   const mapRef = useGoogleMapInitialization({
     mapContainerRef,
     origin,
@@ -59,7 +59,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     }
   });
 
-  // Set up map selection capabilities (clicking on map to set points)
   const { 
     selectionMode, 
     setSelectionMode,
@@ -78,7 +77,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     homeLocation
   });
 
-  // Handle markers on the map (origin, destination, home)
   const { 
     updateMarkers,
     saveHomeLocation
@@ -95,7 +93,6 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     homeLocation
   });
 
-  // Handle route display between points
   useGoogleMapRouting({
     mapRef,
     directionsRendererRef,
@@ -104,38 +101,81 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showRoute
   });
 
-  // Update markers when coordinates change
   useEffect(() => {
     if (mapReady) {
       updateMarkers();
     }
   }, [mapReady, origin, destination, homeLocation, updateMarkers]);
 
-  // Function to save home location - both in context and in localStorage
   const handleSaveHomeLocation = () => {
     if (origin) {
       saveHomeLocation();
       storageUpdateHome(origin);
+      
+      toast({
+        title: "Casa guardada",
+        description: "Se ha guardado tu casa correctamente"
+      });
     }
   };
-
-  const selectionControlsComponent = createSelectionControls();
 
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
       
-      {/* Selection controls for setting origin and destination */}
-      {selectionControlsComponent}
+      {allowMapSelection && (
+        <MapSelectionControl
+          selectionMode={selectionMode}
+          setSelectionMode={setSelectionMode}
+          onUseCurrentLocation={() => {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const { latitude, longitude } = position.coords;
+                  reverseGeocode(latitude, longitude, (address) => {
+                    const coords = {
+                      lat: latitude,
+                      lng: longitude,
+                      address: address || `Mi ubicación (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`
+                    };
+                    if (onOriginChange) {
+                      onOriginChange(coords);
+                    }
+                  });
+                },
+                (error) => {
+                  console.error("Error getting location:", error);
+                  toast({
+                    title: "Error de ubicación",
+                    description: "No se pudo obtener tu ubicación actual",
+                    variant: "destructive"
+                  });
+                }
+              );
+            }
+          }}
+          onSearchLocation={(query, type) => {
+            geocodeAddress(query, (coords) => {
+              if (!coords) {
+                toast({
+                  title: "No se encontró la ubicación",
+                  description: "Intenta con una dirección más específica",
+                  variant: "destructive"
+                });
+                return;
+              }
+              
+              if (type === 'origin' && onOriginChange) {
+                onOriginChange(coords);
+              } else if (type === 'destination' && onDestinationChange) {
+                onDestinationChange(coords);
+              }
+            });
+          }}
+        />
+      )}
       
-      {/* Floating button for easy access to selection */}
-      {renderFloatingButton()}
-      
-      {/* Dialog for asking if user wants to travel from current point to home */}
-      <HomeDialog />
-      
-      {/* Current Selection Mode Indicator */}
-      {allowMapSelection && selectionMode && (
+      {allowMapSelection && selectionMode && selectionMode !== 'none' && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-md z-10 flex items-center gap-2">
           {selectionMode === 'origin' ? (
             <>
@@ -144,7 +184,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
               <X 
                 className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700" 
                 size={16} 
-                onClick={() => setSelectionMode(null)}
+                onClick={() => setSelectionMode('none')}
               />
             </>
           ) : (
@@ -154,14 +194,13 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
               <X 
                 className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700" 
                 size={16}
-                onClick={() => setSelectionMode(null)}
+                onClick={() => setSelectionMode('none')}
               />
             </>
           )}
         </div>
       )}
       
-      {/* Home location controls */}
       {allowHomeEditing && (
         <div className="absolute top-20 right-4 z-10 bg-white p-3 rounded-lg shadow-md">
           <button
@@ -173,6 +212,8 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           </button>
         </div>
       )}
+      
+      <HomeDialog />
     </div>
   );
 };
