@@ -60,6 +60,11 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
       } else {
         directionsRendererRef.current.setMap(map);
       }
+      
+      // Configuraciones adicionales al inicializar el mapa
+      map.setOptions({
+        disableDoubleClickZoom: true, // Desactivar zoom con doble clic
+      });
     }
   });
 
@@ -124,6 +129,8 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     return false;
   };
 
+  const showMarkerInstructions = allowMapSelection && selectionMode !== 'none';
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapContainerRef} className="w-full h-full" />
@@ -151,6 +158,15 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         homeLocation={homeLocation}
         useHomeAsDestination={useHomeAsDestination}
       />
+      
+      {/* Instrucciones de selección visibles */}
+      {showMarkerInstructions && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm z-30">
+          {selectionMode === 'origin' 
+            ? 'Haz clic en el mapa para marcar el ORIGEN' 
+            : 'Haz clic en el mapa para marcar el DESTINO'}
+        </div>
+      )}
     </div>
   );
 };

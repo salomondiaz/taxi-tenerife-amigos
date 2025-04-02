@@ -16,7 +16,7 @@ interface UseGoogleMapInitializationProps {
 const TENERIFE_CENTER = { lat: 28.2916, lng: -16.6291 };
 const DEFAULT_ZOOM = 13;
 const MIN_ZOOM = 10;
-const MAX_ZOOM = 17;
+const MAX_ZOOM = 18;
 
 export function useGoogleMapInitialization({
   mapContainerRef,
@@ -70,6 +70,7 @@ export function useGoogleMapInitialization({
         zoomControl: true,
         minZoom: MIN_ZOOM,
         maxZoom: MAX_ZOOM,
+        disableDoubleClickZoom: true,
         zoomControlOptions: {
           position: google.maps.ControlPosition.RIGHT_TOP
         },

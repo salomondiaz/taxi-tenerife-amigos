@@ -50,6 +50,12 @@ export function useGoogleMapSelection({
     
     console.log(`Map clicked at: ${lat}, ${lng} in mode: ${selectionMode}`);
     
+    // Disable auto-zoom when clicking
+    map.setOptions({
+      gestureHandling: "greedy",
+      disableDoubleClickZoom: true
+    });
+    
     // Use reverse geocoding to get the address
     reverseGeocode(lat, lng, (address) => {
       const coords: MapCoordinates = {
@@ -84,6 +90,11 @@ export function useGoogleMapSelection({
   // Setup map click listener
   useEffect(() => {
     if (!map || !allowMapSelection) return;
+    
+    // Disable double click zoom to prevent zoom issues
+    map.setOptions({
+      disableDoubleClickZoom: true
+    });
     
     const listener = map.addListener('click', handleMapClick);
     

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { MapCoordinates } from "@/components/map/types";
 import Map from "@/components/Map";
 import { toast } from "@/hooks/use-toast";
@@ -28,8 +28,8 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
   routeGeometry,
   handleOriginChange,
   handleDestinationChange,
-  useHomeAsDestination,
   saveRideToSupabase,
+  useHomeAsDestination,
   allowHomeEditing,
   trafficLevel,
   estimatedTime,
@@ -37,106 +37,67 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
   estimatedPrice,
   scheduledTime
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Función para guardar el viaje
-  const handleSaveRide = async () => {
-    if (!originCoords || !destinationCoords) {
+  // Instrucciones de selección de ubicaciones
+  React.useEffect(() => {
+    // Mostrar instrucción inicial
+    if (useManualSelection && !originCoords) {
       toast({
-        title: "Faltan datos",
-        description: "Por favor selecciona origen y destino para continuar",
-        variant: "destructive"
+        title: "Seleccionar ubicaciones",
+        description: "Usa los botones azul y rojo para marcar el origen y destino en el mapa",
       });
-      return;
     }
-    
-    setIsLoading(true);
-    try {
-      await saveRideToSupabase();
-      toast({
-        title: "¡Viaje guardado!",
-        description: scheduledTime 
-          ? `Tu viaje ha sido programado para ${new Date(scheduledTime).toLocaleString('es-ES')}`
-          : "Tu viaje ha sido guardado correctamente"
-      });
-    } catch (error) {
-      console.error("Error guardando el viaje:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo guardar el viaje. Intenta nuevamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Comprobar si debemos mostrar la información previa del viaje
-  const shouldShowTripInfo = originCoords && 
-                            destinationCoords && 
-                            (estimatedDistance !== null || 
-                             estimatedTime !== null || 
-                             estimatedPrice !== null);
+  }, [useManualSelection, originCoords]);
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-lg bg-white" style={{ height: "500px" }}>
-      <div className="relative h-full">
-        <Map
-          interactive={true}
-          allowMapSelection={useManualSelection}
-          origin={originCoords}
-          destination={destinationCoords}
-          routeGeometry={routeGeometry}
-          onOriginChange={handleOriginChange}
-          onDestinationChange={handleDestinationChange}
-          useHomeAsDestination={useHomeAsDestination}
-          alwaysShowHomeMarker={true}
-          allowHomeEditing={allowHomeEditing}
-          showRoute={true}
-        />
-        
-        {/* Información previa del viaje (overlay) */}
-        {shouldShowTripInfo && (
-          <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md z-10">
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              {estimatedDistance !== null && (
-                <div>
-                  <p className="font-semibold text-gray-800">Distancia</p>
-                  <p>{estimatedDistance.toFixed(1)} km</p>
-                </div>
-              )}
-              
-              {estimatedTime !== null && (
-                <div>
-                  <p className="font-semibold text-gray-800">Tiempo estimado</p>
-                  <p>{estimatedTime} min</p>
-                </div>
-              )}
-              
-              {estimatedPrice !== null && (
-                <div>
-                  <p className="font-semibold text-gray-800">Precio estimado</p>
-                  <p>{estimatedPrice.toFixed(2)} €</p>
-                </div>
-              )}
-            </div>
-            
-            {trafficLevel && trafficLevel !== 'low' && (
-              <div className={`mt-2 px-2 py-1 rounded text-xs ${
-                trafficLevel === 'moderate' ? 'bg-yellow-100 text-yellow-800' : 
-                trafficLevel === 'high' || trafficLevel === 'very_high' ? 'bg-red-100 text-red-800' : 
-                'bg-green-100 text-green-800'
-              }`}>
-                <p>
-                  {trafficLevel === 'moderate' ? '⚠️ Tráfico moderado en la ruta' :
-                   trafficLevel === 'high' || trafficLevel === 'very_high' ? '⚠️ Tráfico denso en la ruta' : 
-                   '✓ Tráfico fluido en la ruta'}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-[600px] relative">
+      <Map
+        origin={originCoords}
+        destination={destinationCoords}
+        routeGeometry={routeGeometry}
+        onOriginChange={handleOriginChange}
+        onDestinationChange={handleDestinationChange}
+        allowMapSelection={true}
+        showRoute={true}
+        useHomeAsDestination={useHomeAsDestination}
+        alwaysShowHomeMarker={true}
+        allowHomeEditing={allowHomeEditing}
+        showSelectMarkers={true}
+      />
+      
+      {/* Indicadores de estado */}
+      <div className="absolute top-4 left-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md z-10">
+        <h3 className="font-semibold text-sm mb-1">Instrucciones:</h3>
+        <p className="text-xs text-gray-700">
+          1. Selecciona origen (azul) y destino (rojo)<br/>
+          2. Usa los botones en la esquina superior derecha<br/>
+          3. Haz clic en el mapa para colocar los marcadores
+        </p>
       </div>
+
+      {/* Mostrar resumen del viaje si tenemos estimaciones */}
+      {estimatedPrice && estimatedDistance && estimatedTime && (
+        <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-sm font-medium">
+                {estimatedDistance.toFixed(1)} km • {estimatedTime} min
+              </span>
+              <p className="text-xs text-gray-500">
+                {trafficLevel === 'low' && "Tráfico ligero"}
+                {trafficLevel === 'moderate' && "Tráfico moderado"}
+                {trafficLevel === 'high' && "Tráfico denso"}
+                {trafficLevel === 'very_high' && "Tráfico muy denso"}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-lg font-bold">{estimatedPrice.toFixed(2)}€</span>
+              <p className="text-xs text-gray-500">
+                {scheduledTime ? "Viaje programado" : "Precio estimado"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

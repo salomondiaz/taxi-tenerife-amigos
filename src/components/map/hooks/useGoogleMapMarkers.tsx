@@ -201,6 +201,8 @@ export function useGoogleMapMarkers({
             content: `<div style="color: #1a73e8; font-weight: bold;">Origen: ${origin.address || 'Punto de partida'}</div>`
           });
           
+          google.maps.event.clearListeners(originMarkerRef.current, 'click');
+          
           originMarkerRef.current.addListener('click', () => {
             infoWindow.open(mapRef.current, originMarkerRef.current);
           });
@@ -219,6 +221,8 @@ export function useGoogleMapMarkers({
           const infoWindow = new google.maps.InfoWindow({
             content: `<div style="color: #d81b60; font-weight: bold;">Destino: ${destination.address || 'Punto de llegada'}</div>`
           });
+          
+          google.maps.event.clearListeners(destinationMarkerRef.current, 'click');
           
           destinationMarkerRef.current.addListener('click', () => {
             infoWindow.open(mapRef.current, destinationMarkerRef.current);
@@ -266,16 +270,29 @@ export function useGoogleMapMarkers({
       const bounds = new google.maps.LatLngBounds();
       bounds.extend({ lat: origin.lat, lng: origin.lng });
       bounds.extend({ lat: destination.lat, lng: destination.lng });
-      mapRef.current.fitBounds(bounds, 50);
+      
+      mapRef.current.fitBounds(bounds, 100);
+      
+      setTimeout(() => {
+        if (mapRef.current && mapRef.current.getZoom() > 15) {
+          mapRef.current.setZoom(15);
+        }
+      }, 100);
     } else if (origin && mapRef.current) {
       mapRef.current.setCenter({ lat: origin.lat, lng: origin.lng });
-      if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
+      if (mapRef.current.getZoom() < 13 || mapRef.current.getZoom() > 15) {
+        mapRef.current.setZoom(14);
+      }
     } else if (destination && mapRef.current) {
       mapRef.current.setCenter({ lat: destination.lat, lng: destination.lng });
-      if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
+      if (mapRef.current.getZoom() < 13 || mapRef.current.getZoom() > 15) {
+        mapRef.current.setZoom(14);
+      }
     } else if (homeLocation && (showHomeMarker || alwaysShowHomeMarker) && mapRef.current) {
       mapRef.current.setCenter({ lat: homeLocation.lat, lng: homeLocation.lng });
-      if (mapRef.current.getZoom() < 14) mapRef.current.setZoom(14);
+      if (mapRef.current.getZoom() < 13 || mapRef.current.getZoom() > 15) {
+        mapRef.current.setZoom(14);
+      }
     }
   }, [
     mapRef,
