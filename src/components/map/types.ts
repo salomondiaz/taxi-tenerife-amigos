@@ -45,3 +45,31 @@ export interface MapProps {
   driverPosition?: MapDriverPosition;
   showSelectMarkers?: boolean;
 }
+
+// Adding the missing TrafficLevel type that's causing errors
+export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high' | null;
+
+// Adding the Ride interface that's missing in useRideRequest.ts
+export interface Ride {
+  id: string;
+  origin: MapCoordinates;
+  destination: MapCoordinates;
+  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+  requestTime: Date;
+  price: number;
+  distance: number;
+  createdAt: string;
+  paymentMethodId: string;
+  driver?: {
+    id: string;
+    name: string;
+    photo?: string;
+    rating?: number;
+  };
+  vehicle?: {
+    id: string;
+    model: string;
+    plate: string;
+    color: string;
+  };
+}
