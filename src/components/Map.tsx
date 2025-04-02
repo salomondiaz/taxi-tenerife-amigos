@@ -15,7 +15,7 @@ const Map: React.FC<MapProps> = (props) => {
   // Cargar ubicación de casa
   const homeLocation = loadHomeLocation();
   
-  // Check if we should show the home marker - nueva lógica
+  // Check if we should show the home marker
   const showHomeMarker = props.alwaysShowHomeMarker || 
                          (!!homeLocation && !props.origin) || 
                          (props.origin?.address?.toLowerCase().includes('mi casa') || 

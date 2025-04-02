@@ -5,6 +5,8 @@ import { useMapCursor } from './useMapCursor';
 import { toast } from '@/hooks/use-toast';
 import MapControls from '../components/MapControls';
 import { reverseGeocode } from '../services/GeocodingService';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface UseGoogleMapSelectionProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
@@ -12,6 +14,8 @@ interface UseGoogleMapSelectionProps {
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   showDestinationSelection?: boolean;
+  useHomeAsDestination?: () => void;
+  homeLocation?: MapCoordinates | null;
 }
 
 export function useGoogleMapSelection({
@@ -19,9 +23,13 @@ export function useGoogleMapSelection({
   allowMapSelection = false,
   onOriginChange,
   onDestinationChange,
-  showDestinationSelection = true
+  showDestinationSelection = true,
+  useHomeAsDestination,
+  homeLocation
 }: UseGoogleMapSelectionProps) {
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(null);
+  const [showHomeDialog, setShowHomeDialog] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState<{lat: number, lng: number} | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   
   // Aplicar estilo de cursor basado en el modo de selección
@@ -39,6 +47,14 @@ export function useGoogleMapSelection({
     
     console.log(`Map clicked in ${selectionMode} mode at:`, lat, lng);
     
+    // Si ya hay un origen seleccionado y no estamos en modo de selección específico,
+    // y tenemos una ubicación de casa, preguntar si quiere viajar a casa
+    if (selectionMode === 'none' && homeLocation && useHomeAsDestination) {
+      setSelectedPoint({lat, lng});
+      setShowHomeDialog(true);
+      return;
+    }
+    
     // Obtener la dirección para las coordenadas seleccionadas
     reverseGeocode(lat, lng, (address) => {
       const coordinates = {
@@ -55,7 +71,8 @@ export function useGoogleMapSelection({
           title: "Origen seleccionado",
           description: address || "Ubicación seleccionada en el mapa"
         });
-        // CAMBIO: Cambiar automáticamente al modo de selección de destino en lugar de desactivarlo
+        
+        // Cambiar automáticamente al modo de selección de destino si está disponible
         if (showDestinationSelection) {
           setSelectionMode('destination');
           toast({
@@ -63,7 +80,7 @@ export function useGoogleMapSelection({
             description: "Ahora haga clic para seleccionar el destino"
           });
         } else {
-          setSelectionMode('none');
+          setSelectionMode(null);
         }
       } 
       else if (selectionMode === 'destination' && onDestinationChange) {
@@ -73,10 +90,10 @@ export function useGoogleMapSelection({
           description: address || "Ubicación seleccionada en el mapa"
         });
         // Desactivar el modo de selección después de seleccionar el destino
-        setSelectionMode('none');
+        setSelectionMode(null);
       }
     });
-  }, [selectionMode, onOriginChange, onDestinationChange, showDestinationSelection]);
+  }, [selectionMode, onOriginChange, onDestinationChange, showDestinationSelection, homeLocation, useHomeAsDestination]);
 
   // Gestionar los eventos de clic del mapa y deshabilitar doble clic para zoom
   useEffect(() => {
@@ -93,10 +110,10 @@ export function useGoogleMapSelection({
       console.log(`Adding click listener for ${selectionMode} selection`);
       clickListenerRef.current = mapRef.current.addListener('click', handleMapClick);
       
-      // NUEVO: Deshabilitar zoom por doble clic cuando estamos en modo selección
+      // Deshabilitar zoom por doble clic cuando estamos en modo selección
       mapRef.current.setOptions({ disableDoubleClickZoom: true });
     } else if (mapRef.current) {
-      // NUEVO: Rehabilitar zoom por doble clic cuando no estamos en modo selección
+      // Rehabilitar zoom por doble clic cuando no estamos en modo selección
       mapRef.current.setOptions({ disableDoubleClickZoom: false });
     }
 
@@ -122,11 +139,56 @@ export function useGoogleMapSelection({
     showDestinationSelection
   });
 
+  // Dialogo para preguntar si quiere viajar desde el punto seleccionado hasta su casa
+  const HomeDialog = () => {
+    const handleConfirm = useCallback(() => {
+      if (!selectedPoint) return;
+      
+      // Obtener la dirección para el punto seleccionado
+      reverseGeocode(selectedPoint.lat, selectedPoint.lng, (address) => {
+        if (onOriginChange) {
+          onOriginChange({
+            lat: selectedPoint.lat,
+            lng: selectedPoint.lng,
+            address
+          });
+        }
+        
+        // Usar la casa como destino
+        if (useHomeAsDestination) {
+          useHomeAsDestination();
+        }
+        
+        setShowHomeDialog(false);
+        setSelectedPoint(null);
+      });
+    }, [selectedPoint, useHomeAsDestination]);
+    
+    return (
+      <Dialog open={showHomeDialog} onOpenChange={setShowHomeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Deseas viajar desde aquí hasta tu casa?</DialogTitle>
+            <DialogDescription>
+              El origen será el punto que acabas de seleccionar y el destino será tu casa.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHomeDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirm}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return { 
     selectionMode, 
     setSelectionMode, 
     handleMapClick,
     createSelectionControls: mapControls.createSelectionControls,
-    renderFloatingButton: mapControls.renderFloatingButton
+    renderFloatingButton: mapControls.renderFloatingButton,
+    HomeDialog,
+    showHomeDialog
   };
 }

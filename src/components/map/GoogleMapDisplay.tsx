@@ -37,6 +37,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapBoundsSet, setMapBoundsSet] = useState(false);
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -148,13 +149,17 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     setSelectionMode,
     handleMapClick,
     createSelectionControls,
-    renderFloatingButton
+    renderFloatingButton,
+    HomeDialog,
+    showHomeDialog
   } = useGoogleMapSelection({
     mapRef,
     allowMapSelection,
     onOriginChange,
     onDestinationChange,
-    showDestinationSelection: !destination
+    showDestinationSelection: !destination,
+    useHomeAsDestination,
+    homeLocation
   });
 
   const { driverMarkerRef } = useGoogleMapDriverMarker({
@@ -172,27 +177,45 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
     showRoute
   });
 
+  // Control de zoom y fitbounds para evitar parpadeo
   useEffect(() => {
     if (mapReady && mapRef.current) {
-      if (routeBounds) {
+      // Solo hacemos fitBounds cuando realmente cambian los puntos significativamente
+      if (routeBounds && !mapBoundsSet) {
+        // Añadimos un pequeño padding para mejorar la visualización
         mapRef.current.fitBounds(routeBounds, {
-          top: 50, right: 50, bottom: 50, left: 50
+          top: 60, right: 60, bottom: 60, left: 60
         });
-        return;
+        setMapBoundsSet(true);
       }
-
-      if (origin && destination) {
+      else if (origin && destination && !mapBoundsSet) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend({ lat: origin.lat, lng: origin.lng });
         bounds.extend({ lat: destination.lat, lng: destination.lng });
         
         mapRef.current.fitBounds(bounds, {
-          top: 70, right: 70, bottom: 70, left: 70
+          top: 80, right: 80, bottom: 80, left: 80
         });
+        setMapBoundsSet(true);
+      }
+      // Si solo tenemos un punto y no hay bounds establecidos, centramos en ese punto
+      else if ((origin || destination) && !routeBounds && !mapBoundsSet) {
+        const point = origin || destination;
+        if (point) {
+          mapRef.current.setCenter({ lat: point.lat, lng: point.lng });
+          mapRef.current.setZoom(15);
+          setMapBoundsSet(true);
+        }
       }
     }
-  }, [mapReady, origin, destination, routeBounds]);
+  }, [mapReady, origin, destination, routeBounds, mapBoundsSet]);
 
+  // Reset mapBoundsSet cuando cambian origen o destino significativamente
+  useEffect(() => {
+    setMapBoundsSet(false);
+  }, [origin?.lat, origin?.lng, destination?.lat, destination?.lng]);
+
+  // Actualizar marcadores sin causar parpadeo
   useEffect(() => {
     if (mapReady && mapRef.current) {
       updateMarkers();
@@ -219,6 +242,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
           
           if (type === 'origin' && onOriginChange) {
             onOriginChange(coordinates);
+            // Evitamos cambiar abruptamente el zoom, solo centramos suavemente
             mapRef.current?.panTo(position);
             toast({
               title: "Origen encontrado",
@@ -226,6 +250,7 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
             });
           } else if (type === 'destination' && onDestinationChange) {
             onDestinationChange(coordinates);
+            // Evitamos cambiar abruptamente el zoom, solo centramos suavemente
             mapRef.current?.panTo(position);
             toast({
               title: "Destino encontrado",
@@ -249,25 +274,56 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       description: "Obteniendo coordenadas..."
     });
     
-    setTimeout(() => {
-      const currentLocation = {
-        lat: 28.4698,
-        lng: -16.2549,
-        address: "Tu ubicación actual"
-      };
-      
-      if (onOriginChange) {
-        onOriginChange(currentLocation);
-        if (mapRef.current) {
-          mapRef.current.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
-          mapRef.current.setZoom(14);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            address: "Tu ubicación actual"
+          };
+          
+          if (onOriginChange) {
+            onOriginChange(currentLocation);
+            if (mapRef.current) {
+              // Centrar suavemente sin cambiar el zoom abruptamente
+              mapRef.current.panTo({ lat: currentLocation.lat, lng: currentLocation.lng });
+            }
+            toast({
+              title: "Ubicación actual establecida",
+              description: "Tu ubicación actual se ha establecido como origen"
+            });
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Fallback a una ubicación en Tenerife si falla
+          const fallbackLocation = {
+            lat: 28.4698,
+            lng: -16.2549,
+            address: "Santa Cruz de Tenerife (aproximado)"
+          };
+          
+          if (onOriginChange) {
+            onOriginChange(fallbackLocation);
+            if (mapRef.current) {
+              mapRef.current.panTo({ lat: fallbackLocation.lat, lng: fallbackLocation.lng });
+            }
+            toast({
+              title: "Ubicación aproximada",
+              description: "No se pudo obtener tu ubicación exacta, usando ubicación por defecto"
+            });
+          }
         }
-        toast({
-          title: "Ubicación actual establecida",
-          description: "Tu ubicación actual se ha establecido como origen"
-        });
-      }
-    }, 1000);
+      );
+    } else {
+      // Navegador no soporta geolocalización
+      toast({
+        title: "Error de geolocalización",
+        description: "Tu navegador no soporta geolocalización",
+        variant: "destructive"
+      });
+    }
   }, [mapRef, onOriginChange]);
 
   return (
@@ -284,10 +340,13 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
         className="w-full h-full"
       />
       
-      <MapSelectionIndicator 
-        visible={!!selectionMode && selectionMode !== 'none' && allowMapSelection} 
-        type={selectionMode === 'origin' ? 'origin' : 'destination'} 
-      />
+      {/* MapSelectionIndicator: Fix type issue */}
+      {!!selectionMode && selectionMode !== 'none' && allowMapSelection && (
+        <MapSelectionIndicator 
+          visible={true}
+          type={selectionMode === 'origin' ? 'origin' : 'destination'} 
+        />
+      )}
 
       {allowMapSelection && (
         <div className="absolute top-2 left-2 z-10">
@@ -301,6 +360,9 @@ const GoogleMapDisplay: React.FC<MapProps> = ({
       )}
       
       {renderFloatingButton && renderFloatingButton()}
+      
+      {/* Diálogo para preguntar si quiere viajar a casa */}
+      <HomeDialog />
     </div>
   );
 };
