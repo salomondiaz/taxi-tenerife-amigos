@@ -12,6 +12,7 @@ interface UseGoogleMapSelectionProps {
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   homeLocation?: MapCoordinates | null;
   useHomeAsDestination?: () => void;
+  showSelectMarkers?: boolean;
 }
 
 export function useGoogleMapSelection({
@@ -21,7 +22,8 @@ export function useGoogleMapSelection({
   onOriginChange,
   onDestinationChange,
   homeLocation,
-  useHomeAsDestination
+  useHomeAsDestination,
+  showSelectMarkers = false
 }: UseGoogleMapSelectionProps) {
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(defaultSelectionMode);
   const [showHomeDialog, setShowHomeDialog] = useState(false);
