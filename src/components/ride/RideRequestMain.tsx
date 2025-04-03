@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRideRequestMain } from "@/hooks/useRideRequestMain";
 import ScheduledRideBanner from "./ScheduledRideBanner";
@@ -54,12 +53,6 @@ const RideRequestMain: React.FC = () => {
     }
     
     try {
-      // Verificamos que scheduledDate sea un objeto Date antes de pasarlo
-      if (!(scheduledDate instanceof Date)) {
-        console.error("Error: scheduledDate no es un objeto Date válido");
-        return false;
-      }
-      
       await saveRideToSupabase(scheduledDate);
       return true;
     } catch (error) {
