@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { MapProps } from './types';
 import { useGoogleMap } from './hooks/useGoogleMap';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
@@ -31,7 +31,9 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     alwaysShowHomeMarker = false,
     allowHomeEditing = false,
     homeLocation: initialHomeLocation,
-    showSelectMarkers = false
+    showSelectMarkers = false,
+    selectionMode: externalSelectionMode,
+    onMapClick
   } = props;
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +42,7 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
   const homeLocationFromStorage = loadHomeLocation();
   
   const homeLocation = initialHomeLocation || homeLocationFromStorage;
-  console.log("Home location in GoogleMapDisplay:", homeLocation);
+  const [showHomeDialog, setShowHomeDialog] = useState(false);
 
   // Initialize map
   const mapRef = useGoogleMap({
@@ -69,16 +71,40 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         disableDoubleClickZoom: true, // Desactivar zoom con doble clic
         gestureHandling: "cooperative" // Mejor control de gestos
       });
+      
+      // Add click event listener
+      if (allowMapSelection && onMapClick) {
+        map.addListener('click', (e: google.maps.MapMouseEvent) => {
+          if (!e.latLng) return;
+          
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          
+          // Get address for clicked location
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+              onMapClick({
+                lat,
+                lng,
+                address: results[0].formatted_address
+              });
+            } else {
+              onMapClick({
+                lat,
+                lng
+              });
+            }
+          });
+        });
+      }
     }
   });
 
   // Handle map selection (origin/destination)
   const { 
     selectionMode, 
-    setSelectionMode, 
-    handleMapClick,
-    showHomeDialog,
-    setShowHomeDialog
+    setSelectionMode
   } = useGoogleMapSelection({
     map: mapRef.current,
     allowMapSelection,
@@ -87,7 +113,8 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     showDestinationSelection: true,
     homeLocation,
     useHomeAsDestination,
-    showSelectMarkers
+    showSelectMarkers,
+    selectionMode: externalSelectionMode
   });
 
   // Handle map markers

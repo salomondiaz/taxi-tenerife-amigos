@@ -13,7 +13,8 @@ const RideRequestContent: React.FC = () => {
         <p className="text-blue-700 text-sm">
           1️⃣ <strong>Primer clic</strong> en el mapa: Marca tu <strong className="text-blue-600">punto de origen</strong> (azul)<br/>
           2️⃣ <strong>Segundo clic</strong> en el mapa: Marca tu <strong className="text-red-600">destino</strong> (rojo)<br/>
-          3️⃣ O usa los botones "Usar mi ubicación" y "Casa como destino" para selección automática
+          3️⃣ O usa los botones "Usar mi ubicación" y "Casa como destino" para selección automática<br/>
+          🏠 Tu casa siempre se mostrará en el mapa con un icono especial
         </p>
       </div>
       <RideRequestMain />

@@ -1,15 +1,16 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useRideRequestMain } from "@/hooks/useRideRequestMain";
 import ScheduledRideBanner from "./ScheduledRideBanner";
 import LocationInputSection from "./LocationInputSection";
 import MapViewSection from "./MapViewSection";
 import EstimateSection from "./EstimateSection";
 import { TrafficLevel } from "@/components/map/types";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const RideRequestMain: React.FC = () => {
   const {
-    scheduledTime,
     origin,
     setOrigin,
     destination,
@@ -37,6 +38,31 @@ const RideRequestMain: React.FC = () => {
     saveRideToSupabase,
     setHomeLocation
   } = useRideRequestMain();
+
+  const [scheduledTime, setScheduledTime] = useState<string | undefined>(undefined);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+
+  // Handle scheduling a ride
+  const handleScheduleRide = (date: Date) => {
+    const formattedDate = format(date, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
+    setScheduledTime(formattedDate);
+    setScheduledDate(date);
+  };
+
+  // Save ride with scheduled time
+  const handleSaveScheduledRide = async () => {
+    if (!originCoords || !destinationCoords) {
+      return false;
+    }
+    
+    try {
+      await saveRideToSupabase(scheduledDate);
+      return true;
+    } catch (error) {
+      console.error("Error saving scheduled ride:", error);
+      return false;
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
@@ -70,9 +96,10 @@ const RideRequestMain: React.FC = () => {
             estimatedPrice={estimatedPrice}
             selectedPaymentMethod={selectedPaymentMethod}
             setSelectedPaymentMethod={setSelectedPaymentMethod}
-            handleRideRequest={handleRideRequest}
+            handleRideRequest={scheduledTime ? handleSaveScheduledRide : handleRideRequest}
             visible={originCoords !== null && destinationCoords !== null}
             scheduledTime={scheduledTime}
+            onScheduleRide={handleScheduleRide}
           />
         </div>
         

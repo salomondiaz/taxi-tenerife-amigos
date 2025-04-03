@@ -24,13 +24,6 @@ const Map: React.FC<MapProps> = (props) => {
                           ))
                          ));
 
-  console.log("Map component props:", { 
-    ...props, 
-    homeLocation, 
-    showHomeMarker,
-    selectionMode: props.selectionMode
-  });
-
   // Pass all props to GoogleMapDisplay including the API key and home marker flag
   return <GoogleMapDisplay 
     apiKey={GOOGLE_MAPS_API_KEY} 

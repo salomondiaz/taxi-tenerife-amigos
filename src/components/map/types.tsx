@@ -38,6 +38,7 @@ export interface MapProps {
   showDriverPosition?: boolean;
   driverPosition?: MapDriverPosition;
   selectionMode?: MapSelectionMode;
+  onMapClick?: (coordinates: MapCoordinates) => void;
 }
 
 export interface Ride {

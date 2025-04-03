@@ -1,8 +1,10 @@
 
-import React from "react";
-import { MapCoordinates } from "@/components/map/types";
+import React, { useState } from "react";
+import { MapCoordinates, TrafficLevel } from "@/components/map/types";
 import Map from "@/components/Map";
 import { toast } from "@/hooks/use-toast";
+import HomeDestinationDialog from "@/components/map/components/HomeDestinationDialog";
+import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 
 interface MapViewSectionProps {
   useManualSelection: boolean;
@@ -43,17 +45,39 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
     if (!destinationCoords) return 'destination';
     return null;
   }, [originCoords, destinationCoords]);
+  
+  const [showHomeDialog, setShowHomeDialog] = useState(false);
+  const [clickedPoint, setClickedPoint] = useState<MapCoordinates | null>(null);
+  const { loadHomeLocation } = useHomeLocationStorage();
+  const homeLocation = loadHomeLocation();
 
-  // Instrucciones de selección de ubicaciones
-  React.useEffect(() => {
-    // Mostrar instrucción inicial solo cuando no hay ni origen ni destino
-    if (useManualSelection && !originCoords && !destinationCoords) {
-      toast({
-        title: "Seleccionar ubicaciones",
-        description: "Haz clic en el mapa para marcar tu punto de origen",
-      });
+  // Home dialog handlers
+  const handleMapClick = (coords: MapCoordinates) => {
+    if (!homeLocation) return; // Skip if no home location is set
+    
+    // If we already have an origin and destination, don't show the dialog
+    if (originCoords && destinationCoords) return;
+    
+    // Save the clicked point
+    setClickedPoint(coords);
+    
+    // If this is the first click (setting origin), show dialog asking about trip to home
+    if (!originCoords) {
+      // First set the origin to the clicked point
+      handleOriginChange(coords);
+      // Then ask if they want to go home from here
+      setShowHomeDialog(true);
+    } else if (!destinationCoords) {
+      // If second click, just set destination normally
+      handleDestinationChange(coords);
     }
-  }, [useManualSelection, originCoords, destinationCoords]);
+  };
+
+  const handleHomeDialogConfirm = () => {
+    if (useHomeAsDestination && homeLocation) {
+      useHomeAsDestination();
+    }
+  };
 
   // Format traffic level text
   const getTrafficText = () => {
@@ -81,6 +105,15 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         allowHomeEditing={allowHomeEditing}
         showSelectMarkers={true}
         selectionMode={selectionMode}
+        onMapClick={handleMapClick}
+      />
+      
+      <HomeDestinationDialog 
+        open={showHomeDialog}
+        onOpenChange={setShowHomeDialog}
+        clickedPoint={clickedPoint}
+        onConfirm={handleHomeDialogConfirm}
+        homeAddress={homeLocation?.address}
       />
       
       {/* Mostrar resumen del viaje si tenemos estimaciones */}
@@ -88,11 +121,11 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-md z-40">
           <div className="flex justify-between items-center">
             <div>
-              <div className="text-sm font-medium flex items-center">
-                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1">{estimatedDistance.toFixed(1)} km</span> • 
-                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mx-1">{estimatedTime} min</span>
+              <div className="text-sm font-medium flex items-center space-x-2">
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedDistance.toFixed(1)} km</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedTime} min</span>
                 {scheduledTime && (
-                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded ml-1">Programado</span>
+                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Programado</span>
                 )}
               </div>
               {getTrafficText() && (

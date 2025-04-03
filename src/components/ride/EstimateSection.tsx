@@ -1,14 +1,18 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Clock, Map, AlertTriangle, DollarSign } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { TrafficLevel } from "@/components/map/types";
-import PaymentSelector from "./PaymentSelector";
+import { CalendarClock, Clock } from "lucide-react";
+import PaymentMethodsSection from "./PaymentMethodsSection";
+import ScheduleRideDialog from "./ScheduleRideDialog";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface EstimateSectionProps {
   estimatedDistance: number | null;
   estimatedTime: number | null;
-  trafficLevel: TrafficLevel | null;
+  trafficLevel: TrafficLevel;
   arrivalTime: string | null;
   estimatedPrice: number | null;
   selectedPaymentMethod: string | null;
@@ -16,6 +20,7 @@ interface EstimateSectionProps {
   handleRideRequest: () => void;
   visible: boolean;
   scheduledTime?: string;
+  onScheduleRide?: (date: Date) => void;
 }
 
 const EstimateSection: React.FC<EstimateSectionProps> = ({
@@ -28,147 +33,125 @@ const EstimateSection: React.FC<EstimateSectionProps> = ({
   setSelectedPaymentMethod,
   handleRideRequest,
   visible,
-  scheduledTime
+  scheduledTime,
+  onScheduleRide
 }) => {
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  
+  // Handle scheduling a ride
+  const handleScheduleRide = (date: Date) => {
+    if (onScheduleRide) {
+      onScheduleRide(date);
+    }
+  };
+
+  // If estimates are not available, don't show this section
   if (!visible) return null;
-
-  const getTrafficColor = () => {
+  
+  // Format estimated arrival time
+  const formattedArrivalTime = arrivalTime 
+    ? `Llegada estimada: ${arrivalTime}h`
+    : "";
+    
+  // Format traffic info text and color
+  const getTrafficInfo = () => {
     switch (trafficLevel) {
       case 'low':
-        return 'bg-green-100 text-green-800';
+        return { text: "Tráfico ligero", color: "text-green-600" };
       case 'moderate':
-        return 'bg-yellow-100 text-yellow-800';
+        return { text: "Tráfico moderado", color: "text-yellow-600" };
       case 'high':
-        return 'bg-orange-100 text-orange-800';
+        return { text: "Tráfico denso", color: "text-orange-600" };
       case 'very_high':
-        return 'bg-red-100 text-red-800';
+        return { text: "Tráfico muy denso", color: "text-red-600" };
       default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTrafficIcon = () => {
-    switch (trafficLevel) {
-      case 'low':
-        return '🟢';
-      case 'moderate':
-        return '🟡';
-      case 'high':
-        return '🟠';
-      case 'very_high':
-        return '🔴';
-      default:
-        return '⚪';
-    }
-  };
-
-  const getTrafficText = () => {
-    switch (trafficLevel) {
-      case 'low':
-        return 'Tráfico ligero';
-      case 'moderate':
-        return 'Tráfico moderado';
-      case 'high':
-        return 'Tráfico denso';
-      case 'very_high':
-        return 'Tráfico muy denso';
-      default:
-        return 'Tráfico desconocido';
+        return { text: "Información de tráfico no disponible", color: "text-gray-600" };
     }
   };
   
-  // Format price and distance safely
-  const formattedPrice = estimatedPrice ? estimatedPrice.toFixed(2) : '0.00';
-  const formattedDistance = estimatedDistance ? estimatedDistance.toFixed(1) : '0.0';
-
+  const trafficInfo = getTrafficInfo();
+  
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold mb-4">Información del viaje</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <h2 className="text-lg font-semibold mb-2">Detalles del viaje</h2>
       
-      {/* Indicadores de error si no hay estimaciones */}
-      {(!estimatedDistance || !estimatedTime || !estimatedPrice) && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
-            <p className="text-sm text-yellow-700">
-              Faltan algunos datos para calcular correctamente el viaje. 
-              Por favor, asegúrate de seleccionar origen y destino.
-            </p>
-          </div>
+      {/* Distance and time info */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-500">Distancia</p>
+          <p className="text-xl font-bold">{estimatedDistance?.toFixed(1)} km</p>
         </div>
-      )}
-
-      {/* Grid con información del viaje */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg p-4 border bg-slate-50 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500">Distancia</span>
-            <Map className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-xl font-bold">{formattedDistance} km</div>
-        </div>
-
-        <div className="rounded-lg p-4 border bg-slate-50 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500">Tiempo</span>
-            <Clock className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-xl font-bold">{estimatedTime || 0} min</div>
-          {arrivalTime && (
-            <div className="text-xs text-gray-500 mt-1">
-              Llegada estimada: {arrivalTime}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-lg p-4 border bg-slate-50 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-500">Precio</span>
-            <DollarSign className="h-4 w-4 text-gray-400" />
-          </div>
-          <div className="text-xl font-bold">{formattedPrice} €</div>
-        </div>
-      </div>
-
-      {/* Información de tráfico */}
-      {trafficLevel && (
-        <div className={`p-3 rounded-lg mb-6 ${getTrafficColor()}`}>
-          <div className="flex items-center">
-            <span className="text-lg mr-2">{getTrafficIcon()}</span>
-            <div>
-              <h4 className="font-medium">{getTrafficText()}</h4>
-              {arrivalTime && (
-                <p className="text-sm">Hora estimada de llegada: {arrivalTime}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Selector de método de pago */}
-      <div className="border-t border-gray-100 pt-4 mt-4">
-        <h3 className="text-md font-medium mb-3">Método de pago</h3>
-        <PaymentSelector 
-          price={estimatedPrice || 0}
-          onPaymentMethodSelected={setSelectedPaymentMethod}
-        />
-      </div>
-      
-      {/* Botón para solicitar viaje */}
-      <div className="mt-6">
-        <Button
-          className="w-full bg-tenerife-blue hover:bg-tenerife-blue/90"
-          size="lg"
-          onClick={handleRideRequest}
-          disabled={!selectedPaymentMethod || !estimatedPrice}
-        >
-          {scheduledTime ? "Programar viaje" : "Solicitar viaje ahora"}
-        </Button>
         
-        <p className="text-xs text-gray-500 text-center mt-2">
-          Al solicitar un viaje aceptas nuestros términos y condiciones
-        </p>
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <p className="text-sm text-gray-500">Tiempo</p>
+          <p className="text-xl font-bold">{estimatedTime} min</p>
+        </div>
       </div>
+      
+      {/* Traffic and arrival info */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          <span className={`font-medium ${trafficInfo.color}`}>
+            {trafficInfo.text}
+          </span>
+        </div>
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-1 text-gray-500" />
+          <span className="text-sm text-gray-600">{formattedArrivalTime}</span>
+        </div>
+      </div>
+      
+      {/* Scheduled ride info */}
+      {scheduledTime && (
+        <div className="bg-purple-50 p-3 rounded-lg mb-4 flex items-center">
+          <CalendarClock className="h-5 w-5 text-purple-600 mr-2" />
+          <div>
+            <p className="font-medium text-purple-800">Viaje programado</p>
+            <p className="text-sm text-purple-700">{scheduledTime}</p>
+          </div>
+        </div>
+      )}
+      
+      <Separator className="my-4" />
+      
+      {/* Price */}
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-lg">Precio estimado:</span>
+        <span className="text-2xl font-bold">{estimatedPrice?.toFixed(2)}€</span>
+      </div>
+      
+      {/* Payment section */}
+      <PaymentMethodsSection 
+        selectedPaymentMethod={selectedPaymentMethod}
+        onSelectPaymentMethod={setSelectedPaymentMethod}
+      />
+      
+      <div className="mt-4 flex gap-2">
+        {!scheduledTime && onScheduleRide && (
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => setShowScheduleDialog(true)}
+          >
+            <CalendarClock className="h-4 w-4 mr-2" />
+            Programar
+          </Button>
+        )}
+        
+        <Button 
+          onClick={handleRideRequest} 
+          className="flex-1 bg-tenerife-blue hover:bg-tenerife-blue/90"
+          disabled={!selectedPaymentMethod}
+        >
+          {scheduledTime ? "Programar viaje" : "Solicitar taxi"}
+        </Button>
+      </div>
+      
+      <ScheduleRideDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        onSchedule={handleScheduleRide}
+      />
     </div>
   );
 };

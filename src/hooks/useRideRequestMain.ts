@@ -6,15 +6,19 @@ import { useRideRequestFlow } from "@/hooks/useRideRequestFlow";
 import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 import { useRideSaver } from "@/hooks/useRideSaver";
 import { MapCoordinates, TrafficLevel } from "@/components/map/types";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export const useRideRequestMain = () => {
   const { toast } = useToast();
   const location = useLocation();
-  const scheduledTimeFromLocation = location.state?.scheduledTime;
-  const setHomeLocation = location.state?.setHomeLocation || false;
+  const locationState = location.state || {};
+  const scheduledTimeFromLocation = locationState.scheduledTime;
+  const setHomeLocation = locationState.setHomeLocation || false;
   
   // Estado para viaje programado
   const [scheduledTime, setScheduledTime] = useState<string | undefined>(scheduledTimeFromLocation);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   
   const {
     origin,
@@ -53,9 +57,15 @@ export const useRideRequestMain = () => {
     originCoords, 
     destinationCoords, 
     calculateEstimates, 
-    estimatedPrice || 0,
-    scheduledTime
+    estimatedPrice || 0
   );
+  
+  // Handle scheduling a ride
+  const handleScheduleRide = (date: Date) => {
+    const formattedDate = format(date, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
+    setScheduledTime(formattedDate);
+    setScheduledDate(date);
+  };
 
   // Helper functions for home location
   const saveHomeAddress = () => {
@@ -119,22 +129,12 @@ export const useRideRequestMain = () => {
     }
   };
 
-  // Log coordinates for debugging
-  useEffect(() => {
-    console.log("Coordenadas actuales en RideRequestMain:", { 
-      originCoords, 
-      destinationCoords,
-      origin,
-      destination
-    });
-  }, [originCoords, destinationCoords, origin, destination]);
-
   // Process ride
   const handleRideRequest = () => {
     if (selectedPaymentMethod) {
-      if (scheduledTime) {
-        // Si es un viaje programado, guardarlo directamente en Supabase
-        saveRideToSupabase();
+      if (scheduledDate) {
+        // Si es un viaje programado, guardarlo con la fecha programada
+        saveRideToSupabase(scheduledDate);
       } else {
         // Si es un viaje inmediato, seguir el flujo normal
         handleRequestRide(selectedPaymentMethod);
@@ -150,6 +150,10 @@ export const useRideRequestMain = () => {
 
   return {
     scheduledTime,
+    setScheduledTime,
+    scheduledDate,
+    setScheduledDate,
+    handleScheduleRide,
     origin,
     setOrigin,
     destination,
