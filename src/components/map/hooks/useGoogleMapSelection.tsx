@@ -19,7 +19,7 @@ interface UseGoogleMapSelectionProps {
 export function useGoogleMapSelection({
   map,
   allowMapSelection,
-  defaultSelectionMode = 'none',
+  defaultSelectionMode = null,
   onOriginChange,
   onDestinationChange,
   showDestinationSelection = true,
@@ -32,11 +32,15 @@ export function useGoogleMapSelection({
 
   // Change selection mode with feedback
   const changeSelectionMode = (mode: MapSelectionMode) => {
-    setSelectionMode(mode);
-    
-    if (mode === 'none') {
+    if (mode === selectionMode) {
+      // Toggle off the current mode
+      setSelectionMode(null);
       return;
     }
+    
+    setSelectionMode(mode);
+    
+    if (mode === null) return;
     
     // Show toast message
     toast({
@@ -47,17 +51,14 @@ export function useGoogleMapSelection({
 
   // Handle map click for selection
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (selectionMode === 'none' || !allowMapSelection || !map) return;
+    if (selectionMode === null || !allowMapSelection || !map) return;
     
     const lat = e.latLng!.lat();
     const lng = e.latLng!.lng();
     
     console.log(`Map clicked at: ${lat}, ${lng} in mode: ${selectionMode}`);
     
-    // Disable zoom on click - this helps prevent zoom jumping
-    e.stop();
-    
-    // Use reverse geocoding to get the address
+    // Reverse geocode to get the address
     reverseGeocode(lat, lng, (address) => {
       const coords: MapCoordinates = {
         lat,
@@ -76,7 +77,7 @@ export function useGoogleMapSelection({
         if (allowMapSelection && showDestinationSelection) {
           changeSelectionMode('destination');
         } else {
-          changeSelectionMode('none');
+          changeSelectionMode(null);
         }
       } 
       else if (selectionMode === 'destination' && onDestinationChange) {
@@ -87,7 +88,7 @@ export function useGoogleMapSelection({
         });
         
         // Return to no selection mode
-        changeSelectionMode('none');
+        changeSelectionMode(null);
       }
     });
   }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, map, showDestinationSelection]);

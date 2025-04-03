@@ -88,12 +88,17 @@ export const useHomeLocationStorage = () => {
     return saveHomeLocation(location);
   }, [saveHomeLocation]);
 
-  // Helper to use home location as origin
+  // Helper to use home location as origin - fixed to prevent flickering
   const useHomeAddress = useCallback((setOrigin: (address: string) => void, handleOriginChange: (coordinates: MapCoordinates) => void) => {
     const home = loadHomeLocation();
     if (home) {
+      // Set origin address first to avoid UI jumps
       setOrigin(home.address || "Mi Casa");
-      handleOriginChange(home);
+      
+      // Short timeout to prevent state updates too close together
+      setTimeout(() => {
+        handleOriginChange(home);
+      }, 50);
       
       toast({
         title: "Casa seleccionada como origen",
