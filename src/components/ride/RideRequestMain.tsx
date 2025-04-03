@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useRideRequestMain } from "@/hooks/useRideRequestMain";
 import ScheduledRideBanner from "./ScheduledRideBanner";
@@ -42,14 +41,12 @@ const RideRequestMain: React.FC = () => {
   const [scheduledTime, setScheduledTime] = useState<string | undefined>(undefined);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
 
-  // Handle scheduling a ride
   const handleScheduleRide = (date: Date) => {
     const formattedDate = format(date, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
     setScheduledTime(formattedDate);
     setScheduledDate(date);
   };
 
-  // Save ride with scheduled time
   const handleSaveScheduledRide = async () => {
     if (!originCoords || !destinationCoords) {
       return false;
@@ -66,11 +63,9 @@ const RideRequestMain: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-4">
-      {/* Banner para viajes programados */}
       <ScheduledRideBanner scheduledTime={scheduledTime} />
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Columna izquierda - Inputs de ubicación y estimaciones */}
         <div className="lg:col-span-5 space-y-4">
           <LocationInputSection 
             origin={origin}
@@ -103,7 +98,6 @@ const RideRequestMain: React.FC = () => {
           />
         </div>
         
-        {/* Columna derecha - Vista del mapa */}
         <div className="lg:col-span-7">
           <MapViewSection 
             useManualSelection={useManualSelection}

@@ -115,6 +115,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
+// Add this line to fix the error - alias AppProvider as AppContextProvider
+export const AppContextProvider = AppProvider;
+
 // Hook personalizado para usar el contexto
 export const useAppContext = (): AppContextType => {
   const context = useContext(AppContext);

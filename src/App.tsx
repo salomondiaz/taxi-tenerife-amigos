@@ -1,8 +1,8 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { AppContextProvider } from "@/context/AppContext";
+import { AppProvider } from "@/context/AppContext";
 import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/Home";
 import RideRequest from "@/pages/RideRequest";
@@ -12,14 +12,14 @@ import ContactPage from "@/pages/ContactPage";
 import HelpPage from "@/pages/HelpPage";
 import ProfilePage from "@/pages/ProfilePage";
 import SettingsPage from "@/pages/SettingsPage";
-import HomeLocationSettings from "@/pages/HomeLocationSettings"; // Add import
+import HomeLocationSettings from "@/pages/HomeLocationSettings";
 
 import "@/global.css";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-      <AppContextProvider>
+      <AppProvider>
         <main className="min-h-screen">
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
@@ -35,7 +35,7 @@ function App() {
           </Routes>
         </main>
         <Toaster />
-      </AppContextProvider>
+      </AppProvider>
     </ThemeProvider>
   );
 }
