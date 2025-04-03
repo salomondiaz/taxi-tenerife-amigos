@@ -5,7 +5,7 @@ import { reverseGeocode } from '../services/GeocodingService';
 import { toast } from '@/hooks/use-toast';
 
 interface UseGoogleMapSelectionProps {
-  mapRef: React.MutableRefObject<google.maps.Map | null> | google.maps.Map | null;
+  map: google.maps.Map | null;
   allowMapSelection: boolean;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
@@ -16,7 +16,7 @@ interface UseGoogleMapSelectionProps {
 }
 
 export function useGoogleMapSelection({
-  mapRef,
+  map,
   allowMapSelection,
   onOriginChange,
   onDestinationChange,
@@ -46,8 +46,6 @@ export function useGoogleMapSelection({
   // Handle map click for selection
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     // Get the map object, whether it's a ref or direct object
-    const map = mapRef && 'current' in mapRef ? mapRef.current : mapRef;
-    
     if (selectionMode === 'none' || !allowMapSelection || !map) return;
     
     const lat = e.latLng!.lat();
@@ -91,13 +89,10 @@ export function useGoogleMapSelection({
         changeSelectionMode('none');
       }
     });
-  }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, mapRef, showDestinationSelection]);
+  }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, map, showDestinationSelection]);
 
   // Setup map click listener
   useEffect(() => {
-    // Check if mapRef is a ref object or a direct map instance
-    const map = mapRef && 'current' in mapRef ? mapRef.current : mapRef;
-    
     if (!map || !allowMapSelection) return;
     
     // Disable double-click zoom to prevent accidental zooming when selecting points
@@ -113,7 +108,7 @@ export function useGoogleMapSelection({
       google.maps.event.removeListener(listener);
       console.log("Map click listener removed");
     };
-  }, [mapRef, allowMapSelection, handleMapClick, selectionMode]);
+  }, [map, allowMapSelection, handleMapClick, selectionMode]);
 
   return {
     selectionMode,

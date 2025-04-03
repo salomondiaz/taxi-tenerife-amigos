@@ -47,7 +47,7 @@ const MapStatusOverlay: React.FC<MapStatusOverlayProps> = ({
       </div>
       
       {/* Símbolo de cruz en el centro durante la selección */}
-      {showSelectMarkers && selectionMode !== 'none' && (
+      {showSelectMarkers && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
           <div className={`w-10 h-10 relative ${selectionMode === 'origin' ? 'text-blue-600' : 'text-red-600'}`}>
             <div className="absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-1 rounded-full" 

@@ -98,7 +98,7 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     showHomeDialog,
     setShowHomeDialog
   } = useGoogleMapSelection({
-    mapRef: mapRef.current,
+    map: mapRef.current,
     allowMapSelection,
     onOriginChange,
     onDestinationChange,
@@ -157,17 +157,17 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, lng } = position.coords;
+          const { latitude, longitude } = position.coords;
           
           // Use reverse geocoding to get the address
           const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ location: { lat: latitude, lng } }, (results, status) => {
+          geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
             if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
               const address = results[0].formatted_address;
               if (onOriginChange) {
                 onOriginChange({
                   lat: latitude,
-                  lng,
+                  lng: longitude,
                   address
                 });
                 toast({
