@@ -66,7 +66,7 @@ export const useRideSaver = (
         
         toast({
           title: "Error al guardar viaje",
-          description: error.message,
+          description: `${error.message}. Por favor, intenta de nuevo.`,
           variant: "destructive",
         });
         return null;
@@ -105,7 +105,7 @@ export const useRideSaver = (
       
       toast({
         title: "Error al procesar la solicitud",
-        description: error.message || "Ha ocurrido un error al procesar la solicitud",
+        description: `${error.message || "Ha ocurrido un error al procesar la solicitud"}. Por favor, intenta de nuevo más tarde.`,
         variant: "destructive",
       });
       return null;

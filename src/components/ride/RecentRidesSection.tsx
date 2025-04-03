@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Clock, Calendar, MapPin } from "lucide-react";
+import { Clock, Calendar, MapPin, RefreshCw } from "lucide-react";
 
 interface Ride {
   id: number;
@@ -12,16 +12,21 @@ interface Ride {
   estado: string;
   precio_estimado?: number;
   hora_programada?: string;
+  origen_lat?: number;
+  origen_lng?: number;
+  destino_lat?: number;
+  destino_lng?: number;
 }
 
 const RecentRidesSection: React.FC = () => {
   const [recentRides, setRecentRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchRecentRides = async () => {
     try {
-      setLoading(true);
+      setIsRefreshing(true);
       setError(null);
       
       // Fetch the 5 most recent rides from Supabase
@@ -43,6 +48,7 @@ const RecentRidesSection: React.FC = () => {
       setError(err.message || "Error al cargar viajes recientes");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -52,7 +58,7 @@ const RecentRidesSection: React.FC = () => {
     
     // Set up subscription for real-time updates
     const channel = supabase
-      .channel('rides_changes')
+      .channel('viajes_changes')
       .on('postgres_changes', 
         { 
           event: 'INSERT', 
@@ -60,7 +66,7 @@ const RecentRidesSection: React.FC = () => {
           table: 'viajes' 
         }, 
         () => {
-          // Refresh the rides list when a new ride is inserted
+          console.log("Nuevo viaje detectado - actualizando lista");
           fetchRecentRides();
         }
       )
@@ -72,7 +78,7 @@ const RecentRidesSection: React.FC = () => {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !isRefreshing) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Viajes recientes</h2>
@@ -95,9 +101,9 @@ const RecentRidesSection: React.FC = () => {
           <Button 
             variant="outline" 
             onClick={fetchRecentRides} 
-            className="mt-2"
+            className="mt-2 flex items-center"
           >
-            Reintentar
+            <RefreshCw size={16} className="mr-2" /> Reintentar
           </Button>
         </div>
       </div>
@@ -117,13 +123,14 @@ const RecentRidesSection: React.FC = () => {
 
   // Format date for display
   const formatDate = (dateString: string) => {
+    if (!dateString) return "Fecha no disponible";
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   // Get status badge style based on state
   const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'pendiente':
         return 'bg-yellow-100 text-yellow-800';
       case 'programado':
@@ -142,7 +149,19 @@ const RecentRidesSection: React.FC = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-      <h2 className="text-lg font-semibold mb-4">Viajes recientes</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Viajes recientes</h2>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={fetchRecentRides}
+          disabled={isRefreshing}
+          className="flex items-center"
+        >
+          <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+        </Button>
+      </div>
       
       <div className="space-y-4">
         {recentRides.map((ride) => (
@@ -166,12 +185,12 @@ const RecentRidesSection: React.FC = () => {
               
               <div className="text-right">
                 <span className={`text-xs px-2 py-1 rounded-full inline-block ${getStatusBadge(ride.estado)}`}>
-                  {ride.estado}
+                  {ride.estado || "sin estado"}
                 </span>
                 
                 {ride.precio_estimado && (
                   <div className="font-bold mt-1">
-                    {ride.precio_estimado.toFixed(2)} €
+                    {Number(ride.precio_estimado).toFixed(2)} €
                   </div>
                 )}
               </div>
@@ -192,16 +211,6 @@ const RecentRidesSection: React.FC = () => {
             </div>
           </div>
         ))}
-      </div>
-      
-      <div className="mt-4 text-center">
-        <Button 
-          variant="link" 
-          className="text-blue-600"
-          onClick={fetchRecentRides}
-        >
-          Actualizar historial
-        </Button>
       </div>
     </div>
   );

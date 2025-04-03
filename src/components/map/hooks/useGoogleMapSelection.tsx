@@ -14,6 +14,7 @@ interface UseGoogleMapSelectionProps {
   homeLocation?: MapCoordinates | null;
   useHomeAsDestination?: () => void;
   showSelectMarkers?: boolean;
+  selectionMode?: MapSelectionMode; // Add prop for externally controlled selection mode
 }
 
 export function useGoogleMapSelection({
@@ -25,20 +26,32 @@ export function useGoogleMapSelection({
   showDestinationSelection = true,
   homeLocation,
   useHomeAsDestination,
-  showSelectMarkers = false
+  showSelectMarkers = false,
+  selectionMode: externalSelectionMode = null
 }: UseGoogleMapSelectionProps) {
-  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(defaultSelectionMode);
+  // Use external selection mode if provided, otherwise use internal state
+  const [internalSelectionMode, setInternalSelectionMode] = useState<MapSelectionMode>(defaultSelectionMode);
   const [showHomeDialog, setShowHomeDialog] = useState(false);
+  
+  // Use external selection mode if provided, otherwise use internal state
+  const effectiveSelectionMode = externalSelectionMode !== undefined ? externalSelectionMode : internalSelectionMode;
+
+  // Update internal mode when external mode changes
+  useEffect(() => {
+    if (externalSelectionMode !== undefined) {
+      setInternalSelectionMode(externalSelectionMode);
+    }
+  }, [externalSelectionMode]);
 
   // Change selection mode with feedback
   const changeSelectionMode = (mode: MapSelectionMode) => {
-    if (mode === selectionMode) {
+    if (mode === effectiveSelectionMode) {
       // Toggle off the current mode
-      setSelectionMode(null);
+      setInternalSelectionMode(null);
       return;
     }
     
-    setSelectionMode(mode);
+    setInternalSelectionMode(mode);
     
     if (mode === null) return;
     
@@ -51,12 +64,12 @@ export function useGoogleMapSelection({
 
   // Handle map click for selection
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (selectionMode === null || !allowMapSelection || !map) return;
+    if (effectiveSelectionMode === null || !allowMapSelection || !map) return;
     
     const lat = e.latLng!.lat();
     const lng = e.latLng!.lng();
     
-    console.log(`Map clicked at: ${lat}, ${lng} in mode: ${selectionMode}`);
+    console.log(`Map clicked at: ${lat}, ${lng} in mode: ${effectiveSelectionMode}`);
     
     // Reverse geocode to get the address
     reverseGeocode(lat, lng, (address) => {
@@ -66,7 +79,7 @@ export function useGoogleMapSelection({
         address: address || `Ubicación (${lat.toFixed(6)}, ${lng.toFixed(6)})`
       };
       
-      if (selectionMode === 'origin' && onOriginChange) {
+      if (effectiveSelectionMode === 'origin' && onOriginChange) {
         onOriginChange(coords);
         toast({
           title: "Origen seleccionado",
@@ -75,12 +88,12 @@ export function useGoogleMapSelection({
         
         // Automatically switch to destination selection mode
         if (allowMapSelection && showDestinationSelection) {
-          changeSelectionMode('destination');
+          setInternalSelectionMode('destination');
         } else {
-          changeSelectionMode(null);
+          setInternalSelectionMode(null);
         }
       } 
-      else if (selectionMode === 'destination' && onDestinationChange) {
+      else if (effectiveSelectionMode === 'destination' && onDestinationChange) {
         onDestinationChange(coords);
         toast({
           title: "Destino seleccionado",
@@ -88,10 +101,10 @@ export function useGoogleMapSelection({
         });
         
         // Return to no selection mode
-        changeSelectionMode(null);
+        setInternalSelectionMode(null);
       }
     });
-  }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, map, showDestinationSelection]);
+  }, [effectiveSelectionMode, allowMapSelection, onOriginChange, onDestinationChange, map, showDestinationSelection]);
 
   // Setup map click listener
   useEffect(() => {
@@ -104,16 +117,16 @@ export function useGoogleMapSelection({
     
     const listener = map.addListener('click', handleMapClick);
     
-    console.log("Map selection mode activated: ", selectionMode);
+    console.log("Map selection mode activated: ", effectiveSelectionMode);
     
     return () => {
       google.maps.event.removeListener(listener);
       console.log("Map click listener removed");
     };
-  }, [map, allowMapSelection, handleMapClick, selectionMode]);
+  }, [map, allowMapSelection, handleMapClick, effectiveSelectionMode]);
 
   return {
-    selectionMode,
+    selectionMode: effectiveSelectionMode,
     setSelectionMode: changeSelectionMode,
     handleMapClick,
     showHomeDialog,

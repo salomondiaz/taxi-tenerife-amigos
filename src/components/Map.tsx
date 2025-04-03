@@ -17,11 +17,19 @@ const Map: React.FC<MapProps> = (props) => {
   
   // Check if we should show the home marker
   const showHomeMarker = props.alwaysShowHomeMarker || 
-                         (!!homeLocation && !props.origin) || 
-                         (props.origin?.address?.toLowerCase().includes('mi casa') || 
-                          props.origin?.address?.toLowerCase().includes('home'));
+                         (!!homeLocation && (!props.origin || 
+                          (props.origin?.address && (
+                            props.origin.address.toLowerCase().includes('mi casa') || 
+                            props.origin.address.toLowerCase().includes('home')
+                          ))
+                         ));
 
-  console.log("Map component props:", { ...props, homeLocation, showHomeMarker });
+  console.log("Map component props:", { 
+    ...props, 
+    homeLocation, 
+    showHomeMarker,
+    selectionMode: props.selectionMode
+  });
 
   // Pass all props to GoogleMapDisplay including the API key and home marker flag
   return <GoogleMapDisplay 

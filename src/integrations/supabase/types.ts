@@ -28,25 +28,43 @@ export type Database = {
         Row: {
           created_at: string
           destino: string | null
+          destino_lat: number | null
+          destino_lng: number | null
           estado: string | null
+          hora_programada: string | null
           id: number
           origen: string | null
+          origen_lat: number | null
+          origen_lng: number | null
+          precio_estimado: number | null
           usuario: string | null
         }
         Insert: {
           created_at?: string
           destino?: string | null
+          destino_lat?: number | null
+          destino_lng?: number | null
           estado?: string | null
+          hora_programada?: string | null
           id?: number
           origen?: string | null
+          origen_lat?: number | null
+          origen_lng?: number | null
+          precio_estimado?: number | null
           usuario?: string | null
         }
         Update: {
           created_at?: string
           destino?: string | null
+          destino_lat?: number | null
+          destino_lng?: number | null
           estado?: string | null
+          hora_programada?: string | null
           id?: number
           origen?: string | null
+          origen_lat?: number | null
+          origen_lng?: number | null
+          precio_estimado?: number | null
           usuario?: string | null
         }
         Relationships: []

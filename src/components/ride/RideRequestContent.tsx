@@ -9,11 +9,11 @@ const RideRequestContent: React.FC = () => {
     <div className="space-y-6">
       <RequestHeader />
       <div className="px-4 py-3 bg-blue-50 rounded-lg mb-4 max-w-4xl mx-auto">
-        <h3 className="text-blue-800 font-medium text-sm mb-1">Instrucciones:</h3>
+        <h3 className="text-blue-800 font-medium text-sm mb-1">Cómo usar el mapa:</h3>
         <p className="text-blue-700 text-sm">
-          1️⃣ Haz clic en el botón "<strong>Seleccionar origen</strong>" (azul) y luego en el mapa para marcar el punto de partida<br/>
-          2️⃣ Haz clic en el botón "<strong>Seleccionar destino</strong>" (rojo) y luego en el mapa para marcar hacia dónde quieres ir<br/>
-          3️⃣ Verifica la información del viaje y selecciona tu método de pago preferido
+          1️⃣ <strong>Primer clic</strong> en el mapa: Marca tu <strong className="text-blue-600">punto de origen</strong> (azul)<br/>
+          2️⃣ <strong>Segundo clic</strong> en el mapa: Marca tu <strong className="text-red-600">destino</strong> (rojo)<br/>
+          3️⃣ O usa los botones "Usar mi ubicación" y "Casa como destino" para selección automática
         </p>
       </div>
       <RideRequestMain />

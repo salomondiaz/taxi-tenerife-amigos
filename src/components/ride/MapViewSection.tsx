@@ -37,16 +37,34 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
   estimatedPrice,
   scheduledTime
 }) => {
+  // Select the current step based on what's already selected
+  const selectionMode = React.useMemo(() => {
+    if (!originCoords) return 'origin';
+    if (!destinationCoords) return 'destination';
+    return null;
+  }, [originCoords, destinationCoords]);
+
   // Instrucciones de selección de ubicaciones
   React.useEffect(() => {
-    // Mostrar instrucción inicial
+    // Mostrar instrucción inicial solo cuando no hay ni origen ni destino
     if (useManualSelection && !originCoords && !destinationCoords) {
       toast({
         title: "Seleccionar ubicaciones",
-        description: "Haz clic en el botón azul para marcar el origen y luego en el rojo para el destino",
+        description: "Haz clic en el mapa para marcar tu punto de origen",
       });
     }
   }, [useManualSelection, originCoords, destinationCoords]);
+
+  // Format traffic level text
+  const getTrafficText = () => {
+    switch (trafficLevel) {
+      case 'low': return "🟢 Tráfico ligero";
+      case 'moderate': return "🟡 Tráfico moderado";
+      case 'high': return "🟠 Tráfico denso";
+      case 'very_high': return "🔴 Tráfico muy denso";
+      default: return null;
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-[600px] relative">
@@ -62,34 +80,26 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         alwaysShowHomeMarker={true}
         allowHomeEditing={allowHomeEditing}
         showSelectMarkers={true}
+        selectionMode={selectionMode}
       />
       
-      {/* Instrucciones de uso */}
-      <div className="absolute top-4 left-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md z-10">
-        <h3 className="font-semibold text-sm mb-1">¿Cómo seleccionar ubicaciones?</h3>
-        <ol className="text-xs text-gray-700 list-decimal pl-4 space-y-1">
-          <li>Haz clic en el botón <span className="font-bold text-blue-600">azul</span> arriba a la derecha</li>
-          <li>Haz clic en el mapa para marcar el <span className="font-bold text-blue-600">origen</span></li>
-          <li>Haz clic en el botón <span className="font-bold text-red-600">rojo</span> arriba a la derecha</li>
-          <li>Haz clic en el mapa para marcar el <span className="font-bold text-red-600">destino</span></li>
-        </ol>
-      </div>
-
       {/* Mostrar resumen del viaje si tenemos estimaciones */}
       {estimatedPrice && estimatedDistance && estimatedTime && (
-        <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 p-3 rounded-lg shadow-md">
+        <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-md z-40">
           <div className="flex justify-between items-center">
             <div>
               <div className="text-sm font-medium flex items-center">
                 <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1">{estimatedDistance.toFixed(1)} km</span> • 
-                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-1">{estimatedTime} min</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded mx-1">{estimatedTime} min</span>
+                {scheduledTime && (
+                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded ml-1">Programado</span>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {trafficLevel === 'low' && "🟢 Tráfico ligero"}
-                {trafficLevel === 'moderate' && "🟡 Tráfico moderado"}
-                {trafficLevel === 'high' && "🟠 Tráfico denso"}
-                {trafficLevel === 'very_high' && "🔴 Tráfico muy denso"}
-              </p>
+              {getTrafficText() && (
+                <p className="text-xs text-gray-600 mt-1">
+                  {getTrafficText()}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <span className="text-lg font-bold bg-green-100 text-green-800 px-2 py-1 rounded">{estimatedPrice.toFixed(2)}€</span>
