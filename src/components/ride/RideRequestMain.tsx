@@ -54,7 +54,7 @@ const RideRequestMain: React.FC = () => {
     }
     
     try {
-      // Making sure we pass the Date object and not the string
+      // Pass the scheduledDate (Date object) instead of scheduledTime (string)
       await saveRideToSupabase(scheduledDate);
       return true;
     } catch (error) {
