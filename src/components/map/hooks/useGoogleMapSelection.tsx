@@ -28,6 +28,21 @@ export function useGoogleMapSelection({
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>('none');
   const [showHomeDialog, setShowHomeDialog] = useState(false);
 
+  // Change selection mode with feedback
+  const changeSelectionMode = (mode: MapSelectionMode) => {
+    setSelectionMode(mode);
+    
+    if (mode === 'none') {
+      return;
+    }
+    
+    // Show toast message
+    toast({
+      title: mode === 'origin' ? 'Selecciona el origen' : 'Selecciona el destino',
+      description: `Haz clic en el mapa para seleccionar el punto de ${mode === 'origin' ? 'origen' : 'destino'}`,
+    });
+  };
+
   // Handle map click for selection
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
     // Get the map object, whether it's a ref or direct object
@@ -39,6 +54,9 @@ export function useGoogleMapSelection({
     const lng = e.latLng!.lng();
     
     console.log(`Map clicked at: ${lat}, ${lng} in mode: ${selectionMode}`);
+    
+    // Disable zoom on click - this helps prevent zoom jumping
+    e.stop();
     
     // Use reverse geocoding to get the address
     reverseGeocode(lat, lng, (address) => {
@@ -57,9 +75,9 @@ export function useGoogleMapSelection({
         
         // Automatically switch to destination selection mode
         if (allowMapSelection && showDestinationSelection) {
-          setSelectionMode('destination');
+          changeSelectionMode('destination');
         } else {
-          setSelectionMode('none');
+          changeSelectionMode('none');
         }
       } 
       else if (selectionMode === 'destination' && onDestinationChange) {
@@ -70,7 +88,7 @@ export function useGoogleMapSelection({
         });
         
         // Return to no selection mode
-        setSelectionMode('none');
+        changeSelectionMode('none');
       }
     });
   }, [selectionMode, allowMapSelection, onOriginChange, onDestinationChange, mapRef, showDestinationSelection]);
@@ -82,16 +100,24 @@ export function useGoogleMapSelection({
     
     if (!map || !allowMapSelection) return;
     
+    // Disable double-click zoom to prevent accidental zooming when selecting points
+    map.setOptions({
+      disableDoubleClickZoom: true
+    });
+    
     const listener = map.addListener('click', handleMapClick);
+    
+    console.log("Map selection mode activated: ", selectionMode);
     
     return () => {
       google.maps.event.removeListener(listener);
+      console.log("Map click listener removed");
     };
-  }, [mapRef, allowMapSelection, handleMapClick]);
+  }, [mapRef, allowMapSelection, handleMapClick, selectionMode]);
 
   return {
     selectionMode,
-    setSelectionMode,
+    setSelectionMode: changeSelectionMode,
     handleMapClick,
     showHomeDialog,
     setShowHomeDialog

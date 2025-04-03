@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { MapProps } from './types';
 import { useGoogleMapInitialization } from './hooks/useGoogleMapInitialization';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
@@ -64,9 +64,31 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
       // Configuraciones adicionales al inicializar el mapa
       map.setOptions({
         disableDoubleClickZoom: true, // Desactivar zoom con doble clic
+        gestureHandling: "cooperative" // Mejor control de gestos
       });
     }
   });
+
+  // Prevent automatic zoom out when clicking
+  useEffect(() => {
+    if (mapRef.current) {
+      const currentMap = mapRef.current;
+      
+      // Create a listener that prevents zoom being reset
+      const preventZoomReset = (event: any) => {
+        event.stop();
+      };
+      
+      // Add various event listeners to prevent unwanted zoom changes
+      google.maps.event.addListener(currentMap, 'dblclick', preventZoomReset);
+      
+      return () => {
+        if (currentMap) {
+          google.maps.event.clearListeners(currentMap, 'dblclick');
+        }
+      };
+    }
+  }, [mapRef.current]);
 
   // Handle map selection (origin/destination)
   const { 
@@ -76,12 +98,13 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     showHomeDialog,
     setShowHomeDialog
   } = useGoogleMapSelection({
-    map: mapRef.current,
+    mapRef: mapRef.current,
     allowMapSelection,
     onOriginChange,
     onDestinationChange,
     homeLocation,
-    useHomeAsDestination
+    useHomeAsDestination,
+    showSelectMarkers
   });
 
   // Handle map markers
@@ -129,7 +152,92 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     return false;
   };
 
-  const showMarkerInstructions = allowMapSelection && selectionMode !== 'none';
+  // Handle using current location
+  const handleUseCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, lng } = position.coords;
+          
+          // Use reverse geocoding to get the address
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: { lat: latitude, lng } }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+              const address = results[0].formatted_address;
+              if (onOriginChange) {
+                onOriginChange({
+                  lat: latitude,
+                  lng,
+                  address
+                });
+                toast({
+                  title: "Ubicación actual establecida",
+                  description: address
+                });
+              }
+            }
+          });
+        },
+        (error) => {
+          console.error("Error getting current location:", error);
+          toast({
+            title: "Error de ubicación",
+            description: "No se pudo obtener tu ubicación actual",
+            variant: "destructive"
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "Geolocalización no soportada",
+        description: "Tu navegador no soporta geolocalización",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle search location
+  const handleSearchLocation = (query: string, type: 'origin' | 'destination') => {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: query }, (results, status) => {
+      if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+        const location = results[0].geometry.location;
+        const lat = location.lat();
+        const lng = location.lng();
+        const address = results[0].formatted_address;
+        
+        if (type === 'origin' && onOriginChange) {
+          onOriginChange({ lat, lng, address });
+          // Fly to location
+          if (mapRef.current) {
+            mapRef.current.panTo({ lat, lng });
+            mapRef.current.setZoom(15);
+          }
+          toast({
+            title: "Origen establecido",
+            description: address
+          });
+        } else if (type === 'destination' && onDestinationChange) {
+          onDestinationChange({ lat, lng, address });
+          // Fly to location
+          if (mapRef.current) {
+            mapRef.current.panTo({ lat, lng });
+            mapRef.current.setZoom(15);
+          }
+          toast({
+            title: "Destino establecido",
+            description: address
+          });
+        }
+      } else {
+        toast({
+          title: "Ubicación no encontrada",
+          description: "No se encontró ninguna ubicación con esa dirección",
+          variant: "destructive"
+        });
+      }
+    });
+  };
 
   return (
     <div className="relative w-full h-full">
@@ -139,6 +247,8 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         allowMapSelection={allowMapSelection}
         selectionMode={selectionMode}
         setSelectionMode={setSelectionMode}
+        onUseCurrentLocation={handleUseCurrentLocation}
+        onSearchLocation={handleSearchLocation}
       />
       
       <MapStatusOverlay
@@ -159,12 +269,10 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         useHomeAsDestination={useHomeAsDestination}
       />
       
-      {/* Instrucciones de selección visibles */}
-      {showMarkerInstructions && (
+      {/* Instrucciones de selección */}
+      {!selectionMode && allowMapSelection && (
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm z-30">
-          {selectionMode === 'origin' 
-            ? 'Haz clic en el mapa para marcar el ORIGEN' 
-            : 'Haz clic en el mapa para marcar el DESTINO'}
+          Usa los botones en la esquina superior derecha para seleccionar origen y destino
         </div>
       )}
     </div>
