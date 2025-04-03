@@ -1,4 +1,3 @@
-
 import { MapCoordinates } from "../types";
 
 export const setHomeMarkerLocation = (
@@ -48,22 +47,53 @@ export const addMarkerStyles = (marker: HTMLElement): void => {
   marker.style.justifyContent = "center";
 };
 
+/**
+ * Creates HTML content for a home marker popup in editing mode
+ */
+export const createEditingPopupHTML = (): string => {
+  return `
+    <div class="home-marker-popup home-marker-popup-editing">
+      <h3 class="home-popup-title">Editar ubicación de casa</h3>
+      <p class="home-popup-description">Arrastra el marcador para ajustar la ubicación</p>
+      <button class="save-home-button">Guardar ubicación</button>
+    </div>
+  `;
+};
+
+/**
+ * Creates HTML content for a home marker popup in normal mode
+ */
+export const createNormalPopupHTML = (address: string): string => {
+  return `
+    <div class="home-marker-popup">
+      <h3 class="home-popup-title">Mi Casa</h3>
+      <p class="home-popup-address">${address}</p>
+      <button class="edit-home-button">Editar ubicación</button>
+    </div>
+  `;
+};
+
+/**
+ * Gets address for a location using reverse geocoding
+ */
 export const getAddressForLocation = async (
-  lat: number,
-  lng: number
+  coordinates: { lat: number; lng: number },
+  mapboxToken: string
 ): Promise<string> => {
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${mapboxToken}`
     );
+    
     const data = await response.json();
     
-    if (data.status === "OK" && data.results && data.results.length > 0) {
-      return data.results[0].formatted_address;
+    if (data.features && data.features.length > 0) {
+      return data.features[0].place_name;
     }
-    return "Dirección desconocida";
+    
+    return "Ubicación sin dirección";
   } catch (error) {
     console.error("Error getting address:", error);
-    return "Error al obtener dirección";
+    return "Ubicación sin dirección";
   }
 };
