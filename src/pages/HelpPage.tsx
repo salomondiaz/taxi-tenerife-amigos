@@ -1,91 +1,108 @@
 
 import React from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 
 const HelpPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Preguntas Frecuentes</h1>
+        <h1 className="text-3xl font-bold mb-6">Centro de Ayuda</h1>
         
-        <div className="mb-8">
-          <p className="text-lg text-gray-700">
-            Encuentra respuestas a las preguntas más comunes sobre nuestro servicio de taxi.
-            Si no encuentras lo que buscas, no dudes en contactarnos.
-          </p>
-        </div>
-        
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="item-1">
-            <AccordionTrigger>¿Cómo solicito un taxi?</AccordionTrigger>
-            <AccordionContent>
-              Puedes solicitar un taxi a través de nuestra aplicación móvil, 
-              llamando a nuestro número de teléfono central o reservando en nuestra página web.
-              El proceso es rápido y sencillo.
-            </AccordionContent>
-          </AccordionItem>
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Preguntas frecuentes</h2>
+            
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">¿Cómo solicito un taxi?</h3>
+                <p className="text-gray-700">
+                  Para solicitar un taxi, simplemente ingresa a la sección "Solicitar" en el menú principal. 
+                  Allí podrás seleccionar tu punto de origen y destino, ya sea escribiendo la dirección o 
+                  marcando los puntos en el mapa.
+                </p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">¿Cómo puedo pagar mi viaje?</h3>
+                <p className="text-gray-700">
+                  Aceptamos pagos en efectivo directamente al conductor o puedes registrar una tarjeta de crédito/débito 
+                  en la aplicación para pagar electrónicamente. También puedes agregar saldo a tu cuenta para pagos rápidos.
+                </p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">¿Puedo programar un viaje para más tarde?</h3>
+                <p className="text-gray-700">
+                  Sí, puedes programar un viaje con hasta 7 días de anticipación. Al solicitar un taxi, 
+                  selecciona la opción "Programar viaje" y elige la fecha y hora deseada.
+                </p>
+              </div>
+            </div>
+          </section>
           
-          <AccordionItem value="item-2">
-            <AccordionTrigger>¿Cuánto cuesta un viaje?</AccordionTrigger>
-            <AccordionContent>
-              El costo del viaje depende de la distancia y el tiempo de viaje. 
-              Puedes obtener un presupuesto aproximado antes de confirmar tu viaje 
-              usando la calculadora de tarifas en nuestra aplicación.
-            </AccordionContent>
-          </AccordionItem>
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Contacto</h2>
+            
+            <div className="bg-white p-6 rounded-lg shadow">
+              <p className="mb-4">
+                Si no encuentras respuesta a tu pregunta, puedes contactarnos directamente:
+              </p>
+              
+              <div className="space-y-2 mb-6">
+                <p><strong>Teléfono:</strong> +34 922 123 456</p>
+                <p><strong>Email:</strong> ayuda@taxitenerife.com</p>
+                <p><strong>Horario de atención:</strong> Lunes a Domingo, 8:00 - 20:00</p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button variant="default">
+                  Llamar ahora
+                </Button>
+                <Button variant="outline">
+                  Enviar correo electrónico
+                </Button>
+              </div>
+            </div>
+          </section>
           
-          <AccordionItem value="item-3">
-            <AccordionTrigger>¿Cómo puedo pagar mi viaje?</AccordionTrigger>
-            <AccordionContent>
-              Aceptamos pagos en efectivo, tarjetas de crédito/débito y pago a través 
-              de la aplicación. También ofrecemos facturación para clientes corporativos.
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="item-4">
-            <AccordionTrigger>¿Puedo programar un viaje con anticipación?</AccordionTrigger>
-            <AccordionContent>
-              Sí, puedes programar viajes con hasta 7 días de anticipación. 
-              Esta función es ideal para traslados al aeropuerto, citas médicas 
-              u otros compromisos importantes donde la puntualidad es esencial.
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="item-5">
-            <AccordionTrigger>¿Qué hago si olvidé algo en el taxi?</AccordionTrigger>
-            <AccordionContent>
-              Si olvidaste algo en uno de nuestros taxis, contacta inmediatamente 
-              con nuestro servicio de atención al cliente proporcionando detalles 
-              del viaje. Haremos todo lo posible por localizar tus pertenencias.
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="item-6">
-            <AccordionTrigger>¿Ofrecen servicio de taxi para mascotas?</AccordionTrigger>
-            <AccordionContent>
-              Sí, muchos de nuestros conductores aceptan mascotas. Al solicitar 
-              el taxi, marca la opción "viajo con mascota" para que te asignemos 
-              un vehículo adecuado. Algunas restricciones pueden aplicar para 
-              animales de gran tamaño.
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        
-        <div className="mt-10 bg-blue-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-3">¿Necesitas más ayuda?</h2>
-          <p className="mb-4">
-            Nuestro equipo de atención al cliente está disponible 24/7 para asistirte.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Button>Contactar soporte</Button>
-            <Button variant="outline">Ver tutoriales</Button>
-          </div>
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Tutoriales</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">Cómo solicitar un taxi</h3>
+                <p className="text-gray-700 mb-4">
+                  Aprende a solicitar un taxi de forma rápida y sencilla utilizando nuestra aplicación.
+                </p>
+                <Button variant="link" className="px-0">Ver tutorial</Button>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">Cómo programar un viaje</h3>
+                <p className="text-gray-700 mb-4">
+                  Paso a paso para programar un viaje con anticipación y asegurar tu taxi cuando lo necesites.
+                </p>
+                <Button variant="link" className="px-0">Ver tutorial</Button>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">Cómo configurar tu perfil</h3>
+                <p className="text-gray-700 mb-4">
+                  Aprende a configurar tus preferencias, guardar ubicaciones favoritas y gestionar tus métodos de pago.
+                </p>
+                <Button variant="link" className="px-0">Ver tutorial</Button>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-medium text-lg mb-2">Preguntas sobre facturación</h3>
+                <p className="text-gray-700 mb-4">
+                  Todo lo que necesitas saber sobre pagos, recibos y cómo solicitar facturas para tus viajes.
+                </p>
+                <Button variant="link" className="px-0">Ver tutorial</Button>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </MainLayout>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useRideRequestMain } from "@/hooks/useRideRequestMain";
 import ScheduledRideBanner from "./ScheduledRideBanner";
@@ -48,11 +49,12 @@ const RideRequestMain: React.FC = () => {
   };
 
   const handleSaveScheduledRide = async () => {
-    if (!originCoords || !destinationCoords) {
+    if (!originCoords || !destinationCoords || !scheduledDate) {
       return false;
     }
     
     try {
+      // Now we pass a Date object as expected by the function
       await saveRideToSupabase(scheduledDate);
       return true;
     } catch (error) {
