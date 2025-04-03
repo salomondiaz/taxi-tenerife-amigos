@@ -13,7 +13,7 @@ interface MapViewSectionProps {
   routeGeometry?: any;
   handleOriginChange: (coords: MapCoordinates) => void;
   handleDestinationChange: (coords: MapCoordinates) => void;
-  saveRideToSupabase: () => Promise<any>;
+  saveRideToSupabase: (scheduledDate?: Date) => Promise<any>;  // Updated type definition to match implementation
   useHomeAsDestination?: () => void;
   allowHomeEditing?: boolean;
   trafficLevel?: 'low' | 'moderate' | 'high' | 'very_high' | null;
