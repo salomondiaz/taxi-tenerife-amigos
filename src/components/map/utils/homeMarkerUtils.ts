@@ -1,50 +1,114 @@
+
 import { MapCoordinates } from "../types";
 
 export const setHomeMarkerLocation = (
-  map: google.maps.Map,
-  position: google.maps.LatLngLiteral,
-  markerRef: React.MutableRefObject<google.maps.Marker | null>,
-  isEditing: boolean = false
+  marker: mapboxgl.Marker,
+  coordinates: MapCoordinates
 ) => {
-  if (!markerRef.current) {
-    return;
-  }
-
-  markerRef.current.setPosition(position);
-  if (map) {
-    map.panTo(position);
-  }
+  marker.setLngLat([coordinates.lng, coordinates.lat]);
 };
 
-export const createHomeMarkerElement = (isEditing: boolean = false): HTMLDivElement => {
-  const markerElement = document.createElement("div");
-  markerElement.className = `home-marker ${isEditing ? "home-marker-editing" : ""}`;
-  markerElement.innerHTML = '<span>🏠</span>';
-  return markerElement;
+// Function to create the main marker element
+export const createHomeMarkerElement = () => {
+  const el = document.createElement("div");
+  el.className = "home-marker";
+  el.style.width = "40px";
+  el.style.height = "40px";
+  el.style.borderRadius = "50%";
+  el.style.backgroundColor = "#4CAF50";
+  el.style.border = "2px solid white";
+  el.style.boxShadow = "0 2px 10px rgba(0,0,0,0.25)";
+  el.style.cursor = "pointer";
+  el.style.position = "relative";
+  return el;
 };
 
-export const createEditButton = (
-  onClick: () => void,
-  text: string,
-  className: string
-): HTMLButtonElement => {
-  const button = document.createElement("button");
-  button.textContent = text;
-  button.className = className;
-  button.onclick = onClick;
+// Function to create edit button
+export const createEditButton = (id: string = 'edit-home') => {
+  const button = document.createElement("div");
+  button.className = "home-marker-edit";
+  button.id = id;
+  button.style.position = "absolute";
+  button.style.bottom = "-5px";
+  button.style.right = "-5px";
+  button.style.width = "18px";
+  button.style.height = "18px";
+  button.style.backgroundColor = "#2196F3";
+  button.style.borderRadius = "50%";
+  button.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)";
+  button.style.cursor = "pointer";
+  button.innerHTML = "✏️";
+  button.style.fontSize = "10px";
+  button.style.display = "flex";
+  button.style.alignItems = "center";
+  button.style.justifyContent = "center";
   return button;
 };
 
-export const createPulseCircle = (): HTMLDivElement => {
-  const pulseCircle = document.createElement("div");
-  pulseCircle.className = "pulse-circle";
-  return pulseCircle;
+// Function to create pulse circle effect
+export const createPulseCircle = (id: string = 'pulse-circle') => {
+  const pulse = document.createElement("div");
+  pulse.className = "pulse-circle";
+  pulse.id = id;
+  pulse.style.position = "absolute";
+  pulse.style.width = "100%";
+  pulse.style.height = "100%";
+  pulse.style.borderRadius = "50%";
+  pulse.style.backgroundColor = "transparent";
+  pulse.style.border = "3px solid rgba(76, 175, 80, 0.4)";
+  pulse.style.animation = "pulse 2s infinite";
+  return pulse;
 };
 
-export const addMarkerStyles = (marker: HTMLElement): void => {
-  marker.style.display = "flex";
-  marker.style.alignItems = "center";
-  marker.style.justifyContent = "center";
+// Function to add CSS styles for markers
+export const addMarkerStyles = () => {
+  const styleElement = document.getElementById("marker-styles");
+  if (styleElement) return; // Styles already added
+
+  const style = document.createElement("style");
+  style.id = "marker-styles";
+  style.innerHTML = `
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      70% { transform: scale(1.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    .home-marker {
+      z-index: 1;
+      cursor: pointer;
+    }
+    .home-marker-editing {
+      background-color: #FF9800 !important;
+    }
+    .home-marker-popup {
+      padding: 8px;
+      font-family: Arial, sans-serif;
+      max-width: 200px;
+    }
+    .home-popup-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .home-popup-address {
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .edit-home-button, .save-home-button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .save-home-button {
+      background-color: #4CAF50;
+    }
+  `;
+  document.head.appendChild(style);
 };
 
 /**

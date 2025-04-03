@@ -40,8 +40,8 @@ const HomeMarker: React.FC<HomeMarkerProps> = ({ map, coordinates }) => {
       
       // Create marker elements
       const markerEl = createHomeMarkerElement();
-      const editButton = createEditButton();
-      const pulseCircle = createPulseCircle();
+      const editButton = createEditButton('edit-home');
+      const pulseCircle = createPulseCircle('home');
       
       markerEl.appendChild(editButton);
       markerEl.appendChild(pulseCircle);
