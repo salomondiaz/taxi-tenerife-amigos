@@ -11,7 +11,7 @@ export interface MapDriverPosition {
   heading?: number;
 }
 
-export type MapSelectionMode = 'none' | 'origin' | 'destination';
+export type MapSelectionMode = 'none' | 'origin' | 'destination' | null;
 
 export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
 
@@ -44,6 +44,8 @@ export interface MapProps {
   showDriverPosition?: boolean;
   driverPosition?: MapDriverPosition;
   showSelectMarkers?: boolean;
+  selectionMode?: MapSelectionMode;
+  onMapClick?: (coordinates: MapCoordinates) => void;
 }
 
 // Tipo para los niveles de tráfico

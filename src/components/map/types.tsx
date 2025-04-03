@@ -1,12 +1,6 @@
 
 import React from 'react';
 
-export const API_KEY_STORAGE_KEY = 'google_maps_api_key';
-
-export type MapSelectionMode = 'origin' | 'destination' | null;
-
-export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high' | null;
-
 export interface MapCoordinates {
   lat: number;
   lng: number;
@@ -17,50 +11,69 @@ export interface MapDriverPosition {
   lat: number;
   lng: number;
   heading?: number;
-  speed?: number;
-  timestamp?: number;
+}
+
+export type MapSelectionMode = 'none' | 'origin' | 'destination';
+
+export const API_KEY_STORAGE_KEY = 'mapbox_api_key';
+
+export type FavoriteLocationType = 'home' | 'work' | 'favorite' | 'recent';
+
+export interface FavoriteLocation {
+  id: string;
+  name: string;
+  coordinates: MapCoordinates;
+  type: FavoriteLocationType;
+  icon: string;
 }
 
 export interface MapProps {
-  origin?: MapCoordinates | null;
-  destination?: MapCoordinates | null;
-  routeGeometry?: any;
+  className?: string;
+  apiKey?: string;
+  origin?: MapCoordinates;
+  destination?: MapCoordinates;
+  routeGeometry?: any;  // Para rutas de Mapbox
+  interactive?: boolean;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
-  allowMapSelection?: boolean;
   showRoute?: boolean;
-  routeColor?: string;
-  className?: string;
+  allowMapSelection?: boolean;
   useHomeAsDestination?: () => void;
+  showHomeMarker?: boolean;
   alwaysShowHomeMarker?: boolean;
   allowHomeEditing?: boolean;
-  showSelectMarkers?: boolean;
+  homeLocation?: MapCoordinates;
   showDriverPosition?: boolean;
   driverPosition?: MapDriverPosition;
-  selectionMode?: MapSelectionMode;
+  showSelectMarkers?: boolean;
+  selectionMode?: MapSelectionMode | 'origin' | 'destination' | null;
   onMapClick?: (coordinates: MapCoordinates) => void;
 }
 
+// Tipo para los niveles de tráfico
+export type TrafficLevel = 'low' | 'moderate' | 'high' | 'very_high' | null;
+
+// Interfaz para los viajes
 export interface Ride {
   id: string;
-  origin: MapCoordinates;
-  destination: MapCoordinates;
-  status: "pending" | "accepted" | "ongoing" | "completed" | "cancelled";
+  origin: MapCoordinates & { address: string }; // Aseguramos que address siempre exista
+  destination: MapCoordinates & { address: string }; // Aseguramos que address siempre exista
+  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   requestTime: Date;
-  distance?: number;
-  price?: number;
-  paymentMethodId?: string;
+  price: number;
+  distance: number;
+  createdAt: string;
+  paymentMethodId: string;
   driver?: {
     id: string;
     name: string;
-    rating: number;
-    vehicle?: {
-      make: string;
-      model: string;
-      licensePlate: string;
-      color: string;
-    };
-    profilePicture?: string;
+    photo?: string;
+    rating?: number;
   };
-  createdAt: string;
+  vehicle?: {
+    id: string;
+    model: string;
+    plate: string;
+    color: string;
+  };
 }
