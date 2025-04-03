@@ -54,7 +54,12 @@ const RideRequestMain: React.FC = () => {
     }
     
     try {
-      // Aseguramos que pasamos el objeto Date scheduledDate, no el string formateado
+      // Verificamos que scheduledDate sea un objeto Date antes de pasarlo
+      if (!(scheduledDate instanceof Date)) {
+        console.error("Error: scheduledDate no es un objeto Date válido");
+        return false;
+      }
+      
       await saveRideToSupabase(scheduledDate);
       return true;
     } catch (error) {
