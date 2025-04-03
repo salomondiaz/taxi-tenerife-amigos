@@ -7,25 +7,27 @@ import { toast } from '@/hooks/use-toast';
 interface UseGoogleMapSelectionProps {
   map: google.maps.Map | null;
   allowMapSelection: boolean;
+  defaultSelectionMode?: MapSelectionMode;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
   showDestinationSelection?: boolean;
-  useHomeAsDestination?: () => void;
   homeLocation?: MapCoordinates | null;
+  useHomeAsDestination?: () => void;
   showSelectMarkers?: boolean;
 }
 
 export function useGoogleMapSelection({
   map,
   allowMapSelection,
+  defaultSelectionMode = 'none',
   onOriginChange,
   onDestinationChange,
   showDestinationSelection = true,
-  useHomeAsDestination,
   homeLocation,
+  useHomeAsDestination,
   showSelectMarkers = false
 }: UseGoogleMapSelectionProps) {
-  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>('none');
+  const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(defaultSelectionMode);
   const [showHomeDialog, setShowHomeDialog] = useState(false);
 
   // Change selection mode with feedback

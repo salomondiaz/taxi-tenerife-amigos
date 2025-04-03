@@ -1,0 +1,23 @@
+
+import React from 'react';
+import { MapSelectionMode } from '../types';
+
+interface MapInstructionsProps {
+  selectionMode: MapSelectionMode;
+  allowMapSelection: boolean;
+}
+
+const MapInstructions: React.FC<MapInstructionsProps> = ({
+  selectionMode,
+  allowMapSelection
+}) => {
+  if (selectionMode || !allowMapSelection) return null;
+  
+  return (
+    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm z-30">
+      Usa los botones en la esquina superior derecha para seleccionar origen y destino
+    </div>
+  );
+};
+
+export default MapInstructions;
