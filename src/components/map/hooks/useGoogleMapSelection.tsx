@@ -42,10 +42,10 @@ export function useGoogleMapSelection({
     
     if (mode === null) return;
     
-    // Show toast message
+    // Show toast message with clearer instructions
     toast({
-      title: mode === 'origin' ? 'Selecciona el origen' : 'Selecciona el destino',
-      description: `Haz clic en el mapa para seleccionar el punto de ${mode === 'origin' ? 'origen' : 'destino'}`,
+      title: mode === 'origin' ? 'Seleccionar punto de salida' : 'Seleccionar punto de llegada',
+      description: `Haz clic en el mapa para marcar la ubicación ${mode === 'origin' ? 'desde donde saldrás' : 'a donde quieres ir'}`,
     });
   };
 

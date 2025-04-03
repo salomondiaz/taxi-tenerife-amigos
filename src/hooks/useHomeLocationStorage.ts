@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { MapCoordinates } from '@/components/map/types';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const HOME_LOCATION_KEY = 'user_home_location';
 
@@ -17,8 +18,8 @@ export const useHomeLocationStorage = () => {
     setHomeLocationState(location);
   }, []);
 
-  // Save home location to localStorage
-  const saveHomeLocation = useCallback((location: MapCoordinates) => {
+  // Save home location to localStorage and optionally to Supabase if user is logged in
+  const saveHomeLocation = useCallback(async (location: MapCoordinates) => {
     try {
       if (!location) {
         console.error('Attempted to save undefined home location');
@@ -26,9 +27,48 @@ export const useHomeLocationStorage = () => {
       }
       
       console.log('Saving home location:', location);
+      
+      // Save to localStorage first for immediate availability
       localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(location));
       setHasHomeLocation(true);
       setHomeLocationState(location);
+      
+      // Try to save to Supabase if user is logged in
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Check if user profile exists
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (profile) {
+            // Update profile with home location
+            await supabase
+              .from('profiles')
+              .update({
+                home_location: location
+              })
+              .eq('id', user.id);
+          } else {
+            // Create profile with home location
+            await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                home_location: location
+              });
+          }
+          
+          console.log('Home location saved to Supabase');
+        }
+      } catch (error) {
+        // If Supabase save fails, we still have the local storage copy
+        console.error('Failed to save home location to Supabase:', error);
+      }
       
       toast({
         title: "Casa guardada",

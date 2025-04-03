@@ -49,20 +49,20 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
         <Button 
           size="sm" 
           variant={selectionMode === 'origin' ? "default" : "outline"}
-          onClick={() => setSelectionMode(selectionMode === 'origin' ? 'none' : 'origin')}
-          className="flex items-center gap-2 w-full"
+          onClick={() => setSelectionMode(selectionMode === 'origin' ? null : 'origin')}
+          className={`flex items-center gap-2 w-full ${selectionMode === 'origin' ? 'bg-blue-600 hover:bg-blue-700' : 'border-blue-600 text-blue-600'}`}
         >
-          <MapPin size={18} className="text-blue-500" />
+          <MapPin size={18} className={selectionMode === 'origin' ? "text-white" : "text-blue-600"} />
           {selectionMode === 'origin' ? 'Cancelar selección' : 'Seleccionar origen'}
         </Button>
         
         <Button 
           size="sm" 
           variant={selectionMode === 'destination' ? "default" : "outline"}
-          onClick={() => setSelectionMode(selectionMode === 'destination' ? 'none' : 'destination')}
-          className="flex items-center gap-2 w-full"
+          onClick={() => setSelectionMode(selectionMode === 'destination' ? null : 'destination')}
+          className={`flex items-center gap-2 w-full ${selectionMode === 'destination' ? 'bg-red-600 hover:bg-red-700' : 'border-red-600 text-red-600'}`}
         >
-          <Navigation size={18} className="text-red-500" />
+          <Navigation size={18} className={selectionMode === 'destination' ? "text-white" : "text-red-600"} />
           {selectionMode === 'destination' ? 'Cancelar selección' : 'Seleccionar destino'}
         </Button>
 
@@ -103,7 +103,7 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
                     size="sm" 
                     variant="outline"
                     onClick={() => handleSearch('origin')}
-                    className="flex-1"
+                    className="flex-1 border-blue-600 text-blue-600"
                   >
                     Como origen
                   </Button>
@@ -111,7 +111,7 @@ const MapSelectionControls: React.FC<MapSelectionControlsProps> = ({
                     size="sm" 
                     variant="outline"
                     onClick={() => handleSearch('destination')}
-                    className="flex-1"
+                    className="flex-1 border-red-600 text-red-600"
                   >
                     Como destino
                   </Button>

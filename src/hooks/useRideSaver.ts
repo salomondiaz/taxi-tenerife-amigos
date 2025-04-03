@@ -14,6 +14,7 @@ export const useRideSaver = (
   scheduledTime?: string
 ) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const saveRideToSupabase = useCallback(async () => {
@@ -23,22 +24,29 @@ export const useRideSaver = (
         description: "Por favor, selecciona origen y destino en el mapa",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
-    if (isSaving) return; // Evitar guardado múltiple
+    if (isSaving) return null; // Evitar guardado múltiple
+    
     setIsSaving(true);
+    setSaveError(null);
 
     try {
-      // Calcular estimaciones primero
+      // Calcular estimaciones primero si no están disponibles
       if (estimatedPrice === 0) {
         await calculateEstimates();
       }
 
-      // Preparar datos para guardar
+      // Preparar datos para guardar con coords explícitos para mayor robustez
       const rideData = {
         origen: origin || originCoords.address || `${originCoords.lat},${originCoords.lng}`,
         destino: destination || destinationCoords.address || `${destinationCoords.lat},${destinationCoords.lng}`,
+        origen_lat: originCoords.lat,
+        origen_lng: originCoords.lng,
+        destino_lat: destinationCoords.lat,
+        destino_lng: destinationCoords.lng,
+        precio_estimado: estimatedPrice || 0,
         estado: scheduledTime ? 'programado' : 'pendiente',
         // Agregar campo de hora programada si existe
         ...(scheduledTime && { hora_programada: scheduledTime })
@@ -46,7 +54,7 @@ export const useRideSaver = (
 
       console.log("Guardando viaje:", rideData);
 
-      // Guardar en Supabase
+      // Guardar en Supabase con mejor manejo de errores
       const { data, error } = await supabase
         .from('viajes')
         .insert(rideData)
@@ -54,6 +62,8 @@ export const useRideSaver = (
 
       if (error) {
         console.error("Error al guardar viaje:", error);
+        setSaveError(error.message);
+        
         toast({
           title: "Error al guardar viaje",
           description: error.message,
@@ -89,11 +99,13 @@ export const useRideSaver = (
         
         return data[0];
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error en saveRideToSupabase:", error);
+      setSaveError(error.message || "Error desconocido");
+      
       toast({
         title: "Error al procesar la solicitud",
-        description: "Ha ocurrido un error al procesar la solicitud",
+        description: error.message || "Ha ocurrido un error al procesar la solicitud",
         variant: "destructive",
       });
       return null;
@@ -102,5 +114,9 @@ export const useRideSaver = (
     }
   }, [origin, destination, originCoords, destinationCoords, estimatedPrice, calculateEstimates, toast, isSaving, scheduledTime]);
 
-  return { saveRideToSupabase, isSaving };
+  return { 
+    saveRideToSupabase, 
+    isSaving, 
+    saveError 
+  };
 };

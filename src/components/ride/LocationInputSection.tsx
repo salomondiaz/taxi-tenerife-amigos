@@ -1,19 +1,18 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { MapCoordinates, API_KEY_STORAGE_KEY } from "@/components/map/types";
-import { MapPin, Navigation, Home, LocateIcon, Search, Clock } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
-import EnhancedLocationSelector from "./EnhancedLocationSelector";
+import { MapPin, Navigation } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { MapCoordinates } from "@/components/map/types";
+import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 
 interface LocationInputSectionProps {
   origin: string;
   setOrigin: (value: string) => void;
   destination: string;
   setDestination: (value: string) => void;
-  handleOriginChange: (coords: MapCoordinates) => void;
-  handleDestinationChange: (coords: MapCoordinates) => void;
+  handleOriginChange: (coordinates: MapCoordinates) => void;
+  handleDestinationChange: (coordinates: MapCoordinates) => void;
   handleUseCurrentLocation: () => void;
   useHomeAddress: () => void;
   saveHomeAddress: () => void;
@@ -38,120 +37,125 @@ const LocationInputSection: React.FC<LocationInputSectionProps> = ({
   handleUseHomeAsDestination,
   scheduledTime
 }) => {
-  const googleMapsApiKey = localStorage.getItem(API_KEY_STORAGE_KEY) || '';
-
-  const formatScheduledTime = () => {
-    if (!scheduledTime) return null;
-    
-    try {
-      const date = new Date(scheduledTime);
-      return format(date, "EEEE d 'de' MMMM 'a las' HH:mm", { locale: es });
-    } catch (error) {
-      console.error("Error formatting scheduled time:", error);
-      return scheduledTime;
+  const { hasHomeLocation, homeLocation } = useHomeLocationStorage();
+  
+  const handleCheckEstimates = () => {
+    if (!origin || !destination) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, introduce tanto el origen como el destino",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    calculateEstimates();
   };
-
+  
   return (
-    <div className="bg-white rounded-xl shadow-lg p-5">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
       <h2 className="text-lg font-semibold mb-4">¿De dónde a dónde vas?</h2>
-      
-      <div className="p-4 bg-blue-50 rounded-lg mb-4">
-        <p className="text-sm text-blue-800 font-medium mb-2">Instrucciones simplificadas:</p>
-        <ol className="list-decimal list-inside text-sm text-blue-700 space-y-1">
-          <li>Haz <strong>clic en el mapa</strong> para seleccionar tu punto de origen</li>
-          <li>Haz <strong>clic nuevamente</strong> para seleccionar tu destino</li>
-          <li>El viaje se guardará automáticamente con estado "pendiente"</li>
-        </ol>
-      </div>
-      
-      {(origin || destination) && (
-        <div className="mt-4 space-y-2">
-          {origin && (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0"></div>
-              <p className="text-sm truncate">{origin}</p>
-            </div>
-          )}
+
+      {/* Opciones de ubicaciones */}
+      <div className="space-y-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            onClick={handleUseCurrentLocation}
+            disabled={isLoading}
+            className="flex justify-center items-center gap-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+          >
+            <MapPin size={18} />
+            Usar mi ubicación actual
+          </Button>
           
-          {destination && (
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0"></div>
-              <p className="text-sm truncate">{destination}</p>
-            </div>
+          <Button
+            variant="outline"
+            onClick={useHomeAddress}
+            disabled={isLoading || !hasHomeLocation}
+            className={`flex justify-center items-center gap-2 ${hasHomeLocation ? 'border-blue-600 text-blue-600 hover:bg-blue-50' : 'opacity-50'}`}
+          >
+            <Navigation size={18} />
+            Partir desde mi casa
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            onClick={saveHomeAddress}
+            disabled={isLoading || !origin}
+            className={`flex justify-center items-center gap-2 ${origin ? 'border-green-600 text-green-600 hover:bg-green-50' : 'opacity-50'}`}
+          >
+            <MapPin size={18} />
+            Guardar origen como mi casa
+          </Button>
+          
+          {handleUseHomeAsDestination && (
+            <Button
+              variant="outline"
+              onClick={handleUseHomeAsDestination}
+              disabled={isLoading || !hasHomeLocation}
+              className={`flex justify-center items-center gap-2 ${hasHomeLocation ? 'border-green-600 text-green-600 hover:bg-green-50' : 'opacity-50'}`}
+            >
+              <MapPin size={18} />
+              Ir a mi casa
+            </Button>
           )}
         </div>
-      )}
+      </div>
       
-      {scheduledTime && (
-        <div className="mt-4 flex items-center gap-2 bg-amber-50 p-3 rounded-lg border border-amber-200">
-          <Clock className="text-amber-600" size={18} />
-          <div>
-            <p className="text-sm font-medium text-amber-800">Viaje programado</p>
-            <p className="text-xs text-amber-700">{formatScheduledTime()}</p>
+      {/* Campos de origen y destino */}
+      <div className="space-y-4 mb-6">
+        <div className="space-y-2">
+          <label htmlFor="origin" className="block text-sm font-medium text-gray-700">
+            Origen
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MapPin size={16} className="text-blue-600" />
+            </div>
+            <input
+              id="origin"
+              type="text"
+              value={origin}
+              onChange={(e) => setOrigin(e.target.value)}
+              disabled={isLoading}
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm pl-10 w-full py-2"
+              placeholder="¿Dónde te recogemos?"
+            />
           </div>
         </div>
-      )}
-      
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button 
-          onClick={handleUseCurrentLocation}
-          className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
-        >
-          Usar mi ubicación
-        </button>
         
-        <button 
-          onClick={useHomeAddress}
-          className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
-        >
-          Usar mi casa como origen
-        </button>
-        
-        {handleUseHomeAsDestination && (
-          <button 
-            onClick={handleUseHomeAsDestination}
-            className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
-          >
-            Ir a casa
-          </button>
-        )}
-        
-        <button 
-          onClick={saveHomeAddress}
-          className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full"
-        >
-          Guardar casa
-        </button>
-        
-        <button 
-          onClick={calculateEstimates}
-          className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-full"
-          disabled={isLoading}
-        >
-          {isLoading ? "Calculando..." : "Calcular ruta"}
-        </button>
+        <div className="space-y-2">
+          <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
+            Destino
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MapPin size={16} className="text-red-600" />
+            </div>
+            <input
+              id="destination"
+              type="text"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              disabled={isLoading}
+              className="border-gray-300 focus:border-red-500 focus:ring-red-500 rounded-md shadow-sm pl-10 w-full py-2"
+              placeholder="¿A dónde vas?"
+            />
+          </div>
+        </div>
       </div>
       
-      <details className="mt-6">
-        <summary className="cursor-pointer text-sm text-gray-500">Opciones avanzadas</summary>
-        <div className="mt-4">
-          <EnhancedLocationSelector
-            origin={origin}
-            setOrigin={setOrigin}
-            destination={destination}
-            setDestination={setDestination}
-            onOriginCoordinatesChange={handleOriginChange}
-            onDestinationCoordinatesChange={handleDestinationChange}
-            handleUseCurrentLocation={handleUseCurrentLocation}
-            useHomeAddress={useHomeAddress}
-            saveHomeAddress={saveHomeAddress}
-            googleMapsApiKey={googleMapsApiKey}
-            calculateEstimates={calculateEstimates}
-            isCalculating={isLoading}
-          />
-        </div>
-      </details>
+      {/* Botón de calcular */}
+      <Button
+        className="w-full"
+        onClick={handleCheckEstimates}
+        disabled={isLoading || !origin || !destination}
+      >
+        {isLoading ? "Calculando..." : "Calcular viaje"}
+      </Button>
     </div>
   );
 };
