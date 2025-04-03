@@ -53,6 +53,8 @@ export const useRideSaver = (
         usuario: "anonymous", // Replace with user ID once authentication is implemented
       };
 
+      console.log("Saving ride data:", rideData);
+
       // Save to Supabase
       const { data, error } = await supabase.from("viajes").insert([rideData]).select();
 
@@ -70,10 +72,12 @@ export const useRideSaver = (
       toast({
         title: scheduledDate ? "Viaje Programado" : "Viaje Solicitado",
         description: scheduledDate 
-          ? "Tu viaje ha sido programado con éxito" 
+          ? "Tu viaje ha sido programado con éxito para " + scheduledDate.toLocaleString() 
           : "Tu viaje ha sido registrado con éxito. Un conductor lo verá pronto.",
         variant: "default",
       });
+
+      console.log("Ride saved successfully:", data);
 
       // Return ride data
       return data && data[0];

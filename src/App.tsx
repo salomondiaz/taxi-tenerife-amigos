@@ -1,54 +1,42 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider, useAppContext } from "@/context/AppContext";
-
-// Pages
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Home from "@/pages/Home";
-import NotFound from "@/pages/NotFound";
-import RideRequest from "@/pages/RideRequest";
-import RideTracking from "@/pages/RideTracking";
-import PaymentOptions from "@/pages/PaymentOptions";
-import DriverProfile from "@/pages/DriverProfile";
-import Profile from "@/pages/Profile";
-import RateDriver from "@/pages/RateDriver";
-import TravelHistory from "@/pages/TravelHistory";
-import FareSettings from "@/pages/FareSettings";
-import UserRegistration from "@/pages/UserRegistration";
-import DriverRegistration from "@/pages/DriverRegistration";
-
-// Components
+import React, { useEffect } from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "@/components/ui/toaster";
-import StripePaymentProvider from "@/components/payment/StripePaymentProvider";
+import Home from "@/pages/Home";
+import RideRequest from "@/pages/RideRequest";
+import AboutPage from "@/pages/AboutPage";
+import ServicesPage from "@/pages/ServicesPage";
+import ContactPage from "@/pages/ContactPage";
+import HelpPage from "@/pages/HelpPage";
+import ProfilePage from "@/pages/ProfilePage";
+import SettingsPage from "@/pages/SettingsPage";
+import HomeLocationSettings from "@/pages/HomeLocationSettings"; // Add import
+
+import "@/global.css";
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <StripePaymentProvider>
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <AppContextProvider>
+        <main className="min-h-screen">
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/request-ride" element={<RideRequest />} />
-            <Route path="/ride-tracking" element={<RideTracking />} />
-            <Route path="/payment-options" element={<PaymentOptions />} />
-            <Route path="/driver/:id" element={<DriverProfile />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/rate-driver/:id" element={<RateDriver />} />
-            <Route path="/travel-history" element={<TravelHistory />} />
-            <Route path="/fare-settings" element={<FareSettings />} />
-            <Route path="/user-registration" element={<UserRegistration />} />
-            <Route path="/driver-registration" element={<DriverRegistration />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/ride" element={<RideRequest />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/home-location" element={<HomeLocationSettings />} /> 
           </Routes>
-          <Toaster />
-        </StripePaymentProvider>
-      </AppProvider>
-    </BrowserRouter>
+        </main>
+        <Toaster />
+      </AppContextProvider>
+    </ThemeProvider>
   );
 }
 

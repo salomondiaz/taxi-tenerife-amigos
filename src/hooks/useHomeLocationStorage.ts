@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { MapCoordinates } from "@/components/map/types";
 import { toast } from "@/hooks/use-toast";
 
@@ -28,11 +27,30 @@ export const useHomeLocationStorage = () => {
   // Save home location to local storage
   const saveHomeLocation = (location: MapCoordinates): boolean => {
     try {
-      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(location));
-      setHomeLocation(location);
+      // Make sure we have an address
+      const locationToSave = {
+        ...location,
+        address: location.address || "Mi Casa"
+      };
+      
+      localStorage.setItem(HOME_LOCATION_KEY, JSON.stringify(locationToSave));
+      setHomeLocation(locationToSave);
+      
+      toast({
+        title: "Casa guardada",
+        description: "Tu ubicación ha sido guardada como tu casa."
+      });
+      
       return true;
     } catch (error) {
       console.error("Error saving home location:", error);
+      
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar tu ubicación de casa.",
+        variant: "destructive"
+      });
+      
       return false;
     }
   };
@@ -62,7 +80,7 @@ export const useHomeLocationStorage = () => {
   };
 
   return {
-    homeLocation,
+    homeLocation: homeLocation || loadHomeLocation(),
     saveHomeLocation,
     loadHomeLocation,
     updateHomeLocation,

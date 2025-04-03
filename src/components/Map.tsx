@@ -2,8 +2,8 @@
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { MapProps } from './map/types';
-import GoogleMapDisplay from './map/GoogleMapDisplay';
 import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
+import GoogleMapDisplay from './map/GoogleMapDisplay';
 
 // Google Maps API key
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBBhFX2uXJtOBZFWqKKACGEBYqKKn80lrg';
@@ -12,7 +12,7 @@ const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();
   const { loadHomeLocation } = useHomeLocationStorage();
 
-  // Cargar ubicación de casa
+  // Load home location
   const homeLocation = loadHomeLocation();
   
   // Check if we should show the home marker
@@ -27,9 +27,9 @@ const Map: React.FC<MapProps> = (props) => {
   // Pass all props to GoogleMapDisplay including the API key and home marker flag
   return <GoogleMapDisplay 
     apiKey={GOOGLE_MAPS_API_KEY} 
-    allowHomeEditing={showHomeMarker || props.allowHomeEditing}
+    allowHomeEditing={props.allowHomeEditing || false}
     {...props} 
-    showHomeMarker={showHomeMarker}
+    showHomeMarker={showHomeMarker || props.showHomeMarker}
     homeLocation={homeLocation}
   />;
 };
