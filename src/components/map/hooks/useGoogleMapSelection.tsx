@@ -45,7 +45,6 @@ export function useGoogleMapSelection({
 
   // Handle map click for selection
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    // Get the map object, whether it's a ref or direct object
     if (selectionMode === 'none' || !allowMapSelection || !map) return;
     
     const lat = e.latLng!.lat();
