@@ -1,9 +1,9 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { MapCoordinates } from "@/components/map/types";
-import { useRouter } from "react-router-dom";
 
 export const useRideSaver = (
   origin: string,
@@ -14,7 +14,7 @@ export const useRideSaver = (
   estimatedPrice: number = 0,
   scheduledTime?: string
 ) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
 
   /**
