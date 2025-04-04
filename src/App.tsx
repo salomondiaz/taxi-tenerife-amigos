@@ -1,25 +1,20 @@
 
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, useRoutes } from "react-router-dom";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { AppProvider } from "@/context/AppContext";
 import { MapProvider } from "@/context/MapContext";
 import { Toaster } from "@/components/ui/toaster";
 
-// Import pages
-import HomePage from "@/pages/Home";
-import RideRequest from "@/pages/RideRequest";
-import ProfilePage from "@/pages/Profile";
-import SettingsPage from "@/pages/Settings";
-import NotificationsPage from "@/pages/Notifications";
-import RideHistoryPage from "@/pages/RideHistory";
-import ActiveRidePage from "@/pages/ActiveRide";
-import HomeLocationSettings from "@/pages/HomeLocationSettings";
-import NotFound from "@/pages/NotFound";
-import ErrorPage from "@/pages/Error";
-import LandingPage from "@/pages/LandingPage";
+import routes from "./routes";
 
 import "@/global.css";
+
+// Router component that uses the routes configuration
+const AppRoutes = () => {
+  const routeElement = useRoutes(routes);
+  return routeElement;
+};
 
 function App() {
   return (
@@ -27,19 +22,7 @@ function App() {
       <AppProvider>
         <MapProvider>
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/solicitar" element={<RideRequest />} />
-              <Route path="/perfil" element={<ProfilePage />} />
-              <Route path="/ajustes" element={<SettingsPage />} />
-              <Route path="/notificaciones" element={<NotificationsPage />} />
-              <Route path="/historial" element={<RideHistoryPage />} />
-              <Route path="/viaje/:id" element={<ActiveRidePage />} />
-              <Route path="/ajustes/casa" element={<HomeLocationSettings />} />
-              <Route path="/error" element={<ErrorPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppRoutes />
           </BrowserRouter>
           <Toaster />
         </MapProvider>

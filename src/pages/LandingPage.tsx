@@ -27,7 +27,7 @@ const LandingPage = () => {
             <div className="w-64 h-64 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="w-full h-full rounded-full flex items-center justify-center">
                 <img 
-                  src="/lovable-uploads/4746ebf1-b14c-43e3-8368-1ccfe426830e.png" 
+                  src="/lovable-uploads/3f027f1c-4ee8-4827-b4ce-9d6d560d6b75.png" 
                   alt="Taxi Tenerife Logo" 
                   className="w-48 h-48 object-contain"
                 />
