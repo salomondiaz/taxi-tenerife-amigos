@@ -3,13 +3,13 @@ import React from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 import HomeLocationSetup from "@/components/ride/HomeLocationSetup";
 
 const HomeLocationSettings = () => {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { resetHomeLocation } = useHomeLocationStorage();
   
   const handleReset = () => {
@@ -21,7 +21,7 @@ const HomeLocationSettings = () => {
   };
   
   const handleBack = () => {
-    router.push('/ajustes');
+    navigate('/ajustes');
   };
   
   return (
