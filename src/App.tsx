@@ -17,6 +17,7 @@ import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
 import NotFound from "@/pages/NotFound";
 import ErrorPage from "@/pages/Error";
+import LandingPage from "@/pages/LandingPage";
 
 import "@/global.css";
 
@@ -27,7 +28,8 @@ function App() {
         <MapProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/solicitar" element={<RideRequest />} />
               <Route path="/perfil" element={<ProfilePage />} />
               <Route path="/ajustes" element={<SettingsPage />} />

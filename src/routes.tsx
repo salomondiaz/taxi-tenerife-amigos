@@ -10,12 +10,17 @@ import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
 import NotFound from "@/pages/NotFound";
 import ErrorPage from "@/pages/Error";
+import LandingPage from "@/pages/LandingPage";
 
 const routes: RouteObject[] = [
   {
     path: "/",
-    element: <HomePage />,
+    element: <LandingPage />,
     errorElement: <ErrorPage />,
+  },
+  {
+    path: "/home",
+    element: <HomePage />,
   },
   {
     path: "/solicitar",

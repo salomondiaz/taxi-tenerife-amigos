@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, User, MapPin, History, CreditCard } from "lucide-react";
+import { Home, User, MapPin, History, Settings } from "lucide-react";
 import { useAppContext } from "@/context/AppContext";
 
 const Navigation: React.FC = () => {
@@ -19,25 +19,25 @@ const Navigation: React.FC = () => {
     },
     {
       name: "Solicitar",
-      path: "/request-ride",
+      path: "/solicitar",
       icon: <MapPin size={24} />,
       ariaLabel: "Solicitar un taxi",
     },
     {
       name: "Historial",
-      path: "/travel-history",
+      path: "/historial",
       icon: <History size={24} />,
       ariaLabel: "Ver historial de viajes",
     },
     {
-      name: "Pagos",
-      path: "/payment-options",
-      icon: <CreditCard size={24} />,
-      ariaLabel: "Gestionar métodos de pago",
+      name: "Ajustes",
+      path: "/ajustes",
+      icon: <Settings size={24} />,
+      ariaLabel: "Ver ajustes",
     },
     {
       name: "Perfil",
-      path: "/profile",
+      path: "/perfil",
       icon: <User size={24} />,
       ariaLabel: "Ver mi perfil",
     },
