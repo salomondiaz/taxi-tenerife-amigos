@@ -1,15 +1,62 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { useAppContext } from "@/context/AppContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { setIsLoggedIn, setUser } = useAppContext();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    // Simular inicio de sesión y redirigir a la página principal
-    navigate("/home");
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    
+    // Basic validation
+    if (!email || !password) {
+      setError("Por favor complete todos los campos");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Simulate login process
+    setTimeout(() => {
+      // For demo purposes, accept any valid email format
+      if (email.includes("@") && password.length >= 6) {
+        // Set logged in state
+        setIsLoggedIn(true);
+        
+        // Set mock user data
+        setUser({
+          id: "user-123",
+          name: "Usuario",
+          email: email,
+          phone: "+34 612 345 678"
+        });
+        
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: "Bienvenido de nuevo",
+        });
+        
+        // Redirect to home page
+        navigate("/home");
+      } else {
+        setError("Correo electrónico o contraseña incorrectos");
+      }
+      setIsLoading(false);
+    }, 800);
   };
 
   return (
@@ -34,43 +81,53 @@ const Login = () => {
             </div>
             
             <div className="w-full max-w-sm">
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 text-center">Acceder a tu cuenta</h2>
                 
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
+                
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="space-y-1">
+                    <Label htmlFor="email">
                       Correo electrónico
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       id="email"
                       type="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="ejemplo@correo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
                   
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <div className="space-y-1">
+                    <Label htmlFor="password">
                       Contraseña
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       id="password"
                       type="password"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
                   
                   <Button 
-                    onClick={handleLogin} 
-                    variant="default" 
+                    type="submit"
                     className="w-full bg-tenerife-blue hover:bg-blue-700"
+                    disabled={isLoading}
                   >
-                    Iniciar sesión
+                    {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
                   </Button>
                 </div>
-              </div>
+              </form>
               
               <div className="mt-4 text-center">
                 <Button 

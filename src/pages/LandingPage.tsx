@@ -45,7 +45,7 @@ const LandingPage = () => {
           {/* Action Buttons */}
           <div className="space-y-4">
             <Button 
-              onClick={() => navigate("/home")} 
+              onClick={() => navigate("/login")} 
               variant="default" 
               className="w-full bg-white text-tenerife-blue hover:bg-gray-100 h-12"
             >
