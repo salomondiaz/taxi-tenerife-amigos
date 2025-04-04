@@ -1,12 +1,12 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapCoordinates } from '../types';
 
 interface UseGoogleMapRoutingProps {
   mapRef: React.MutableRefObject<google.maps.Map | null>;
   directionsRendererRef: React.MutableRefObject<google.maps.DirectionsRenderer | null>;
-  origin?: MapCoordinates | null;
-  destination?: MapCoordinates | null;
+  origin?: MapCoordinates;
+  destination?: MapCoordinates; 
   showRoute?: boolean;
 }
 
@@ -17,43 +17,33 @@ export function useGoogleMapRouting({
   destination,
   showRoute = false
 }: UseGoogleMapRoutingProps) {
-  
-  // Update route when origin or destination changes
   useEffect(() => {
-    if (!mapRef.current || !directionsRendererRef.current || !showRoute) {
+    if (!showRoute || !origin || !destination || !mapRef.current || !directionsRendererRef.current) {
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setDirections(null);
+      }
       return;
     }
+
+    const directionsService = new google.maps.DirectionsService();
     
-    if (origin && destination) {
-      const directionsService = new google.maps.DirectionsService();
-      
-      directionsService.route(
-        {
-          origin: { lat: origin.lat, lng: origin.lng },
-          destination: { lat: destination.lat, lng: destination.lng },
-          travelMode: google.maps.TravelMode.DRIVING
-        },
-        (result, status) => {
-          if (status === google.maps.DirectionsStatus.OK && result) {
-            directionsRendererRef.current?.setDirections(result);
-          } else {
-            console.error("Error fetching directions:", status);
+    directionsService.route(
+      {
+        origin: { lat: origin.lat, lng: origin.lng },
+        destination: { lat: destination.lat, lng: destination.lng },
+        travelMode: google.maps.TravelMode.DRIVING
+      },
+      (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK && result) {
+          directionsRendererRef.current?.setDirections(result);
+        } else {
+          console.error('Directions request failed: ', status);
+          // Draw a straight line if directions failed
+          if (directionsRendererRef.current) {
+            directionsRendererRef.current.setDirections(null);
           }
         }
-      );
-    } else {
-      // Clear the route if we don't have both origin and destination
-      // Create a proper empty DirectionsResult object
-      const emptyDirectionsResult: google.maps.DirectionsResult = {
-        routes: [],
-        geocoded_waypoints: [],
-        request: {
-          origin: { lat: 0, lng: 0 },
-          destination: { lat: 0, lng: 0 },
-          travelMode: google.maps.TravelMode.DRIVING
-        }
-      };
-      directionsRendererRef.current.setDirections(emptyDirectionsResult);
-    }
+      }
+    );
   }, [mapRef, directionsRendererRef, origin, destination, showRoute]);
 }
