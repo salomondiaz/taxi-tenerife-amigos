@@ -66,10 +66,9 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
         directionsRendererRef.current.setMap(map);
       }
       
-      // Configuraciones adicionales al inicializar el mapa
+      // Remove Ctrl key requirement for map interaction
       map.setOptions({
-        disableDoubleClickZoom: true, // Desactivar zoom con doble clic
-        gestureHandling: "cooperative" // Mejor control de gestos
+        gestureHandling: "greedy" // Allows free movement without Ctrl key
       });
       
       // Add click event listener

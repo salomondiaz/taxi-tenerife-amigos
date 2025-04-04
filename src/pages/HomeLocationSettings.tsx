@@ -14,7 +14,7 @@ import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
 
 const HomeLocationSettings: React.FC = () => {
   const navigate = useNavigate();
-  const { homeLocation, saveHomeLocation, resetHomeLocation } = useHomeLocationStorage();
+  const { loadHomeLocation, saveHomeLocation, resetHomeLocation } = useHomeLocationStorage();
   
   const [address, setAddress] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<MapCoordinates | null>(null);
@@ -22,11 +22,12 @@ const HomeLocationSettings: React.FC = () => {
 
   // Load initial home location
   useEffect(() => {
+    const homeLocation = loadHomeLocation();
     if (homeLocation) {
       setSelectedLocation(homeLocation);
       setAddress(homeLocation.address || "");
     }
-  }, [homeLocation]);
+  }, [loadHomeLocation]);
 
   // Handle map location selection
   const handleLocationSelect = (coordinates: MapCoordinates) => {
@@ -113,6 +114,11 @@ const HomeLocationSettings: React.FC = () => {
         title: "Casa restablecida",
         description: "La ubicación de tu casa ha sido restablecida a la ubicación predeterminada"
       });
+      
+      // Update the local state with the default location
+      const defaultLocation = loadHomeLocation();
+      setSelectedLocation(defaultLocation);
+      setAddress(defaultLocation?.address || "");
     }
   };
 
@@ -168,7 +174,7 @@ const HomeLocationSettings: React.FC = () => {
               />
               
               {/* Map overlay with instructions */}
-              <div className="absolute top-4 right-4 bg-white p-3 rounded-md shadow-md max-w-xs">
+              <div className="absolute top-4 left-4 bg-white p-3 rounded-md shadow-md max-w-xs">
                 <h3 className="text-sm font-medium mb-1">Instrucciones:</h3>
                 <p className="text-xs text-gray-600">
                   Haz clic en el mapa para seleccionar tu ubicación o arrastra el marcador para ajustarla.

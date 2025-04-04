@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Map from '@/components/Map';
 import { MapCoordinates, MapDriverPosition } from '@/components/map/types';
 import { toast } from '@/hooks/use-toast';
@@ -35,10 +35,21 @@ const MapViewer: React.FC<MapViewerProps> = ({
   showDriverPosition = false,
   driverPosition = null
 }) => {
-  // Track which point we're currently selecting
+  // Initialize selectionStep based on current state
   const [selectionStep, setSelectionStep] = useState<'origin' | 'destination' | null>(
-    originCoords ? (destinationCoords ? null : 'destination') : 'origin'
+    !originCoords ? 'origin' : (!destinationCoords ? 'destination' : null)
   );
+  
+  // Update selectionStep when originCoords or destinationCoords change
+  useEffect(() => {
+    if (!originCoords) {
+      setSelectionStep('origin');
+    } else if (!destinationCoords) {
+      setSelectionStep('destination');
+    } else {
+      setSelectionStep(null);
+    }
+  }, [originCoords, destinationCoords]);
   
   // Helper to show status of the selection
   const getSelectionStatus = () => {
@@ -62,6 +73,25 @@ const MapViewer: React.FC<MapViewerProps> = ({
       title: "Selección de destino activada",
       description: "Haz clic en el mapa para marcar tu punto de llegada",
     });
+  };
+
+  // Handle map clicks to set origin or destination
+  const handleMapClick = (coords: MapCoordinates) => {
+    if (selectionStep === 'origin') {
+      handleOriginChange(coords);
+      setSelectionStep('destination');
+      toast({
+        title: "Origen seleccionado",
+        description: coords.address || "Ubicación seleccionada como punto de origen",
+      });
+    } else if (selectionStep === 'destination') {
+      handleDestinationChange(coords);
+      setSelectionStep(null);
+      toast({
+        title: "Destino seleccionado",
+        description: coords.address || "Ubicación seleccionada como punto de destino",
+      });
+    }
   };
 
   return (
@@ -115,6 +145,7 @@ const MapViewer: React.FC<MapViewerProps> = ({
         driverPosition={driverPosition || undefined}
         showSelectMarkers={true}
         selectionMode={selectionStep}
+        onMapClick={handleMapClick}
       />
       
       {/* Status banner at the bottom of the map */}
