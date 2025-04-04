@@ -9,6 +9,7 @@ import NotificationsPage from "@/pages/Notifications";
 import RideHistoryPage from "@/pages/RideHistory";
 import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
+import NotFound from "@/pages/NotFound";
 
 const routes: RouteObject[] = [
   {
@@ -44,6 +45,10 @@ const routes: RouteObject[] = [
     path: "/ajustes/casa",
     element: <HomeLocationSettings />,
   },
+  {
+    path: "*",
+    element: <NotFound />,
+  }
 ];
 
 const router = createBrowserRouter(routes);
