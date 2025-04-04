@@ -23,8 +23,8 @@ function App() {
         <MapProvider>
           <BrowserRouter>
             <AppRoutes />
+            <Toaster />
           </BrowserRouter>
-          <Toaster />
         </MapProvider>
       </AppProvider>
     </ThemeProvider>

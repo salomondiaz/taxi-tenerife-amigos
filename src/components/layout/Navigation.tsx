@@ -43,6 +43,13 @@ const Navigation: React.FC = () => {
     },
   ];
 
+  // Handle navigation with prevention of current location re-navigation
+  const handleNavigation = (path: string) => {
+    if (location.pathname !== path) {
+      navigate(path);
+    }
+  };
+
   return (
     <nav className={`${darkMode ? "bg-gray-900" : "bg-white"} border-t border-gray-200 fixed bottom-0 w-full z-50 shadow-lg`}>
       <div className="max-w-md mx-auto px-2">
@@ -50,7 +57,7 @@ const Navigation: React.FC = () => {
           {navItems.map((item) => (
             <li key={item.path} className="w-full">
               <button
-                onClick={() => navigate(item.path)}
+                onClick={() => handleNavigation(item.path)}
                 className={`flex flex-col items-center justify-center w-full py-3 px-1 focus:outline-none ${
                   location.pathname === item.path
                     ? `text-tenerife-blue ${darkMode ? "bg-gray-800" : "bg-blue-50"}`

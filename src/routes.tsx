@@ -11,6 +11,7 @@ import HomeLocationSettings from "@/pages/HomeLocationSettings";
 import NotFound from "@/pages/NotFound";
 import ErrorPage from "@/pages/Error";
 import LandingPage from "@/pages/LandingPage";
+import Login from "@/pages/Login";
 
 const routes: RouteObject[] = [
   {
@@ -25,6 +26,10 @@ const routes: RouteObject[] = [
   {
     path: "/solicitar",
     element: <RideRequest />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
   },
   {
     path: "/perfil",
