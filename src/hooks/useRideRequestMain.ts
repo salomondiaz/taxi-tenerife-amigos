@@ -15,16 +15,18 @@ export const useRideRequestMain = () => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id || 'anonymous';
       
-      const { data, error } = await supabase.from("rides").insert([
+      const { data, error } = await supabase.from("viajes").insert([
         {
-          origin,
-          destination,
-          distance,
-          duration,
-          price,
-          scheduled_at: scheduledDate ? scheduledDate.toISOString() : null,
-          status: "pending",
-          user_id: userId,
+          origen: origin,
+          destino: destination,
+          origen_lat: 0, // Since these aren't provided in the params, we're using placeholders
+          origen_lng: 0,
+          destino_lat: 0,
+          destino_lng: 0,
+          precio_estimado: price,
+          hora_programada: scheduledDate ? scheduledDate.toISOString() : null,
+          estado: "pendiente",
+          usuario: userId,
         },
       ]);
 
@@ -43,7 +45,7 @@ export const useRideRequestMain = () => {
   return { saveRideToSupabase };
 };
 
-// Ensure the saveRideToSupabase function accepts a Date for scheduledDate, not a string
+// Standalone function for direct imports
 export const saveRideToSupabase = async (
   origin: string,
   destination: string,
@@ -56,16 +58,18 @@ export const saveRideToSupabase = async (
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id || 'anonymous';
     
-    const { data, error } = await supabase.from("rides").insert([
+    const { data, error } = await supabase.from("viajes").insert([
       {
-        origin,
-        destination,
-        distance,
-        duration,
-        price,
-        scheduled_at: scheduledDate ? scheduledDate.toISOString() : null,
-        status: "pending",
-        user_id: userId,
+        origen: origin,
+        destino: destination,
+        origen_lat: 0, // Since these aren't provided in the params, we're using placeholders
+        origen_lng: 0,
+        destino_lat: 0,
+        destino_lng: 0,
+        precio_estimado: price,
+        hora_programada: scheduledDate ? scheduledDate.toISOString() : null,
+        estado: "pendiente",
+        usuario: userId,
       },
     ]);
 

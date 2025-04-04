@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, MapPin, Clock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useMapContext } from "@/context/MapContext";
 import { saveRideToSupabase } from "@/hooks/useRideRequestMain";
 
 interface RideRequestMainProps {
@@ -25,7 +24,6 @@ const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMain
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState<string>("");
   const { toast } = useToast();
-  const { setOriginCoordinates, setDestinationCoordinates } = useMapContext();
 
   const handleSubmitRequest = async () => {
     if (!origin || !destination) {
@@ -82,7 +80,6 @@ const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMain
           value={origin}
           onChange={(e) => {
             setOrigin(e.target.value);
-            setOriginCoordinates(null);
           }}
         />
       </div>
@@ -94,7 +91,6 @@ const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMain
           value={destination}
           onChange={(e) => {
             setDestination(e.target.value);
-            setDestinationCoordinates(null);
           }}
         />
       </div>

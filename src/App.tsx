@@ -5,7 +5,8 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { AppProvider } from "@/context/AppContext";
 import { MapProvider } from "@/context/MapContext";
 import { Toaster } from "@/components/ui/toaster";
-import ErrorPage from "@/pages/Error";
+
+// Import pages
 import HomePage from "@/pages/Home";
 import RideRequest from "@/pages/RideRequest";
 import ProfilePage from "@/pages/Profile";
@@ -15,6 +16,7 @@ import RideHistoryPage from "@/pages/RideHistory";
 import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
 import NotFound from "@/pages/NotFound";
+import ErrorPage from "@/pages/Error";
 
 import "@/global.css";
 
