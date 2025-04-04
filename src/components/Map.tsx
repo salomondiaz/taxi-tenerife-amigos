@@ -6,7 +6,7 @@ import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
 import GoogleMapDisplay from './map/GoogleMapDisplay';
 
 // Google Maps API key
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBBhFX2uXJtOBZFWqKKACGEBYqKKn80lrg';
+export const GOOGLE_MAPS_API_KEY = 'AIzaSyBBhFX2uXJtOBZFWqKKACGEBYqKKn80lrg';
 
 const Map: React.FC<MapProps> = (props) => {
   const { testMode } = useAppContext();

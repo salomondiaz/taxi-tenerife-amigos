@@ -1,160 +1,184 @@
 
-import React, { useState } from 'react';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { useRideRequestFlow } from "@/hooks/useRideRequestFlow";
+import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
+import EnhancedLocationSelector from "./EnhancedLocationSelector";
+import MapViewSection from "./MapViewSection";
+import RouteCalculator from "./RouteCalculator";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { CalendarIcon, MapPin, Clock } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { saveRideToSupabase } from "@/hooks/useRideRequestMain";
+import { Car } from "lucide-react";
 
-interface RideRequestMainProps {
-  estimatedPrice?: number;
-  distance?: number;
-  duration?: number;
-}
+const RideRequestMain: React.FC = () => {
+  const location = useLocation();
+  const {
+    useManualSelection,
+    setUseManualSelection,
+    origin,
+    setOrigin,
+    destination,
+    setDestination,
+    originCoords,
+    destinationCoords,
+    routeGeometry,
+    isLoading,
+    handleUseCurrentLocation,
+    handleOriginChange,
+    handleDestinationChange,
+    calculateEstimates,
+    handleRequestRide,
+    estimatedPrice,
+    estimatedTime,
+    estimatedDistance,
+    trafficLevel
+  } = useRideRequestFlow();
 
-const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMainProps) => {
-  const [origin, setOrigin] = useState<string>("");
-  const [destination, setDestination] = useState<string>("");
-  const [isScheduled, setIsScheduled] = useState<boolean>(false);
-  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
-  const [scheduledTime, setScheduledTime] = useState<string>("");
-  const { toast } = useToast();
-
-  const handleSubmitRequest = async () => {
-    if (!origin || !destination) {
+  const [activeTab, setActiveTab] = useState<"map" | "info">("map");
+  
+  // Get locations from context
+  const { getLocationByType } = useFavoriteLocations();
+  
+  const useHomeAddress = () => {
+    const homeLocation = getLocationByType('home');
+    if (homeLocation) {
+      handleOriginChange(homeLocation.coordinates);
+      setOrigin(homeLocation.coordinates.address || "Mi Casa");
       toast({
-        variant: "destructive",
-        title: "Información incompleta",
-        description: "Por favor ingrese origen y destino",
+        title: "Casa como origen",
+        description: "Tu ubicación de casa ha sido establecida como punto de origen"
+      });
+    } else {
+      toast({
+        title: "No tienes una casa guardada",
+        description: "Configura tu ubicación de casa en Ajustes",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const saveHomeAddress = () => {
+    if (!originCoords) {
+      toast({
+        title: "Selecciona un origen primero",
+        description: "Marca un punto en el mapa para guardar como casa",
+        variant: "destructive"
       });
       return;
     }
     
-    try {
-      let scheduledDateObj: Date | null = null;
-      
-      if (isScheduled && scheduledDate && scheduledTime) {
-        // Create a new Date object from the scheduledDate
-        scheduledDateObj = new Date(scheduledDate);
-        
-        // Parse the time string and set hours and minutes
-        const [hours, minutes] = scheduledTime.split(':').map(Number);
-        scheduledDateObj.setHours(hours, minutes);
-      }
-      
-      await saveRideToSupabase(
-        origin,
-        destination,
-        distance || 0,
-        duration || 0,
-        estimatedPrice || 0,
-        scheduledDateObj
-      );
-      
+    // Call the hook to save the home location
+    const { saveHomeLocation } = useHomeLocationStorage();
+    saveHomeLocation(originCoords);
+    
+    toast({
+      title: "Casa guardada",
+      description: "Tu ubicación actual ha sido guardada como tu casa"
+    });
+  };
+  
+  const useHomeAsDestination = () => {
+    const homeLocation = getLocationByType('home');
+    if (homeLocation) {
+      handleDestinationChange(homeLocation.coordinates);
+      setDestination(homeLocation.coordinates.address || "Mi Casa");
       toast({
-        title: "Solicitud enviada!",
-        description: "Su solicitud de viaje ha sido enviada con éxito.",
+        title: "Casa como destino",
+        description: "Tu ubicación de casa ha sido establecida como punto de destino"
       });
-    } catch (error) {
-      console.error("Failed to save ride request:", error);
+    } else {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Hubo un problema al solicitar el viaje.",
+        title: "No tienes una casa guardada",
+        description: "Configura tu ubicación de casa en Ajustes",
+        variant: "destructive"
       });
     }
   };
 
+  // Request a ride
+  const handleSubmitRideRequest = () => {
+    if (!estimatedPrice || !originCoords || !destinationCoords) {
+      toast({
+        title: "Información incompleta",
+        description: "Por favor, calcula el precio antes de solicitar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    handleRequestRide("efectivo"); // Default to cash payment
+  };
+
+  // Import required hooks
+  const { useFavoriteLocations } = require("@/hooks/useFavoriteLocations");
+  const { useHomeLocationStorage } = require("@/hooks/useHomeLocationStorage");
+
   return (
-    <div className="grid gap-4">
-      <div>
-        <Label htmlFor="origin">Origen</Label>
-        <Input
-          id="origin"
-          placeholder="Punto de partida"
-          value={origin}
-          onChange={(e) => {
-            setOrigin(e.target.value);
-          }}
-        />
-      </div>
-      <div>
-        <Label htmlFor="destination">Destino</Label>
-        <Input
-          id="destination"
-          placeholder="¿A dónde quieres ir?"
-          value={destination}
-          onChange={(e) => {
-            setDestination(e.target.value);
-          }}
-        />
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Input
-          id="schedule"
-          type="checkbox"
-          checked={isScheduled}
-          onChange={(e) => setIsScheduled(e.target.checked)}
-        />
-        <Label htmlFor="schedule">Programar viaje</Label>
-      </div>
-
-      {isScheduled && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Fecha</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !scheduledDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {scheduledDate ? format(scheduledDate, "PPP") : <span>Seleccionar fecha</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                <Calendar
-                  mode="single"
-                  selected={scheduledDate}
-                  onSelect={setScheduledDate}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div>
-            <Label htmlFor="time">Hora</Label>
-            <Input
-              type="time"
-              id="time"
-              value={scheduledTime}
-              onChange={(e) => setScheduledTime(e.target.value)}
-            />
-          </div>
+    <div className="max-w-4xl mx-auto pb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left column - Map on desktop */}
+        <div className="col-span-1 lg:col-span-7 order-2 lg:order-1">
+          <MapViewSection 
+            useManualSelection={useManualSelection}
+            originCoords={originCoords}
+            destinationCoords={destinationCoords}
+            routeGeometry={routeGeometry}
+            handleOriginChange={handleOriginChange}
+            handleDestinationChange={handleDestinationChange}
+            saveRideToSupabase={handleSubmitRideRequest}
+            useHomeAsDestination={useHomeAsDestination}
+            allowHomeEditing={true}
+            trafficLevel={trafficLevel}
+            estimatedTime={estimatedTime}
+            estimatedDistance={estimatedDistance}
+            estimatedPrice={estimatedPrice}
+          />
         </div>
-      )}
-
-      {estimatedPrice !== undefined && (
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold">Precio estimado:</span>
-          <span className="text-2xl font-bold">{estimatedPrice.toFixed(2)} €</span>
+        
+        {/* Right column - ride info */}
+        <div className="col-span-1 lg:col-span-5 order-1 lg:order-2 space-y-4">
+          <EnhancedLocationSelector 
+            origin={origin}
+            setOrigin={setOrigin}
+            destination={destination}
+            setDestination={setDestination}
+            onOriginCoordinatesChange={handleOriginChange}
+            onDestinationCoordinatesChange={handleDestinationChange}
+            handleUseCurrentLocation={handleUseCurrentLocation}
+            useHomeAddress={useHomeAddress}
+            saveHomeAddress={saveHomeAddress}
+            googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+            calculateEstimates={calculateEstimates}
+            isCalculating={isLoading}
+          />
+          
+          {/* Calculation buttons */}
+          <RouteCalculator
+            origin={origin}
+            originCoords={originCoords}
+            destination={destination}
+            destinationCoords={destinationCoords}
+            isLoading={isLoading}
+            calculateEstimates={calculateEstimates}
+          />
+          
+          {/* Request button (only shown if price is calculated) */}
+          {estimatedPrice && estimatedDistance && estimatedTime && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <Button 
+                onClick={handleSubmitRideRequest}
+                className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg"
+              >
+                <Car className="mr-2" size={24} />
+                Solicitar Taxi ({estimatedPrice.toFixed(2)}€)
+              </Button>
+              <p className="text-sm text-center mt-2 text-gray-500">
+                Tiempo estimado de espera: 3-5 minutos
+              </p>
+            </div>
+          )}
         </div>
-      )}
-
-      <Button onClick={handleSubmitRequest}>Solicitar viaje</Button>
+      </div>
     </div>
   );
 };

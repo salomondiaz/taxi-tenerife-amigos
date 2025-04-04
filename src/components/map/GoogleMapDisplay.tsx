@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { MapProps } from './types';
 import { useGoogleMap } from './hooks/useGoogleMap';
 import { useGoogleMapSelection } from './hooks/useGoogleMapSelection';
@@ -7,6 +7,7 @@ import { useGoogleMapMarkers } from './hooks/useGoogleMapMarkers';
 import { useGoogleMapRouting } from './hooks/useGoogleMapRouting';
 import { useGoogleMapSearch } from './hooks/useGoogleMapSearch';
 import { useHomeLocationStorage } from '@/hooks/useHomeLocationStorage';
+import { useGoogleMapDriverMarker } from './hooks/useGoogleMapDriverMarker';
 import MapStatusOverlay from './components/MapStatusOverlay';
 import MapSelectionControls from './components/MapSelectionControls';
 import HomeButtonControls from './components/HomeButtonControls';
@@ -33,7 +34,9 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     homeLocation: initialHomeLocation,
     showSelectMarkers = false,
     selectionMode: externalSelectionMode,
-    onMapClick
+    onMapClick,
+    showDriverPosition = false,
+    driverPosition
   } = props;
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -65,11 +68,6 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
       } else {
         directionsRendererRef.current.setMap(map);
       }
-      
-      // Remove Ctrl key requirement for map interaction
-      map.setOptions({
-        gestureHandling: "greedy" // Allows free movement without Ctrl key
-      });
       
       // Add click event listener
       if (allowMapSelection && onMapClick) {
@@ -133,6 +131,13 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     homeLocation
   });
 
+  // Handle driver marker if needed
+  useGoogleMapDriverMarker({
+    map: mapRef.current,
+    showDriverPosition,
+    driverPosition
+  });
+
   // Handle routing between points
   useGoogleMapRouting({
     mapRef,
@@ -151,6 +156,11 @@ const GoogleMapDisplay: React.FC<MapProps> = (props) => {
     onOriginChange,
     onDestinationChange
   });
+
+  // Update markers when origin or destination changes
+  useEffect(() => {
+    updateMarkers();
+  }, [origin, destination, homeLocation, updateMarkers]);
 
   // Handle saving home location
   const handleSaveHomeLocation = () => {

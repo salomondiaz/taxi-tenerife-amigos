@@ -1,5 +1,6 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { MapCoordinates } from '../types';
 
 interface UseGoogleMapProps {
@@ -18,78 +19,117 @@ export function useGoogleMap({
   onMapReady
 }: UseGoogleMapProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const mapIsInitialized = useRef<boolean>(false);
   
-  // Initialize map when container is ready
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+  // Initialize the map
+  const initializeMap = useCallback(() => {
+    if (!mapContainerRef.current || mapIsInitialized.current) return;
     
-    // Load Google Maps API
-    if (!window.google) {
-      console.error("Google Maps API not loaded");
-      return;
-    }
-
+    const tenerife = { lat: 28.2916, lng: -16.6291 };
+    const initialCenter = origin ? { lat: origin.lat, lng: origin.lng } : tenerife;
+    
+    const mapOptions: google.maps.MapOptions = {
+      center: initialCenter,
+      zoom: 14,
+      mapTypeControl: false,
+      fullscreenControl: false,
+      streetViewControl: false,
+      zoomControl: true,
+      gestureHandling: "greedy", // Allow user to freely move map without Ctrl key
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    };
+    
     try {
-      // Create map instance
-      const defaultCenter = { lat: 40.416775, lng: -3.70379 }; // Default center (Madrid)
-      const initialCenter = origin || defaultCenter;
-      
-      const mapOptions: google.maps.MapOptions = {
-        center: initialCenter,
-        zoom: 13,
-        mapTypeId: 'roadmap',
-        disableDefaultUI: !interactive,
-        zoomControl: interactive,
-        mapTypeControl: false,
-        streetViewControl: false,
-        rotateControl: false,
-        fullscreenControl: interactive,
-        gestureHandling: interactive ? 'greedy' : 'none',
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
-      };
-      
       mapRef.current = new google.maps.Map(mapContainerRef.current, mapOptions);
-      console.log("Google Map initialized");
+      mapIsInitialized.current = true;
       
-      if (onMapReady) {
-        onMapReady(mapRef.current);
+      if (mapRef.current) {
+        // Wait for the map to finish loading before calling onMapReady
+        google.maps.event.addListenerOnce(mapRef.current, 'idle', () => {
+          if (mapRef.current) {
+            if (onMapReady) onMapReady(mapRef.current);
+          }
+        });
       }
     } catch (error) {
-      console.error("Error initializing Google Maps:", error);
+      console.error("Error initializing map:", error);
+      toast({
+        title: "Error al cargar el mapa",
+        description: "No se pudo inicializar Google Maps",
+        variant: "destructive"
+      });
     }
-    
-    return () => {
-      // No explicit cleanup needed for Google Maps
-      mapRef.current = null;
-    };
-  }, [mapContainerRef, origin, interactive, onMapReady]);
-  
-  // Prevent automatic zoom out when clicking
+  }, [mapContainerRef, origin, onMapReady]);
+
+  // Initialize map when API key is available
   useEffect(() => {
-    if (mapRef.current) {
-      const currentMap = mapRef.current;
-      
-      // Create a listener that prevents zoom being reset
-      const preventZoomReset = (event: any) => {
-        event.stop();
-      };
-      
-      // Add various event listeners to prevent unwanted zoom changes
-      google.maps.event.addListener(currentMap, 'dblclick', preventZoomReset);
-      
-      return () => {
-        if (currentMap) {
-          google.maps.event.clearListeners(currentMap, 'dblclick');
-        }
-      };
+    if (!mapContainerRef.current || !apiKey || mapIsInitialized.current) return;
+
+    if (!window.google?.maps) {
+      // Only load the script once
+      const existingScript = document.getElementById("google-maps-script");
+      if (!existingScript) {
+        const script = document.createElement('script');
+        script.id = "google-maps-script";
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+          console.log("Google Maps API loaded successfully");
+          initializeMap();
+        };
+        
+        script.onerror = () => {
+          console.error('Error loading Google Maps API');
+          toast({
+            title: 'Error',
+            description: 'No se pudo cargar Google Maps',
+            variant: 'destructive'
+          });
+        };
+        
+        document.body.appendChild(script);
+        return () => {
+          // Don't remove the script on unmount to prevent re-loading
+          // Just clean up other resources
+          if (mapRef.current) {
+            google.maps.event.clearInstanceListeners(mapRef.current);
+          }
+        };
+      } else {
+        // Script already exists, wait for it to load
+        const checkGoogleMapsLoaded = setInterval(() => {
+          if (window.google?.maps) {
+            clearInterval(checkGoogleMapsLoaded);
+            initializeMap();
+          }
+        }, 100);
+        
+        return () => {
+          clearInterval(checkGoogleMapsLoaded);
+        };
+      }
+    } else {
+      // Google Maps already loaded
+      console.log("Google Maps API already loaded, initializing map");
+      initializeMap();
     }
-  }, [mapRef.current]);
-  
+  }, [apiKey, initializeMap]);
+
+  // Update map center when origin changes
+  useEffect(() => {
+    if (!mapRef.current || !origin) return;
+    
+    const newCenter = { lat: origin.lat, lng: origin.lng };
+    mapRef.current.setCenter(newCenter);
+  }, [origin]);
+
   return mapRef;
 }
