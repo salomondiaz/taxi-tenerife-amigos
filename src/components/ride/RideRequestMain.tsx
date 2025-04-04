@@ -14,10 +14,8 @@ import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 
 const RideRequestMain: React.FC = () => {
   const location = useLocation();
-  const { useFavoriteLocations: favoriteLocationsHook } = require("@/hooks/useFavoriteLocations");
-  const { useHomeLocationStorage: homeLocationStorageHook } = require("@/hooks/useHomeLocationStorage");
   
-  // Get instances of hooks
+  // Get instances of hooks - using ES imports instead of require
   const { getLocationByType } = useFavoriteLocations();
   const { saveHomeLocation } = useHomeLocationStorage();
   
