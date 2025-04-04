@@ -34,7 +34,6 @@ const Map: React.FC<MapProps> = (props) => {
   />;
 };
 
-// Exportaciones
+// Export only once
 export default Map;
-export { GOOGLE_MAPS_API_KEY };
 export type { MapCoordinates } from './map/types';

@@ -9,9 +9,18 @@ import MapViewSection from "./MapViewSection";
 import RouteCalculator from "./RouteCalculator";
 import { Button } from "@/components/ui/button";
 import { Car } from "lucide-react";
+import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
+import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
 
 const RideRequestMain: React.FC = () => {
   const location = useLocation();
+  const { useFavoriteLocations: favoriteLocationsHook } = require("@/hooks/useFavoriteLocations");
+  const { useHomeLocationStorage: homeLocationStorageHook } = require("@/hooks/useHomeLocationStorage");
+  
+  // Get instances of hooks
+  const { getLocationByType } = useFavoriteLocations();
+  const { saveHomeLocation } = useHomeLocationStorage();
+  
   const {
     useManualSelection,
     setUseManualSelection,
@@ -35,9 +44,6 @@ const RideRequestMain: React.FC = () => {
   } = useRideRequestFlow();
 
   const [activeTab, setActiveTab] = useState<"map" | "info">("map");
-  
-  // Get locations from context
-  const { getLocationByType } = useFavoriteLocations();
   
   const useHomeAddress = () => {
     const homeLocation = getLocationByType('home');
@@ -67,8 +73,6 @@ const RideRequestMain: React.FC = () => {
       return;
     }
     
-    // Call the hook to save the home location
-    const { saveHomeLocation } = useHomeLocationStorage();
     saveHomeLocation(originCoords);
     
     toast({
@@ -95,23 +99,19 @@ const RideRequestMain: React.FC = () => {
     }
   };
 
-  // Request a ride
-  const handleSubmitRideRequest = () => {
+  // Request a ride - wrap in async function to match expected Promise return type
+  const saveRideToSupabase = async (scheduledDate?: Date) => {
     if (!estimatedPrice || !originCoords || !destinationCoords) {
       toast({
         title: "Información incompleta",
         description: "Por favor, calcula el precio antes de solicitar",
         variant: "destructive"
       });
-      return;
+      return null;
     }
     
-    handleRequestRide("efectivo"); // Default to cash payment
+    return handleRequestRide("efectivo"); // Default to cash payment
   };
-
-  // Import required hooks
-  const { useFavoriteLocations } = require("@/hooks/useFavoriteLocations");
-  const { useHomeLocationStorage } = require("@/hooks/useHomeLocationStorage");
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -125,7 +125,7 @@ const RideRequestMain: React.FC = () => {
             routeGeometry={routeGeometry}
             handleOriginChange={handleOriginChange}
             handleDestinationChange={handleDestinationChange}
-            saveRideToSupabase={handleSubmitRideRequest}
+            saveRideToSupabase={saveRideToSupabase}
             useHomeAsDestination={useHomeAsDestination}
             allowHomeEditing={true}
             trafficLevel={trafficLevel}
@@ -166,7 +166,7 @@ const RideRequestMain: React.FC = () => {
           {estimatedPrice && estimatedDistance && estimatedTime && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <Button 
-                onClick={handleSubmitRideRequest}
+                onClick={() => saveRideToSupabase()}
                 className="w-full bg-green-600 hover:bg-green-700 h-14 text-lg"
               >
                 <Car className="mr-2" size={24} />

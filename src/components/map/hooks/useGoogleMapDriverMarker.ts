@@ -57,10 +57,7 @@ export function useGoogleMapDriverMarker({
       }
     }
     
-    // Add pulsating effect if available
-    if (driverPosition.pulsate) {
-      // This would require custom animation code
-    }
+    // Remove pulsate effect check - property doesn't exist in MapDriverPosition type
     
     return () => {
       if (driverMarkerRef.current) {
