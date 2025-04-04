@@ -19,6 +19,7 @@ export const useRideSaver = (
 
   /**
    * Save ride details to Supabase
+   * @param scheduledDate An optional Date object representing when the ride is scheduled
    */
   const saveRideToSupabase = async (scheduledDate?: Date) => {
     // Validate required data
