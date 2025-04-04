@@ -89,10 +89,8 @@ const HomeLocationSetup: React.FC<HomeLocationSetupProps> = ({ setOrigin }) => {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <RequestHeader />
-      
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <div className="p-6">
+      <div className="bg-white rounded-xl p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4 flex items-center">
           <Home className="mr-2 text-tenerife-blue" size={24} />
           Configurar Mi Casa
