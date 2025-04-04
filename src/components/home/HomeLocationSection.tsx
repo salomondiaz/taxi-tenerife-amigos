@@ -12,7 +12,7 @@ const HomeLocationSection: React.FC<HomeLocationSectionProps> = ({ homeLocation 
   const navigate = useNavigate();
   
   const handleSetHomeLocation = () => {
-    navigate("/request-ride", { state: { setHomeLocation: true } });
+    navigate("/solicitar", { state: { setHomeLocation: true } });
   };
 
   return (
@@ -32,7 +32,7 @@ const HomeLocationSection: React.FC<HomeLocationSectionProps> = ({ homeLocation 
               <Button
                 variant="default"
                 className="flex-1 bg-tenerife-blue"
-                onClick={() => navigate("/request-ride", { 
+                onClick={() => navigate("/solicitar", { 
                   state: { useHomeAsOrigin: true } 
                 })}
               >

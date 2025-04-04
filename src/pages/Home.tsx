@@ -95,7 +95,7 @@ const Home = () => {
   }, [testMode, getLocationByType]);
 
   const handleRequestRide = () => {
-    navigate("/request-ride");
+    navigate("/solicitar");
   };
 
   return (

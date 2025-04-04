@@ -28,6 +28,10 @@ const routes: RouteObject[] = [
     element: <RideRequest />,
   },
   {
+    path: "/request-ride",
+    element: <RideRequest />,
+  },
+  {
     path: "/login",
     element: <Login />,
   },
