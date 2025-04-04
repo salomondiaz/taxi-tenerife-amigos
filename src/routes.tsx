@@ -1,5 +1,5 @@
-import { createBrowserRouter, RouteObject } from "react-router-dom";
-import ErrorPage from "@/pages/Error";
+
+import { RouteObject } from "react-router-dom";
 import HomePage from "@/pages/Home";
 import RideRequest from "@/pages/RideRequest";
 import ProfilePage from "@/pages/Profile";
@@ -9,6 +9,7 @@ import RideHistoryPage from "@/pages/RideHistory";
 import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
 import NotFound from "@/pages/NotFound";
+import ErrorPage from "@/pages/Error";
 
 const routes: RouteObject[] = [
   {
@@ -45,13 +46,13 @@ const routes: RouteObject[] = [
     element: <HomeLocationSettings />,
   },
   {
+    path: "/error",
+    element: <ErrorPage />,
+  },
+  {
     path: "*",
     element: <NotFound />,
   }
 ];
 
-// We're moving away from using this directly in App.tsx
-// but keeping it for reference
-const router = createBrowserRouter(routes);
-
-export default router;
+export default routes;

@@ -1,8 +1,7 @@
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
+
+import { supabase } from "@/integrations/supabase/client";
 
 export const useRideRequestMain = () => {
-  const supabase = useSupabaseClient();
-
   // Function to save ride request to Supabase
   const saveRideToSupabase = async (
     origin: string,
@@ -13,6 +12,9 @@ export const useRideRequestMain = () => {
     scheduledDate: Date | null = null
   ) => {
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id || 'anonymous';
+      
       const { data, error } = await supabase.from("rides").insert([
         {
           origin,
@@ -22,7 +24,7 @@ export const useRideRequestMain = () => {
           price,
           scheduled_at: scheduledDate ? scheduledDate.toISOString() : null,
           status: "pending",
-          user_id: (await supabase.auth.getUser()).data?.user?.id,
+          user_id: userId,
         },
       ]);
 
@@ -51,7 +53,9 @@ export const saveRideToSupabase = async (
   scheduledDate: Date | null = null
 ) => {
   try {
-    const supabase = useSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id || 'anonymous';
+    
     const { data, error } = await supabase.from("rides").insert([
       {
         origin,
@@ -61,7 +65,7 @@ export const saveRideToSupabase = async (
         price,
         scheduled_at: scheduledDate ? scheduledDate.toISOString() : null,
         status: "pending",
-        user_id: (await supabase.auth.getUser()).data?.user?.id,
+        user_id: userId,
       },
     ]);
 

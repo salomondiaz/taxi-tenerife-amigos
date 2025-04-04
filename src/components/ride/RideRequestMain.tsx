@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,14 +29,22 @@ const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMain
 
   const handleSubmitRequest = async () => {
     if (!origin || !destination) {
-      console.error("Origin and destination are required");
+      toast({
+        variant: "destructive",
+        title: "Información incompleta",
+        description: "Por favor ingrese origen y destino",
+      });
       return;
     }
     
     try {
-      let scheduledDateObj = null;
+      let scheduledDateObj: Date | null = null;
+      
       if (isScheduled && scheduledDate && scheduledTime) {
+        // Create a new Date object from the scheduledDate
         scheduledDateObj = new Date(scheduledDate);
+        
+        // Parse the time string and set hours and minutes
         const [hours, minutes] = scheduledTime.split(':').map(Number);
         scheduledDateObj.setHours(hours, minutes);
       }
