@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, RouteObject } from "react-router-dom";
 import ErrorPage from "@/pages/Error";
 import HomePage from "@/pages/Home";
@@ -51,6 +50,8 @@ const routes: RouteObject[] = [
   }
 ];
 
+// We're moving away from using this directly in App.tsx
+// but keeping it for reference
 const router = createBrowserRouter(routes);
 
 export default router;
