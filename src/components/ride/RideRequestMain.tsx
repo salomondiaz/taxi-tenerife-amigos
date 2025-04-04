@@ -122,13 +122,14 @@ const RideRequestMain = ({ estimatedPrice, distance, duration }: RideRequestMain
                   {scheduledDate ? format(scheduledDate, "PPP") : <span>Seleccionar fecha</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
                 <Calendar
                   mode="single"
                   selected={scheduledDate}
                   onSelect={setScheduledDate}
                   disabled={(date) => date < new Date()}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>

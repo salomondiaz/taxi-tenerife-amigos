@@ -9,8 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Home, MapPin } from "lucide-react";
 import { MapCoordinates } from '../types';
-import { Home, X } from 'lucide-react';
 
 interface HomeDestinationDialogProps {
   open: boolean;
@@ -25,7 +25,7 @@ const HomeDestinationDialog: React.FC<HomeDestinationDialogProps> = ({
   onOpenChange,
   clickedPoint,
   onConfirm,
-  homeAddress
+  homeAddress = 'Mi Casa'
 }) => {
   const handleConfirm = () => {
     onConfirm();
@@ -37,42 +37,39 @@ const HomeDestinationDialog: React.FC<HomeDestinationDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <Home className="mr-2 h-5 w-5 text-green-600" />
-            ¿Viajar a casa?
+            <Home className="mr-2 h-5 w-5 text-tenerife-blue" />
+            ¿Quieres ir a casa?
           </DialogTitle>
           <DialogDescription>
-            ¿Deseas viajar desde este punto hasta tu casa?
-            {homeAddress && (
-              <div className="mt-2 bg-blue-50 p-2 rounded-md">
-                <p className="text-sm font-semibold">Dirección de tu casa:</p>
-                <p className="text-sm text-blue-700">{homeAddress}</p>
-              </div>
-            )}
-            {clickedPoint?.address && (
-              <div className="mt-2 bg-gray-50 p-2 rounded-md">
-                <p className="text-sm font-semibold">Punto seleccionado:</p>
-                <p className="text-sm text-gray-700">{clickedPoint.address}</p>
-              </div>
-            )}
+            Hemos detectado que seleccionaste un punto de origen. ¿Deseas establecer tu casa como destino de este viaje?
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter className="flex sm:justify-between">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="mt-2 sm:mt-0"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Cancelar
+        
+        <div className="flex flex-col space-y-4 pt-4">
+          <div className="flex items-start space-x-3">
+            <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <p className="font-medium">Origen seleccionado</p>
+              <p className="text-sm text-gray-500">{clickedPoint?.address || 'Ubicación seleccionada'}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <Home className="h-5 w-5 text-green-600 mt-0.5" />
+            <div>
+              <p className="font-medium">Destino: Tu casa</p>
+              <p className="text-sm text-gray-500">{homeAddress}</p>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-end sm:space-x-2 space-y-2 sm:space-y-0">
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            No, seleccionar otro destino
           </Button>
-          <Button 
-            type="button" 
-            onClick={handleConfirm} 
-            className="bg-green-600 hover:bg-green-700"
-          >
+          <Button type="button" onClick={handleConfirm} className="flex items-center">
             <Home className="mr-2 h-4 w-4" />
-            Sí, viajar a casa
+            Sí, ir a casa
           </Button>
         </DialogFooter>
       </DialogContent>
