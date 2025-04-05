@@ -12,7 +12,7 @@ const RIDE_HISTORY_KEY = 'ride_history';
 
 const RideTracking = () => {
   const navigate = useNavigate();
-  const { currentRide, setCurrentRide, testMode } = useAppContext();
+  const { currentRide, setCurrentRide } = useAppContext();
   
   const [rideStatus, setRideStatus] = useState<"pending" | "accepted" | "ongoing" | "completed" | "cancelled">(
     currentRide?.status || "pending"
@@ -30,60 +30,63 @@ const RideTracking = () => {
         variant: "destructive",
       });
       navigate("/home");
-    } else {
-      setRideStatus(currentRide.status);
-      
-      if (currentRide.status === "pending") {
-        const timer = setTimeout(() => {
-          // Asignar un conductor de prueba
-          const testDriver = {
-            id: "driver-1",
-            name: "Carlos Rodríguez",
-            phone: "+34 612 345 678",
-            licenseNumber: "TX-123456",
-            vehicle: {
-              make: "Toyota",
-              model: "Prius",
-              licensePlate: "3456-BCM",
-              color: "Blanco",
-            },
-            rating: 4.8,
-            isAvailable: true,
-            profilePicture: null,
-            isTestDriver: true,
-          };
-          
-          setDriver(testDriver);
-          setEstimatedArrival(5);
-          setRideStatus("accepted");
-          
-          // Actualizar el ride en el contexto
+      return;
+    }
+    
+    setRideStatus(currentRide.status);
+    
+    if (currentRide.status === "pending") {
+      const timer = setTimeout(() => {
+        // Asignar un conductor de prueba
+        const testDriver = {
+          id: "driver-1",
+          name: "Carlos Rodríguez",
+          phone: "+34 612 345 678",
+          licenseNumber: "TX-123456",
+          vehicle: {
+            make: "Toyota",
+            model: "Prius",
+            licensePlate: "3456-BCM",
+            color: "Blanco",
+          },
+          rating: 4.8,
+          isAvailable: true,
+          profilePicture: null,
+          isTestDriver: true,
+        };
+        
+        setDriver(testDriver);
+        setEstimatedArrival(5);
+        setRideStatus("accepted");
+        
+        // Actualizar el ride en el contexto
+        if (currentRide && setCurrentRide) {
           setCurrentRide({
             ...currentRide,
             status: "accepted",
             driver: testDriver,
           });
-          
-          // Simular posición inicial del conductor
-          if (currentRide.origin) {
-            const initialPosition = {
-              lat: currentRide.origin.lat - 0.01,
-              lng: currentRide.origin.lng + 0.005,
-              heading: 45,
-              speed: 40,
-              timestamp: Date.now()
-            };
-            setDriverPosition(initialPosition);
-          }
-          
-          toast({
-            title: "¡Conductor encontrado!",
-            description: "Carlos llegará en 5 minutos",
-          });
-        }, 3000);
+        }
         
-        return () => clearTimeout(timer);
-      }
+        // Simular posición inicial del conductor
+        if (currentRide && currentRide.origin) {
+          const initialPosition = {
+            lat: currentRide.origin.lat - 0.01,
+            lng: currentRide.origin.lng + 0.005,
+            heading: 45,
+            speed: 40,
+            timestamp: Date.now()
+          };
+          setDriverPosition(initialPosition);
+        }
+        
+        toast({
+          title: "¡Conductor encontrado!",
+          description: "Carlos llegará en 5 minutos",
+        });
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
   }, [currentRide, navigate, setCurrentRide]);
 
@@ -91,10 +94,13 @@ const RideTracking = () => {
     if (rideStatus === "accepted") {
       const timer = setTimeout(() => {
         setRideStatus("ongoing");
-        setCurrentRide({
-          ...currentRide,
-          status: "ongoing",
-        });
+        
+        if (currentRide && setCurrentRide) {
+          setCurrentRide({
+            ...currentRide,
+            status: "ongoing",
+          });
+        }
         
         toast({
           title: "¡El viaje ha comenzado!",
@@ -112,10 +118,13 @@ const RideTracking = () => {
           if (newProgress >= 100) {
             clearInterval(interval);
             setRideStatus("completed");
-            setCurrentRide({
-              ...currentRide,
-              status: "completed",
-            });
+            
+            if (currentRide && setCurrentRide) {
+              setCurrentRide({
+                ...currentRide,
+                status: "completed",
+              });
+            }
             
             toast({
               title: "¡Viaje completado!",
@@ -213,10 +222,13 @@ const RideTracking = () => {
     
     if (window.confirm("¿Estás seguro de que quieres cancelar este viaje?")) {
       setRideStatus("cancelled");
-      setCurrentRide({
-        ...currentRide,
-        status: "cancelled",
-      });
+      
+      if (currentRide && setCurrentRide) {
+        setCurrentRide({
+          ...currentRide,
+          status: "cancelled",
+        });
+      }
       
       // Save cancelled ride to history
       saveRideToHistory();
