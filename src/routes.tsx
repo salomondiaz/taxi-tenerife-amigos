@@ -16,7 +16,7 @@ import Login from "@/pages/Login";
 const routes: RouteObject[] = [
   {
     path: "/",
-    element: <LandingPage />,
+    element: <HomePage />,
     errorElement: <ErrorPage />,
   },
   {
