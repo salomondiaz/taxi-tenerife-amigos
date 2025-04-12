@@ -5,6 +5,8 @@ import Map from "@/components/Map";
 import { toast } from "@/hooks/use-toast";
 import HomeDestinationDialog from "@/components/map/components/HomeDestinationDialog";
 import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
+import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
+import { AlertCircle } from "lucide-react";
 
 interface MapViewSectionProps {
   useManualSelection: boolean;
@@ -21,6 +23,7 @@ interface MapViewSectionProps {
   estimatedDistance?: number | null;
   estimatedPrice?: number | null;
   scheduledTime?: string;
+  roadInterruptions?: string[];
 }
 
 const MapViewSection: React.FC<MapViewSectionProps> = ({
@@ -37,36 +40,36 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
   estimatedTime,
   estimatedDistance,
   estimatedPrice,
-  scheduledTime
+  scheduledTime,
+  roadInterruptions = []
 }) => {
   // Select the current step based on what's already selected
   const selectionMode = React.useMemo(() => {
     if (!originCoords) return 'origin';
     if (!destinationCoords) return 'destination';
-    return null;
+    return 'none';
   }, [originCoords, destinationCoords]);
   
   const [showHomeDialog, setShowHomeDialog] = useState(false);
   const [clickedPoint, setClickedPoint] = useState<MapCoordinates | null>(null);
-  const { loadHomeLocation } = useHomeLocationStorage();
-  const homeLocation = loadHomeLocation();
+  const { saveHomeLocation } = useHomeLocationStorage();
+  const { getLocationByType, saveFavoriteLocation } = useFavoriteLocations();
+  const homeLocation = getLocationByType('home');
 
   // Home dialog handlers
   const handleMapClick = (coords: MapCoordinates) => {
-    if (!homeLocation) return; // Skip if no home location is set
-    
-    // If we already have an origin and destination, don't show the dialog
-    if (originCoords && destinationCoords) return;
-    
     // Save the clicked point
     setClickedPoint(coords);
     
-    // If this is the first click (setting origin), show dialog asking about trip to home
+    // If this is the first click (setting origin), check if we should show dialog
     if (!originCoords) {
-      // First set the origin to the clicked point
+      // Set the origin to the clicked point
       handleOriginChange(coords);
-      // Then ask if they want to go home from here
-      setShowHomeDialog(true);
+      
+      // If we have a home location, ask if they want to go home from here
+      if (homeLocation) {
+        setShowHomeDialog(true);
+      }
     } else if (!destinationCoords) {
       // If second click, just set destination normally
       handleDestinationChange(coords);
@@ -77,6 +80,36 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
     if (useHomeAsDestination && homeLocation) {
       useHomeAsDestination();
     }
+  };
+  
+  const handleSaveHomeLocation = () => {
+    if (!originCoords) {
+      toast({
+        title: "No hay ubicación seleccionada",
+        description: "Selecciona primero una ubicación de origen para guardarla como casa",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Save to localStorage for backward compatibility
+    saveHomeLocation(originCoords);
+    
+    // Also save to favorite locations
+    const homeFavorite = {
+      name: "Mi Casa",
+      type: "home" as 'home',
+      coordinates: originCoords,
+      icon: "🏠",
+      notes: "Mi dirección principal"
+    };
+    
+    saveFavoriteLocation(homeFavorite);
+    
+    toast({
+      title: "Casa guardada",
+      description: "Tu ubicación ha sido guardada como tu casa",
+    });
   };
 
   // Format traffic level text
@@ -98,6 +131,7 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         routeGeometry={routeGeometry}
         onOriginChange={handleOriginChange}
         onDestinationChange={handleDestinationChange}
+        onMapClick={handleMapClick}
         allowMapSelection={true}
         showRoute={true}
         useHomeAsDestination={useHomeAsDestination}
@@ -105,41 +139,71 @@ const MapViewSection: React.FC<MapViewSectionProps> = ({
         allowHomeEditing={allowHomeEditing}
         showSelectMarkers={true}
         selectionMode={selectionMode}
-        onMapClick={handleMapClick}
       />
+      
+      {/* Button to save home location */}
+      <div className="absolute top-4 right-4 z-40">
+        <button 
+          onClick={handleSaveHomeLocation}
+          className="bg-white text-tenerife-blue px-3 py-2 rounded-lg shadow-md text-sm font-medium flex items-center"
+        >
+          <span className="mr-1">🏠</span>
+          Guardar como Mi Casa
+        </button>
+      </div>
       
       <HomeDestinationDialog 
         open={showHomeDialog}
         onOpenChange={setShowHomeDialog}
         clickedPoint={clickedPoint}
         onConfirm={handleHomeDialogConfirm}
-        homeAddress={homeLocation?.address}
+        homeAddress={homeLocation?.coordinates.address}
       />
       
       {/* Mostrar resumen del viaje si tenemos estimaciones */}
       {estimatedPrice && estimatedDistance && estimatedTime && (
         <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-md z-40">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="text-sm font-medium flex items-center space-x-2">
-                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedDistance.toFixed(1)} km</span>
-                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedTime} min</span>
-                {scheduledTime && (
-                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Programado</span>
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <div className="text-sm font-medium flex items-center space-x-2">
+                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedDistance.toFixed(1)} km</span>
+                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{estimatedTime} min</span>
+                  {scheduledTime && (
+                    <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Programado: {scheduledTime}</span>
+                  )}
+                </div>
+                {getTrafficText() && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    {getTrafficText()}
+                  </p>
                 )}
               </div>
-              {getTrafficText() && (
-                <p className="text-xs text-gray-600 mt-1">
-                  {getTrafficText()}
+              <div className="text-right">
+                <span className="text-lg font-bold bg-green-100 text-green-800 px-2 py-1 rounded">{estimatedPrice.toFixed(2)}€</span>
+                <p className="text-xs text-gray-500 mt-1">
+                  {scheduledTime ? "Viaje programado" : "Precio estimado"}
                 </p>
-              )}
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-lg font-bold bg-green-100 text-green-800 px-2 py-1 rounded">{estimatedPrice.toFixed(2)}€</span>
-              <p className="text-xs text-gray-500 mt-1">
-                {scheduledTime ? "Viaje programado" : "Precio estimado"}
-              </p>
-            </div>
+            
+            {/* Road interruptions section */}
+            {roadInterruptions && roadInterruptions.length > 0 && (
+              <div className="mt-1 pt-1 border-t border-gray-200">
+                <div className="flex items-center text-amber-700 text-xs">
+                  <AlertCircle size={14} className="mr-1" />
+                  <span className="font-medium">Alertas en la ruta:</span>
+                </div>
+                <ul className="text-xs text-amber-600 mt-1">
+                  {roadInterruptions.map((interruption, idx) => (
+                    <li key={idx} className="flex items-start">
+                      <span className="mr-1">•</span>
+                      <span>{interruption}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,16 +1,30 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock } from "lucide-react";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon, Clock as ClockIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { TimeSelector } from "./TimeSelector";
 
 interface ScheduleRideDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSchedule: (scheduledTime: Date) => void;
+  onSchedule: (scheduledDate: Date) => void;
 }
 
 const ScheduleRideDialog: React.FC<ScheduleRideDialogProps> = ({
@@ -18,87 +32,93 @@ const ScheduleRideDialog: React.FC<ScheduleRideDialogProps> = ({
   onOpenChange,
   onSchedule
 }) => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [time, setTime] = useState<string>("12:00");
+  const today = new Date();
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState<string | undefined>(undefined);
   
-  const handleSchedule = () => {
-    if (!date) return;
-    
-    const [hours, minutes] = time.split(":").map(Number);
-    const scheduledTime = new Date(date);
-    scheduledTime.setHours(hours, minutes, 0, 0);
-    
-    // Check if the scheduled time is in the future
-    if (scheduledTime < new Date()) {
-      alert("No puedes programar un viaje para el pasado. Por favor, elige una fecha y hora futura.");
+  const handleSubmit = () => {
+    if (!date || !time) {
       return;
     }
     
-    onSchedule(scheduledTime);
-    onOpenChange(false);
+    // Parse the time string (format: HH:MM)
+    const [hours, minutes] = time.split(':').map(Number);
+    
+    // Create a new date with the selected date and time
+    const scheduledDate = new Date(date);
+    scheduledDate.setHours(hours);
+    scheduledDate.setMinutes(minutes);
+    
+    onSchedule(scheduledDate);
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <Calendar className="mr-2 h-5 w-5 text-purple-600" />
-            Programar viaje
-          </DialogTitle>
+          <DialogTitle>Programar viaje</DialogTitle>
           <DialogDescription>
-            Selecciona la fecha y hora para programar tu viaje
+            Selecciona la fecha y hora para tu viaje programado.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Fecha</label>
-            <div className="flex justify-center border rounded-md p-1">
-              <CalendarComponent
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                locale={es}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                className="mx-auto"
-              />
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="col-span-4 space-y-2">
+              <label className="text-sm font-medium">Fecha</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP", { locale: es }) : "Seleccionar fecha"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    disabled={(date) => date < today}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="col-span-4 space-y-2">
+              <label className="text-sm font-medium">Hora</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !time && "text-muted-foreground"
+                    )}
+                  >
+                    <ClockIcon className="mr-2 h-4 w-4" />
+                    {time ? time : "Seleccionar hora"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <TimeSelector value={time} onChange={setTime} />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="time" className="text-sm font-medium leading-none flex items-center">
-              <Clock className="mr-1 h-4 w-4" />
-              Hora
-            </label>
-            <input
-              type="time"
-              id="time"
-              className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
-          </div>
-          
-          {date && (
-            <p className="text-sm text-center">
-              Viaje programado para:{" "}
-              <strong>
-                {format(date, "EEEE d 'de' MMMM", { locale: es })} a las{" "}
-                {time}
-              </strong>
-            </p>
-          )}
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
           <Button 
-            variant="default" 
-            className="bg-purple-600 hover:bg-purple-700"
-            onClick={handleSchedule}
+            onClick={handleSubmit} 
+            disabled={!date || !time}
+            className="bg-tenerife-blue hover:bg-tenerife-blue/90"
           >
             Programar viaje
           </Button>

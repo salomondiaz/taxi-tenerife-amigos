@@ -12,6 +12,7 @@ interface UseMapSelectionProps {
   defaultSelectionMode?: MapSelectionMode;
   onOriginChange?: (coordinates: MapCoordinates) => void;
   onDestinationChange?: (coordinates: MapCoordinates) => void;
+  onMapClick?: (coordinates: MapCoordinates) => void;
 }
 
 export function useMapSelection({
@@ -20,39 +21,68 @@ export function useMapSelection({
   allowMapSelection = false,
   defaultSelectionMode = 'none',
   onOriginChange,
-  onDestinationChange
+  onDestinationChange,
+  onMapClick
 }: UseMapSelectionProps) {
   const [selectionMode, setSelectionMode] = useState<MapSelectionMode>(
     allowMapSelection ? defaultSelectionMode : 'none'
   );
 
   useEffect(() => {
-    if (!map || !allowMapSelection) return;
+    if (!map) return;
+    
+    // Remove the dragPan restriction that requires CTRL key
+    if (map.dragPan) {
+      map.dragPan.enable();
+    }
     
     const handleMapClick = async (e: mapboxgl.MapMouseEvent) => {
-      if (selectionMode === 'none') return;
+      if (!allowMapSelection) return;
       
       const coords = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-      const address = await reverseGeocode(coords, apiKey);
+      let address: string | undefined;
+      
+      try {
+        address = await reverseGeocode(coords, apiKey);
+      } catch (error) {
+        console.error("Error reverse geocoding:", error);
+      }
+      
+      const fullCoords: MapCoordinates = { 
+        ...coords, 
+        address: address || undefined 
+      };
+      
+      // Pass event to custom click handler if provided
+      if (onMapClick) {
+        onMapClick(fullCoords);
+        return;
+      }
       
       if (selectionMode === 'origin') {
         if (onOriginChange) {
-          onOriginChange({ ...coords, address: address || undefined });
+          onOriginChange(fullCoords);
         }
         
         toast({
           title: "Origen seleccionado",
           description: address || "Ubicación seleccionada en el mapa",
         });
+        
+        // Auto-switch to destination selection after origin is set
+        setSelectionMode('destination');
       } else if (selectionMode === 'destination') {
         if (onDestinationChange) {
-          onDestinationChange({ ...coords, address: address || undefined });
+          onDestinationChange(fullCoords);
         }
         
         toast({
           title: "Destino seleccionado",
           description: address || "Ubicación seleccionada en el mapa",
         });
+        
+        // Reset selection mode after destination is set
+        setSelectionMode('none');
       }
     };
     
@@ -61,7 +91,7 @@ export function useMapSelection({
     return () => {
       map.off('click', handleMapClick);
     };
-  }, [map, apiKey, allowMapSelection, selectionMode, onOriginChange, onDestinationChange]);
+  }, [map, apiKey, allowMapSelection, selectionMode, onOriginChange, onDestinationChange, onMapClick]);
 
   return { selectionMode, setSelectionMode };
 }

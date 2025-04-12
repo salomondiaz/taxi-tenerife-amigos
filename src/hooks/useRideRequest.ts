@@ -1,75 +1,102 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppContext } from "@/context/AppContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { MapCoordinates, Ride } from "@/components/map/types";
+import { MapCoordinates } from "@/components/map/types";
 
 export const useRideRequest = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { setCurrentRide } = useAppContext();
+  const [isRequesting, setIsRequesting] = useState(false);
 
-  const requestRide = (
+  const requestRide = async (
     origin: string,
     destination: string,
     originCoords: MapCoordinates | null,
     destinationCoords: MapCoordinates | null,
-    estimatedPrice: number,
-    estimatedDistance: number,
-    paymentMethodId: string
+    estimatedPrice: number | null,
+    estimatedDistance: number | null,
+    paymentMethodId: string,
+    scheduledDate?: Date
   ) => {
     if (!originCoords || !destinationCoords) {
       toast({
         title: "Información incompleta",
-        description: "Por favor, asegúrate de seleccionar un origen y un destino válidos",
+        description: "Por favor selecciona origen y destino en el mapa",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
-    setIsSubmitting(true);
+    try {
+      setIsRequesting(true);
 
-    // Aquí se haría la llamada a la API para solicitar un viaje
-    // En este caso, simulamos un tiempo de respuesta
-    setTimeout(() => {
-      // Creamos un objeto de tipo Ride con la estructura correcta
       const rideData = {
-        id: `ride-${Date.now()}`,
-        origin: {
-          ...originCoords,
-          address: origin || originCoords.address || "Ubicación sin nombre", // Aseguramos que siempre haya una dirección
-        },
-        destination: {
-          ...destinationCoords,
-          address: destination || destinationCoords.address || "Destino sin nombre", // Aseguramos que siempre haya una dirección
-        },
-        status: "pending" as const,
-        requestTime: new Date(),
-        price: estimatedPrice,
-        distance: estimatedDistance,
-        createdAt: new Date().toISOString(),
-        paymentMethodId: paymentMethodId,
+        origen: origin,
+        destino: destination,
+        origen_lat: originCoords.lat,
+        origen_lng: originCoords.lng,
+        destino_lat: destinationCoords.lat,
+        destino_lng: destinationCoords.lng,
+        precio_estimado: estimatedPrice || 0,
+        estado: "pendiente",
+        hora_programada: scheduledDate ? scheduledDate.toISOString() : null,
+        usuario: "anonymous", // Replace with actual user ID when auth is implemented
+        distancia_estimada: estimatedDistance,
+        metodo_pago: paymentMethodId
       };
 
-      // Guardar en el contexto de la aplicación
-      setCurrentRide(rideData as any); // Usamos type assertion para evitar el error de tipo
+      // Check connection to Supabase
+      const { data: pingData, error: pingError } = await supabase.from('tabla de prueba').select('*').limit(1);
+      
+      if (pingError) {
+        console.error("Error connecting to Supabase:", pingError);
+        toast({
+          title: "Error de conexión",
+          description: "No se pudo conectar con el servidor. Por favor intenta más tarde.",
+          variant: "destructive",
+        });
+        return null;
+      }
 
-      // Mostrar notificación de éxito
+      // Insert ride data
+      const { data, error } = await supabase.from("viajes").insert([rideData]).select();
+
+      if (error) {
+        console.error("Error requesting ride:", error);
+        toast({
+          title: "Error al solicitar viaje",
+          description: "No se pudo procesar tu solicitud. Por favor intenta de nuevo.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      // Success message
       toast({
-        title: "¡Viaje solicitado!",
-        description: "Buscando conductor disponible...",
+        title: scheduledDate ? "Viaje Programado" : "Viaje Solicitado",
+        description: scheduledDate
+          ? `Tu viaje ha sido programado para el ${scheduledDate.toLocaleDateString()} a las ${scheduledDate.toLocaleTimeString()}`
+          : "Tu solicitud de viaje ha sido recibida. Pronto recibirás confirmación.",
       });
 
-      // Redirigir a la página de seguimiento
-      navigate("/ride-tracking");
-
-      setIsSubmitting(false);
-    }, 1500);
+      // Return the created ride data
+      return data?.[0] || null;
+    } catch (error) {
+      console.error("Exception requesting ride:", error);
+      toast({
+        title: "Error inesperado",
+        description: "Ocurrió un error al procesar tu solicitud",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsRequesting(false);
+    }
   };
 
   return {
     requestRide,
-    isSubmitting,
+    isRequesting,
   };
 };

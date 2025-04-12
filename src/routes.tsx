@@ -17,12 +17,12 @@ import Login from "@/pages/Login";
 const routes: RouteObject[] = [
   {
     path: "/",
-    element: <HomePage />,
+    element: <RideRequest />, // Set RideRequest as the default homepage
     errorElement: <ErrorPage />,
   },
   {
     path: "/home",
-    element: <HomePage />,
+    element: <RideRequest />,
   },
   {
     path: "/solicitar",

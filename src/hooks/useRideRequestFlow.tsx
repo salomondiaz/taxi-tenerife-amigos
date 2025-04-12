@@ -22,7 +22,7 @@ export const useRideRequestFlow = () => {
   const [originCoords, setOriginCoords] = useState<MapCoordinates | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<MapCoordinates | null>(null);
   const [routeGeometry, setRouteGeometry] = useState<any>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("efectivo");
   
   // Custom hooks
   const { 
@@ -101,11 +101,6 @@ export const useRideRequestFlow = () => {
     console.log("New destination from map:", coords);
   };
 
-  // Handle place selected from Google Places Autocomplete
-  const handlePlaceSelected = (coords: MapCoordinates) => {
-    // This is handled in HomeLocationSetup component
-  };
-
   // Function to handle selection of a saved location
   const handleSelectSavedLocation = (coordinates: MapCoordinates, address?: string) => {
     setOriginCoords(coordinates);
@@ -167,7 +162,7 @@ export const useRideRequestFlow = () => {
   };
 
   // Process ride request
-  const handleRequestRide = (paymentMethodId: string) => {
+  const handleRequestRide = (paymentMethodId: string, scheduledDate?: Date) => {
     return requestRide(
       origin, 
       destination, 
@@ -175,7 +170,8 @@ export const useRideRequestFlow = () => {
       destinationCoords, 
       estimatedPrice, 
       estimatedDistance,
-      paymentMethodId
+      paymentMethodId,
+      scheduledDate
     );
   };
 
@@ -194,7 +190,6 @@ export const useRideRequestFlow = () => {
     handleUseCurrentLocation,
     handleOriginChange,
     handleDestinationChange,
-    handlePlaceSelected,
     handleSelectSavedLocation,
     calculateEstimates,
     handleRequestRide,
