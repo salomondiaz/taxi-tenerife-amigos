@@ -40,9 +40,9 @@ const HomeLocations = () => {
   const navigate = useNavigate();
   const { 
     favoriteLocations, 
-    addFavoriteLocation, 
+    saveFavoriteLocation, 
     removeFavoriteLocation, 
-    updateFavoriteLocation 
+    editFavoriteLocation 
   } = useFavoriteLocations();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -105,12 +105,14 @@ const HomeLocations = () => {
       address: data.address,
     };
     
-    const id = addFavoriteLocation(mockCoordinates, "home", data.name);
+    const newLocation: Omit<FavoriteLocation, "id"> = {
+      name: data.name,
+      type: "home",
+      coordinates: mockCoordinates,
+      notes: data.notes
+    };
     
-    // Add notes if provided
-    if (data.notes) {
-      updateFavoriteLocation(id, { notes: data.notes });
-    }
+    saveFavoriteLocation(newLocation);
     
     setIsAddDialogOpen(false);
     toast({
@@ -128,11 +130,14 @@ const HomeLocations = () => {
       address: data.address,
     };
     
-    updateFavoriteLocation(selectedLocation.id, {
+    const updatedLocation = {
+      ...selectedLocation,
       name: data.name,
       coordinates: updatedCoordinates,
       notes: data.notes,
-    });
+    };
+    
+    editFavoriteLocation(selectedLocation.id, updatedLocation);
     
     setIsEditDialogOpen(false);
     toast({

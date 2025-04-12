@@ -11,6 +11,7 @@ export interface FavoriteLocation {
   coordinates: MapCoordinates;
   type: FavoriteLocationType;
   icon?: string;
+  notes?: string; // Added notes property
 }
 
 const FAVORITE_LOCATIONS_KEY = 'favorite_locations';
@@ -113,7 +114,7 @@ export function useFavoriteLocations() {
   };
 
   // Function to edit an existing favorite location
-  const editFavoriteLocation = (id: string, updates: Partial<Omit<FavoriteLocation, 'id'>>) => {
+  const editFavoriteLocation = (id: string, updates: Partial<FavoriteLocation> | FavoriteLocation) => {
     try {
       const locationIndex = favoriteLocations.findIndex(loc => loc.id === id);
       
