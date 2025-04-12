@@ -14,6 +14,7 @@ export const useRideRequestFlow = () => {
   const location = useLocation();
   const initialDestination = location.state?.destination || "";
   const useHomeAsOrigin = location.state?.useHomeAsOrigin || false;
+  const selectedHomeId = location.state?.selectedHomeId;
   const setHomeLocationMode = location.state?.setHomeLocation || false;
   
   // Selection mode state
@@ -51,22 +52,36 @@ export const useRideRequestFlow = () => {
     updateTrafficInfo
   } = useTrafficCalculator();
   
-  const { getLocationByType } = useFavoriteLocations();
+  const { getLocationByType, getLocationById } = useFavoriteLocations();
 
   // Cargar ubicación de casa si viene con ese parámetro
   useEffect(() => {
     if (useHomeAsOrigin) {
-      const homeLocation = getLocationByType('home');
-      if (homeLocation) {
-        setOriginCoords(homeLocation.coordinates);
-        setOrigin(homeLocation.coordinates.address || "Mi Casa");
-        toast({
-          title: "Casa seleccionada como origen",
-          description: "Tu ubicación de casa ha sido establecida como punto de origen."
-        });
+      // Si hay un ID específico de casa
+      if (selectedHomeId) {
+        const selectedHome = getLocationById(selectedHomeId);
+        if (selectedHome && selectedHome.type === 'home') {
+          setOriginCoords(selectedHome.coordinates);
+          setOrigin(selectedHome.name || selectedHome.coordinates.address || "Mi Casa");
+          toast({
+            title: `${selectedHome.name} seleccionada como origen`,
+            description: "Tu ubicación ha sido establecida como punto de origen."
+          });
+        }
+      } else {
+        // Usar la primera casa (comportamiento tradicional)
+        const homeLocation = getLocationByType('home');
+        if (homeLocation) {
+          setOriginCoords(homeLocation.coordinates);
+          setOrigin(homeLocation.name || homeLocation.coordinates.address || "Mi Casa");
+          toast({
+            title: "Casa seleccionada como origen",
+            description: "Tu ubicación de casa ha sido establecida como punto de origen."
+          });
+        }
       }
     }
-  }, [useHomeAsOrigin, getLocationByType, setOrigin]);
+  }, [useHomeAsOrigin, selectedHomeId, getLocationByType, getLocationById, setOrigin]);
 
   // Handle origin change from map
   const handleOriginChange = (coords: MapCoordinates) => {
@@ -153,7 +168,7 @@ export const useRideRequestFlow = () => {
 
   // Process ride request
   const handleRequestRide = (paymentMethodId: string) => {
-    requestRide(
+    return requestRide(
       origin, 
       destination, 
       originCoords, 

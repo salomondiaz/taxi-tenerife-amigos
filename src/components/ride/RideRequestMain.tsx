@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -8,15 +9,26 @@ import MapViewSection from "./MapViewSection";
 import RouteCalculator from "./RouteCalculator";
 import { Button } from "@/components/ui/button";
 import { Car } from "lucide-react";
-import { useFavoriteLocations } from "@/hooks/useFavoriteLocations";
+import { useFavoriteLocations, FavoriteLocation } from "@/hooks/useFavoriteLocations";
 import { useHomeLocationStorage } from "@/hooks/useHomeLocationStorage";
+import HomesSelector from "@/components/home/HomesSelector";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const RideRequestMain: React.FC = () => {
   const location = useLocation();
+  const selectedHomeId = location.state?.selectedHomeId;
   
-  // Get instances of hooks - using ES imports instead of require
-  const { getLocationByType } = useFavoriteLocations();
+  // Get instances of hooks
+  const { getLocationByType, getLocationById, favoriteLocations } = useFavoriteLocations();
   const { saveHomeLocation } = useHomeLocationStorage();
+  
+  const [showHomesSelector, setShowHomesSelector] = useState(false);
   
   const {
     useManualSelection,
@@ -42,14 +54,30 @@ const RideRequestMain: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<"map" | "info">("map");
   
-  const useHomeAddress = () => {
-    const homeLocation = getLocationByType('home');
+  // Manejo de casas múltiples
+  useEffect(() => {
+    // Si se especificó un ID de casa, usarla
+    if (selectedHomeId) {
+      const selectedHome = getLocationById(selectedHomeId);
+      if (selectedHome && selectedHome.type === 'home') {
+        useHomeLocation(selectedHome);
+      }
+    } else if (location.state?.useHomeAsOrigin) {
+      // Si no hay ID específico pero se pidió usar casa, usar la predeterminada
+      const homeLocation = getLocationByType('home');
+      if (homeLocation) {
+        useHomeLocation(homeLocation);
+      }
+    }
+  }, [selectedHomeId, location.state?.useHomeAsOrigin]);
+
+  const useHomeLocation = (homeLocation: FavoriteLocation) => {
     if (homeLocation) {
       handleOriginChange(homeLocation.coordinates);
-      setOrigin(homeLocation.coordinates.address || "Mi Casa");
+      setOrigin(homeLocation.name || homeLocation.coordinates.address || "Mi Casa");
       toast({
         title: "Casa como origen",
-        description: "Tu ubicación de casa ha sido establecida como punto de origen"
+        description: `${homeLocation.name} ha sido establecida como punto de origen`
       });
     } else {
       toast({
@@ -58,6 +86,30 @@ const RideRequestMain: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+  
+  const useHomeAddress = () => {
+    // Abrimos el selector de casas si hay más de una
+    if (favoriteLocations.filter(loc => loc.type === 'home').length > 1) {
+      setShowHomesSelector(true);
+    } else {
+      // Si solo hay una casa, la usamos directamente
+      const homeLocation = getLocationByType('home');
+      if (homeLocation) {
+        useHomeLocation(homeLocation);
+      } else {
+        toast({
+          title: "No tienes una casa guardada",
+          description: "Configura tu ubicación de casa en Ajustes",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+  
+  const handleSelectHome = (home: FavoriteLocation) => {
+    useHomeLocation(home);
+    setShowHomesSelector(false);
   };
   
   const saveHomeAddress = () => {
@@ -96,7 +148,7 @@ const RideRequestMain: React.FC = () => {
     }
   };
 
-  // Request a ride - wrap in async function to match expected Promise return type
+  // Request a ride
   const saveRideToSupabase = async (scheduledDate?: Date) => {
     if (!estimatedPrice || !originCoords || !destinationCoords) {
       toast({
@@ -176,6 +228,26 @@ const RideRequestMain: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* Diálogo para seleccionar casa */}
+      <Dialog open={showHomesSelector} onOpenChange={setShowHomesSelector}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleccionar casa</DialogTitle>
+            <DialogDescription>
+              Elige la casa que quieres usar como punto de origen
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <HomesSelector 
+              onSelectHome={handleSelectHome} 
+              allowEditing={false}
+              showAddNew={false}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

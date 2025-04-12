@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowLeft, MapPin, Car, Phone, Star, User, Clock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ const RIDE_HISTORY_KEY = 'ride_history';
 
 const RideTracking = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentRide, setCurrentRide } = useAppContext();
   
   const [rideStatus, setRideStatus] = useState<"pending" | "accepted" | "ongoing" | "completed" | "cancelled">(
@@ -29,11 +31,11 @@ const RideTracking = () => {
         description: "Regresando a la página de inicio",
         variant: "destructive",
       });
-      navigate("/home");
+      setTimeout(() => navigate("/home"), 2000);
       return;
     }
     
-    setRideStatus(currentRide.status);
+    setRideStatus(currentRide.status || "pending");
     
     if (currentRide.status === "pending") {
       const timer = setTimeout(() => {
@@ -90,7 +92,11 @@ const RideTracking = () => {
     }
   }, [currentRide, navigate, setCurrentRide]);
 
+  // Estado del viaje
   useEffect(() => {
+    // No continuar si no hay viaje activo
+    if (!currentRide) return;
+
     if (rideStatus === "accepted") {
       const timer = setTimeout(() => {
         setRideStatus("ongoing");
@@ -140,6 +146,7 @@ const RideTracking = () => {
     }
   }, [rideStatus, currentRide, setCurrentRide]);
   
+  // Funciones de utilidad
   const getStatusText = () => {
     switch (rideStatus) {
       case "pending":
@@ -257,6 +264,23 @@ const RideTracking = () => {
       navigate(`/rate-driver/${currentRide.id}`);
     }
   };
+
+  // Si no hay viaje activo, mostrar mensaje y redireccionar
+  if (!currentRide) {
+    return (
+      <MainLayout requireAuth>
+        <div className="flex flex-col items-center justify-center min-h-screen p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+            <h2 className="text-xl font-semibold mb-4">No hay viaje activo</h2>
+            <p className="text-gray-600 mb-4">Redirigiendo a la página principal...</p>
+            <Button onClick={() => navigate("/home")}>
+              Ir al inicio
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout requireAuth>

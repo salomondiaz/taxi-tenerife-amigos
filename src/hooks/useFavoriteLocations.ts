@@ -189,6 +189,11 @@ export function useFavoriteLocations() {
   const getLocationsByType = (type: FavoriteLocationType): FavoriteLocation[] => {
     return favoriteLocations.filter(loc => loc.type === type);
   };
+  
+  // Get a location by its ID
+  const getLocationById = (id: string): FavoriteLocation | undefined => {
+    return favoriteLocations.find(loc => loc.id === id);
+  };
 
   return {
     favoriteLocations,
@@ -197,6 +202,7 @@ export function useFavoriteLocations() {
     removeFavoriteLocation,
     getLocationByType,
     getLocationsByType,
+    getLocationById,
     loadFavoriteLocations
   };
 }
