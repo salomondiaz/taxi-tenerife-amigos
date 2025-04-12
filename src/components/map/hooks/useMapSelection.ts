@@ -31,7 +31,7 @@ export function useMapSelection({
   useEffect(() => {
     if (!map) return;
     
-    // Remove the dragPan restriction that requires CTRL key
+    // Ensure dragPan is enabled without requiring CTRL key
     if (map.dragPan) {
       map.dragPan.enable();
     }
@@ -43,7 +43,9 @@ export function useMapSelection({
       let address: string | undefined;
       
       try {
+        // Get address from coordinates through reverse geocoding
         address = await reverseGeocode(coords, apiKey);
+        console.log("Address found:", address);
       } catch (error) {
         console.error("Error reverse geocoding:", error);
       }
@@ -59,6 +61,7 @@ export function useMapSelection({
         return;
       }
       
+      // Handle origin selection
       if (selectionMode === 'origin') {
         if (onOriginChange) {
           onOriginChange(fullCoords);
@@ -71,7 +74,9 @@ export function useMapSelection({
         
         // Auto-switch to destination selection after origin is set
         setSelectionMode('destination');
-      } else if (selectionMode === 'destination') {
+      } 
+      // Handle destination selection
+      else if (selectionMode === 'destination') {
         if (onDestinationChange) {
           onDestinationChange(fullCoords);
         }

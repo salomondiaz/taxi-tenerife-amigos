@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { MapCoordinates, TrafficLevel } from "@/components/map/types";
+import { MapCoordinates } from "@/components/map/types";
 import Map from "@/components/Map";
 import { toast } from "@/hooks/use-toast";
 import HomeDestinationDialog from "@/components/map/components/HomeDestinationDialog";

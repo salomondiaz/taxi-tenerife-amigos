@@ -46,6 +46,8 @@ export const useRideRequest = () => {
         metodo_pago: paymentMethodId
       };
 
+      console.log("Attempting to save ride data:", rideData);
+
       // Check connection to Supabase
       const { data: pingData, error: pingError } = await supabase.from('tabla de prueba').select('*').limit(1);
       
@@ -71,6 +73,8 @@ export const useRideRequest = () => {
         });
         return null;
       }
+
+      console.log("Ride data saved successfully:", data);
 
       // Success message
       toast({

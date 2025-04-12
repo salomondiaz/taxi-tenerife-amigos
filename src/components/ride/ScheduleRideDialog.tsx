@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { TimeSelector } from "./TimeSelector";
+import { toast } from "@/hooks/use-toast";
 
 interface ScheduleRideDialogProps {
   open: boolean;
@@ -38,18 +39,46 @@ const ScheduleRideDialog: React.FC<ScheduleRideDialogProps> = ({
   
   const handleSubmit = () => {
     if (!date || !time) {
+      toast({
+        title: "Datos incompletos",
+        description: "Por favor selecciona fecha y hora para programar el viaje",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Parse the time string (format: HH:MM)
-    const [hours, minutes] = time.split(':').map(Number);
-    
-    // Create a new date with the selected date and time
-    const scheduledDate = new Date(date);
-    scheduledDate.setHours(hours);
-    scheduledDate.setMinutes(minutes);
-    
-    onSchedule(scheduledDate);
+    try {
+      // Parse the time string (format: HH:MM)
+      const [hours, minutes] = time.split(':').map(Number);
+      
+      // Create a new date with the selected date and time
+      const scheduledDate = new Date(date);
+      scheduledDate.setHours(hours);
+      scheduledDate.setMinutes(minutes);
+      
+      // Verify the date is in the future
+      if (scheduledDate <= new Date()) {
+        toast({
+          title: "Fecha inválida",
+          description: "La fecha de programación debe ser en el futuro",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      onSchedule(scheduledDate);
+      
+      // Reset form after submission
+      setDate(undefined);
+      setTime(undefined);
+    } catch (error) {
+      console.error("Error processing date:", error);
+      toast({
+        title: "Error de programación",
+        description: "Ocurrió un error al programar el viaje. Intenta nuevamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

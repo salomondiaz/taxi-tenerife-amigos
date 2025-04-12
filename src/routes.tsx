@@ -17,7 +17,7 @@ import Login from "@/pages/Login";
 const routes: RouteObject[] = [
   {
     path: "/",
-    element: <RideRequest />, // Set RideRequest as the default homepage
+    element: <RideRequest />,
     errorElement: <ErrorPage />,
   },
   {
