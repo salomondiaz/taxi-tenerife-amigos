@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Navigation, CalendarIcon, Car, Clock, Calendar, X } from "lucide-react";
+import { MapPin, Navigation, CalendarIcon, Car, Clock, Calendar, X, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { GOOGLE_MAPS_API_KEY } from "@/components/Map";
@@ -58,6 +58,10 @@ const QuickRideRequest: React.FC = () => {
     setScheduledTime("");
   };
   
+  const navigateToHomeLocations = () => {
+    navigate("/mis-casas");
+  };
+  
   const formatScheduledTime = () => {
     if (!scheduledTime) return "";
     
@@ -74,10 +78,22 @@ const QuickRideRequest: React.FC = () => {
     <section className="py-6">
       <div className="container px-4 mx-auto">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
-            <MapPin className="text-tenerife-blue" size={20} />
-            Solicitar un viaje
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+              <MapPin className="text-tenerife-blue" size={20} />
+              Solicitar un viaje
+            </h2>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-tenerife-blue border-tenerife-blue"
+              onClick={navigateToHomeLocations}
+            >
+              <Home className="mr-2" size={16} />
+              Gestionar mis casas
+            </Button>
+          </div>
           
           <div className="space-y-4">
             <div className="flex gap-2 items-start">

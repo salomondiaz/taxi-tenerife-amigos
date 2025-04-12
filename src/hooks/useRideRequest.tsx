@@ -43,9 +43,11 @@ export const useRideRequest = () => {
           destino_lat: destinationCoords.lat,
           destino_lng: destinationCoords.lng,
           precio_estimado: price,
-          estado: "pendiente",
+          estado: scheduledDate ? "programado" : "pendiente",
           usuario: userId,
           hora_programada: scheduledDate ? scheduledDate.toISOString() : null,
+          metodo_pago: paymentMethod,
+          distancia_km: distance,
         },
       ]).select();
 
@@ -63,7 +65,14 @@ export const useRideRequest = () => {
       
       // Mostrar mensaje según si es programado o no
       const message = scheduledDate 
-        ? "Tu viaje ha sido programado para " + scheduledDate.toLocaleString()
+        ? "Tu viaje ha sido programado para " + scheduledDate.toLocaleString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
         : "Tu viaje ha sido solicitado. Un conductor te recogerá pronto.";
       
       toast({
@@ -85,6 +94,16 @@ export const useRideRequest = () => {
             } 
           });
         }, 1000);
+      } else if (scheduledDate && data && data[0]) {
+        // Si es programado, redirigir a la pantalla de historial
+        setTimeout(() => {
+          navigate(`/historial`, { 
+            state: { 
+              highlightRideId: data[0].id,
+              showThanks: true 
+            } 
+          });
+        }, 2000);
       }
 
       return data ? data[0] : null;

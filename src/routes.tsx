@@ -8,6 +8,7 @@ import NotificationsPage from "@/pages/Notifications";
 import RideHistoryPage from "@/pages/RideHistory";
 import ActiveRidePage from "@/pages/ActiveRide";
 import HomeLocationSettings from "@/pages/HomeLocationSettings";
+import HomeLocations from "@/pages/HomeLocations";
 import NotFound from "@/pages/NotFound";
 import ErrorPage from "@/pages/Error";
 import LandingPage from "@/pages/LandingPage";
@@ -58,6 +59,10 @@ const routes: RouteObject[] = [
   {
     path: "/ajustes/casa",
     element: <HomeLocationSettings />,
+  },
+  {
+    path: "/mis-casas",
+    element: <HomeLocations />,
   },
   {
     path: "/error",

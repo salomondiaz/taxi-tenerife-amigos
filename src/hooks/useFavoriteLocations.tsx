@@ -9,6 +9,7 @@ export interface FavoriteLocation {
   type: "home" | "work" | "favorite";
   coordinates: MapCoordinates;
   createdAt: Date;
+  notes?: string;
 }
 
 // Clave para almacenar las ubicaciones en localStorage
@@ -60,18 +61,11 @@ export const useFavoriteLocations = () => {
     // Actualizar el estado
     setFavoriteLocations((prevLocations) => {
       // Si ya existe una ubicación de ese tipo y queremos que sea única
-      if (type === "home" || type === "work") {
+      if (type === "work") {
+        // Solo para trabajo limitamos a una ubicación
         // Filtrar ubicaciones del mismo tipo
-        const sameName = prevLocations.filter(loc => 
-          loc.name === name && loc.type === type
-        );
-        
-        // Si ya existe una ubicación con el mismo nombre, actualizarla
-        if (sameName.length > 0) {
-          return prevLocations.map(loc => 
-            (loc.name === name && loc.type === type) ? newLocation : loc
-          );
-        }
+        const filtered = prevLocations.filter(loc => loc.type !== type);
+        return [...filtered, newLocation];
       }
       
       // Caso general: añadir a la lista
